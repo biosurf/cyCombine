@@ -4,3 +4,6 @@
 ^\.Rproj\.user$
 ^LICENSE\.md$
 ^README\.Rmd$
+^data$
+^doc$
+^Meta$

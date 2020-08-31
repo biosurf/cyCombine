@@ -19,7 +19,10 @@ Imports:
     RColorBrewer,
     ggplot2,
     kohonen,
-    cydar,
     tibble,
     sva,
     uwot
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

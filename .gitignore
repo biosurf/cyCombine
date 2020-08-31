@@ -1,8 +1,14 @@
 .Rproj.user
+*.Rproj
 .Rhistory
 .RData
-data/
-dev/
+.Rprofile
+data
+dev
 README.Rmd
 figs/
-.Rproj
+
+
+inst/doc
+doc
+Meta

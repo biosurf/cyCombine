@@ -1,5 +1,9 @@
 #### Batch correction ####
 
+
+#' Batch-wise scaling of data
+#' @importFrom dplyr mutate group_by ungroup
+#' @family batch
 scale_expr <- function(combined_expr){
   scaled_expr <- combined_expr %>%
     group_by(batch_ids) %>%
@@ -9,7 +13,12 @@ scale_expr <- function(combined_expr){
 }
 
 
-
+#' Create SOM
+#'
+#' @importFrom dplyr select all_of
+#' @importFrom kohonen som somgrid
+#'
+#' @family batch
 create_som <- function(scaled_expr,
                        seed = 548,
                        xdim = 10,
@@ -28,7 +37,11 @@ create_som <- function(scaled_expr,
 
 
 
-
+#' Correct data using ComBat
+#'
+#' @importFrom tibble tibble add_column
+#' @importFrom sva ComBat
+#' @family batch
 correct_data <- function(combined_expr,
                          som_classes,
                          markers){
@@ -67,7 +80,10 @@ correct_data <- function(combined_expr,
 }
 
 
-
+#' Run batch correction on preprocessed data
+#'
+#'
+#' @family batch
 batch_correct <- function(data,
                           markers){
 
