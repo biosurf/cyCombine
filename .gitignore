@@ -3,3 +3,6 @@
 .RData
 data/
 dev/
+README.Rmd
+figs/
+.Rproj
