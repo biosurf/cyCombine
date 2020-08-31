@@ -52,6 +52,8 @@ create_sample <- function(combined_expr,
 }
 
 #'
+#'
+#' @importFrom flowCore fsApply
 preprocess <- function(input,
                        sample_size = 100000,
                        seed = 473){

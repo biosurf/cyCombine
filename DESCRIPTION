@@ -21,7 +21,8 @@ Imports:
     kohonen,
     tibble,
     sva,
-    uwot
+    uwot,
+    dplyr
 Suggests: 
     knitr,
     rmarkdown

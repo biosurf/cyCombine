@@ -1,7 +1,6 @@
 #### Plotting functions ----
 
 #' Density ridges for two sets
-#' @import
 density_plots <- function(uncorrected, corrected, batch_ids, uncorrected_order = as.factor(batch_ids), corrected_order = as.factor(batch_ids), filename) {
 
   # Extract data into dataframe format
