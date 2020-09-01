@@ -4,7 +4,7 @@
 \alias{transform_asinh}
 \title{Transform data using asinh}
 \usage{
-transform_asinh(fcs_raw)
+transform_asinh(data, markers, cofactor = 5, panel_fcs)
 }
 \description{
 Transform data using asinh

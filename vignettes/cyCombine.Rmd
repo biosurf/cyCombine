@@ -16,4 +16,13 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(cyCombine)
+load("../data/raw/DFCI_panel1_data.Rdata")
+# Run preprocessing
+preprocessed_data <- panel1_data %>% 
+  preprocess()
+# Store result
+save(preprocessed_data, file = "data/01_preprocessed.Rdata")
+
+
+
 ```

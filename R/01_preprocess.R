@@ -10,27 +10,41 @@
 #'
 #'
 #'
-#' @importFrom flowCore parameters fsApply
+#' @import flowCore
 #' @importFrom Biobase pData exprs
 #' @import magrittr
+#' @importFrom dplyr select mutate_at
 #' @family preprocess
-transform_asinh <- function(fcs_raw){
-  # De-randomize and transform data using asinh
-  panel_fcs <- fcs_raw[[1]] %>%
-    flowCore::parameters() %>%
-    Biobase::pData()
+transform_asinh <- function(data, markers, cofactor = 5, panel_fcs){
+  colnames(data) <- c(gsub('[ -]', '', gsub("\\d+[A-Za-z]+_", "", panel_fcs$desc)), "batch_ids", "sample_ids")
+  data <- data %>%
+    # rename_at(.vars = all_of(panel_fcs$name), .funs = function(x)gsub(' ', '', gsub('-', '', gsub("\\d+[A-Za-z]+_", "", x)))) %>%
+    # rename_at(.vars = all_of(panel_fcs$name), .funs = list(str_replace(., "[ -]", ""),
+    # str_replace(., "-", ""),
+    # str_replace(., "\\d+[A-Za-z]+_", ""))) %>% View()
+    select(markers, batch_ids, sample_ids) %>%
+    mutate_at(.vars = all_of(markers),
+              .funs = function(x) asinh(ceiling(x)/cofactor))
 
-  panel_fcs$desc <- gsub(' ', '', gsub('-', '', gsub("\\d+[A-Za-z]+_", "", panel_fcs$desc)))
-
-  fcs <- flowCore::fsApply(fcs_raw, function(x, cofactor = 5){
-    colnames(x) <- panel_fcs$desc
-    expr <- Biobase::exprs(x)
-    expr <- asinh(ceiling(expr[, all_markers]) / cofactor)
-    exprs(x) <- expr
-    x
-  })
-  return(fcs)
+  return(data)
 }
+# transform_asinh <- function(fcs_raw, markers){
+#   # De-randomize and transform data using asinh
+#   panel_fcs <- fcs_raw[[1]] %>%
+#     flowCore::parameters() %>%
+#     Biobase::pData()
+#
+#   panel_fcs$desc <- gsub(' ', '', gsub('-', '', gsub("\\d+[A-Za-z]+_", "", panel_fcs$desc)))
+#
+#   fcs <- flowCore::fsApply(fcs_raw, function(x, cofactor = 5){
+#     colnames(x) <- panel_fcs$desc
+#     expr <- Biobase::exprs(x)
+#     expr <- asinh(ceiling(expr[, markers]) / cofactor)
+#     exprs(x) <- expr
+#     x
+#   })
+#   return(fcs)
+# }
 
 #' Create subsample of combined expression matrix
 #'
@@ -63,14 +77,19 @@ preprocess <- function(input,
   sample_ids <- input$sample_ids
   batch_ids <- input$batch_ids
 
+  panel_fcs <- fcs_raw[[1]] %>%
+    flowCore::parameters() %>%
+    Biobase::pData()
+
   #
   combined_expr <- fcs_raw %>%
-    transform_asinh() %>%
     flowCore::fsApply(exprs) %>%            # Extract expression data
     create_sample(batch_ids = batch_ids,
                   sample_ids = sample_ids,
                   sample_size = sample_size,
-                  seed = seed)
+                  seed = seed) %>%
+    transform_asinh(markers = all_markers,
+                    panel_fcs = panel_fcs)
 
   return(list("data" = combined_expr,
               "markers" = all_markers))
