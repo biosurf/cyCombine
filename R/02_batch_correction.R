@@ -4,6 +4,7 @@
 #' Batch-wise scaling of data
 #' @importFrom dplyr mutate_at group_by ungroup vars
 #' @family batch
+#' @export
 scale_expr <- function(combined_expr){
   scaled_expr <- combined_expr %>%
     group_by(batch_ids) %>%
@@ -19,6 +20,7 @@ scale_expr <- function(combined_expr){
 #' @importFrom kohonen som somgrid
 #'
 #' @family batch
+#' @export
 create_som <- function(scaled_expr,
                        seed = 548,
                        xdim = 10,
@@ -42,6 +44,7 @@ create_som <- function(scaled_expr,
 #' @importFrom tibble tibble add_column
 #' @importFrom sva ComBat
 #' @family batch
+#' @export
 correct_data <- function(combined_expr,
                          som_classes,
                          markers){
@@ -84,6 +87,7 @@ correct_data <- function(combined_expr,
 #'
 #'
 #' @family batch
+#' @export
 batch_correct <- function(data,
                           markers){
 

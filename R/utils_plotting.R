@@ -4,6 +4,7 @@
 #' @import ggplot2
 #' @import ggridges
 #' @import cowplot
+#' @export
 density_plots <- function(uncorrected, corrected, batch_ids, uncorrected_order = as.factor(batch_ids), corrected_order = as.factor(batch_ids), filename) {
 
   # Extract data into dataframe format
@@ -31,9 +32,11 @@ density_plots <- function(uncorrected, corrected, batch_ids, uncorrected_order =
 
 
 
-# Dimensionality reduction plot
+
+#' Dimensionality reduction plot
 #' @importFrom uwot umap
 #' @importFrom dplyr select_if rename
+#' @export
 dimred_plot <- function(data, batch_ids, name, type = 'pca', plot = 'batch', marker = NULL) {
 
   if (type == 'pca') {
@@ -93,13 +96,17 @@ dimred_plot <- function(data, batch_ids, name, type = 'pca', plot = 'batch', mar
 
 
 
-# Save two plots aligned with cowplot
+
+#' Save two plots aligned with cowplot
+#' @export
 save_two_plots <- function(plot1, plot2, filename) {
   plot <- cowplot::plot_grid(plot1, plot2, align = 'v', scale = 0.9)
   cowplot::save_plot(filename = filename, plot, base_width = 12, base_height = 6)
 }
 
-# Save four plots aligned with cowplot
+
+#' Save four plots aligned with cowplot
+#' @export
 save_four_plots <- function(plot1, plot2, plot3, plot4, filename) {
   plot <- cowplot::plot_grid(plot1, plot2, plot3, plot4, align = 'v', scale = 0.9, nrow = 2)
   cowplot::save_plot(filename = filename, plot, base_width = 12, base_height = 12)
