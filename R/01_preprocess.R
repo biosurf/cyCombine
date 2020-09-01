@@ -15,7 +15,6 @@
 #' @import magrittr
 #' @importFrom dplyr select mutate_at
 #' @family preprocess
-#' @export
 transform_asinh <- function(data, markers, cofactor = 5, panel_fcs){
   colnames(data) <- c(gsub('[ -]', '', gsub("\\d+[A-Za-z]+_", "", panel_fcs$desc)), "batch_ids", "sample_ids")
   data <- data %>%
@@ -52,7 +51,6 @@ transform_asinh <- function(data, markers, cofactor = 5, panel_fcs){
 #'
 #' @importFrom tibble as_tibble
 #' @importFrom dplyr mutate
-#' @export
 create_sample <- function(combined_expr,
                           batch_ids,
                           sample_ids,
@@ -70,7 +68,6 @@ create_sample <- function(combined_expr,
 #'
 #'
 #' @importFrom flowCore fsApply
-#' @export
 preprocess <- function(input,
                        sample_size = 100000,
                        seed = 473){

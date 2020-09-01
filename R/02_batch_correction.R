@@ -2,12 +2,12 @@
 
 
 #' Batch-wise scaling of data
-#' @importFrom dplyr mutate group_by ungroup
+#' @importFrom dplyr mutate_at group_by ungroup vars
 #' @family batch
 scale_expr <- function(combined_expr){
   scaled_expr <- combined_expr %>%
     group_by(batch_ids) %>%
-    mutate_at(vars(-c("batch_ids", "sample_ids")), scale) %>%
+    mutate_at(vars(-c("batch_ids", "sample_ids")), .funs = scale) %>%
     ungroup()
   return(scaled_expr)
 }

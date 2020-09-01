@@ -1,6 +1,9 @@
 #### Plotting functions ----
 
 #' Density ridges for two sets
+#' @import ggplot2
+#' @import ggridges
+#' @import cowplot
 density_plots <- function(uncorrected, corrected, batch_ids, uncorrected_order = as.factor(batch_ids), corrected_order = as.factor(batch_ids), filename) {
 
   # Extract data into dataframe format
@@ -20,6 +23,8 @@ density_plots <- function(uncorrected, corrected, batch_ids, uncorrected_order =
   }
 
   # Save the plots
+  # ggsave(filename = filename, plot = plot_grid(plotlist = p, ncol = 6),
+         # device = "png", width = 28, height = 40)
   save_plot(filename, plot_grid(plotlist = p, ncol = 6), base_width = 28, base_height = 40)
 
 }
@@ -27,6 +32,8 @@ density_plots <- function(uncorrected, corrected, batch_ids, uncorrected_order =
 
 
 # Dimensionality reduction plot
+#' @importFrom uwot umap
+#' @importFrom dplyr select_if rename
 dimred_plot <- function(data, batch_ids, name, type = 'pca', plot = 'batch', marker = NULL) {
 
   if (type == 'pca') {
@@ -50,7 +57,7 @@ dimred_plot <- function(data, batch_ids, name, type = 'pca', plot = 'batch', mar
     set.seed(758)
     umap <- data %>%
       select_if(is.numeric) %>%
-      umap(n_neighbors = 15, min_dist = 0.2, metric = 'euclidean')
+      uwot::umap(n_neighbors = 15, min_dist = 0.2, metric = 'euclidean')
 
     # Make dataframe with output
     if (plot == 'batch') {
@@ -88,12 +95,12 @@ dimred_plot <- function(data, batch_ids, name, type = 'pca', plot = 'batch', mar
 
 # Save two plots aligned with cowplot
 save_two_plots <- function(plot1, plot2, filename) {
-  plot <- plot_grid(plot1, plot2, align = 'v', scale = 0.9)
-  save_plot(filename = filename, plot, base_width = 12, base_height = 6)
+  plot <- cowplot::plot_grid(plot1, plot2, align = 'v', scale = 0.9)
+  cowplot::save_plot(filename = filename, plot, base_width = 12, base_height = 6)
 }
 
 # Save four plots aligned with cowplot
 save_four_plots <- function(plot1, plot2, plot3, plot4, filename) {
-  plot <- plot_grid(plot1, plot2, plot3, plot4, align = 'v', scale = 0.9, nrow = 2)
-  save_plot(filename = filename, plot, base_width = 12, base_height = 12)
+  plot <- cowplot::plot_grid(plot1, plot2, plot3, plot4, align = 'v', scale = 0.9, nrow = 2)
+  cowplot::save_plot(filename = filename, plot, base_width = 12, base_height = 12)
 }

@@ -22,7 +22,9 @@ Imports:
     tibble,
     sva,
     uwot,
-    dplyr
+    dplyr,
+    cowplot,
+    ggridges
 Suggests: 
     knitr,
     rmarkdown
