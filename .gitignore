@@ -1,5 +1,4 @@
 .Rproj.user
-*.Rproj
 .Rhistory
 .RData
 .Rprofile
@@ -7,8 +6,6 @@ data
 dev
 README.Rmd
 figs/
-
-
 inst/doc
 doc
 Meta
