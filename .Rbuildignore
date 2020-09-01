@@ -1,6 +1,6 @@
 ^renv$
 ^renv\.lock$
-^baCor\.Rproj$
+^cyCombine\.Rproj$
 ^\.Rproj\.user$
 ^LICENSE\.md$
 ^README\.Rmd$
