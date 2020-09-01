@@ -22,7 +22,8 @@ Imports:
     tibble,
     sva,
     uwot,
-    dplyr
+    dplyr,
+    config
 Suggests: 
     knitr,
     rmarkdown
