@@ -67,7 +67,7 @@ create_sample <- function(combined_expr,
   return(combined_expr)
 }
 
-#'
+#' Preprocess FlowSet data
 #'
 #' @importFrom flowCore fsApply
 #' @export
