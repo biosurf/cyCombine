@@ -24,7 +24,8 @@ Imports:
     uwot,
     dplyr,
     cowplot,
-    ggridges
+    ggridges,
+    BiocManager
 Suggests: 
     knitr,
     rmarkdown

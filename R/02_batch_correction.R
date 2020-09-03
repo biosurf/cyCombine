@@ -45,7 +45,7 @@ create_som <- function(scaled_expr,
 #' @importFrom sva ComBat
 #' @family batch
 #' @export
-correct_data <- function(combined_expr,
+correct_data <- function(data,
                          som_classes,
                          markers){
   # sample_ids <- combined_expr$sample_ids
@@ -54,23 +54,23 @@ correct_data <- function(combined_expr,
   #combined_expr <- combined
 
   # Create empty dataset
-  corrected_data <- tibble::tibble(.rows = nrow(combined_expr)) %>%
+  corrected_data <- tibble::tibble(.rows = nrow(data)) %>%
     tibble::add_column(!!!set_names(as.list(rep(0, length(markers))), nm = markers))
 
 
   for (s in sort(unique(som_classes))) {
 
     # Extract original (non-scaled+ranked) data for cluster
-    data <- combined_expr[which(som_classes==s), ]
+    data_subset <- data[which(som_classes==s), ]
 
 
     # ComBat batch correction using disease status as covariate
-    covar <- rep('CLL', nrow(data))
-    covar[grep('^HD', data$sample_ids)] <- 'HD'
-    magic_output <- data %>%
+    covar <- rep('CLL', nrow(data_subset))
+    covar[grep('^HD', data_subset$sample_ids)] <- 'HD'
+    magic_output <- data_subset %>%
       select(-c("batch_ids", "sample_ids")) %>%
       t() %>%
-      sva::ComBat(batch = data$batch_ids, mod = model.matrix(~covar)) %>%
+      sva::ComBat(batch = data_subset$batch_ids, mod = model.matrix(~covar)) %>%
       t()
       # t(sva::ComBat(t(data), batch = batches, mod = model.matrix(~covar)))
 
@@ -81,6 +81,49 @@ correct_data <- function(combined_expr,
 
   return(corrected_data)
 }
+
+
+correct_data2 <- function(input,
+                          som_classes,
+                          markers){
+  # sample_ids <- combined_expr$sample_ids
+  # batch_ids <- combined_expr$batch_ids
+  # Processing and correcting data per-cluster
+  #combined_expr <- combined
+
+  # Create empty dataset
+  corrected_data <- tibble::tibble(.rows = nrow(input)) %>%
+    tibble::add_column(!!!set_names(as.list(rep(0, length(markers))), nm = markers)) %>%
+    mutate(batch_ids = 0,
+           sample_ids = "",
+           covar = "")
+
+  corrected_data2 <- input %>%
+    mutate(som = som_classes,
+           covar = case_when(str_starts(string = sample_ids,
+                                        pattern = "HD") ~ "HD",
+                             TRUE ~ "CLL")) %>%
+    # nest_by(som) %>%
+    # mutate(mean = mean(data$CD20))
+    group_by(som) %>%
+    group_modify(function(df, ...){
+      magic_output <- df %>%
+        select(markers) %>%
+        t() %>%
+        sva::ComBat(batch = df$batch_ids, mod = model.matrix(~df$covar)) %>%
+        t() %>%
+        as_tibble() %>%
+        mutate(batch_ids = df$batch_ids,
+               sample_ids = df$sample_ids,
+               covar = df$covar)
+      magic_output[magic_output < 0] <- 0
+      return(magic_output)
+    }) %>%
+    ungroup() %>%
+    select(-som)
+  return(corrected_data2)
+}
+
 
 
 #' Run batch correction on preprocessed data
@@ -96,7 +139,7 @@ batch_correct <- function(data,
     scale_expr() %>%
     create_som()
   # Run batch correction
-  corrected_data <- combined_expr %>%
+  corrected_data <- data %>%
     correct_data(som_classes = som$unit.classif,
                  markers = markers)
   return(corrected_data)
