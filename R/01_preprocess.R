@@ -16,19 +16,19 @@
 #' @importFrom dplyr select mutate_at
 #' @family preprocess
 #' @export
-transform_asinh <- function(data, markers, cofactor = 5, panel_fcs){
+transform_asinh <- function(input, markers, cofactor = 5, panel_fcs){
   print(paste("Transforming data using asinh with a cofactor of", cofactor))
-  colnames(data) <- c(gsub('[ -]', '', gsub("\\d+[A-Za-z]+_", "", panel_fcs$desc)), "batch_ids", "sample_ids")
-  data <- data %>%
+  colnames(input) <- c(gsub('[ -]', '', gsub("\\d+[A-Za-z]+_", "", panel_fcs$desc)), "Batch", "Sample")
+  input <- input %>%
     # rename_at(.vars = all_of(panel_fcs$name), .funs = function(x)gsub(' ', '', gsub('-', '', gsub("\\d+[A-Za-z]+_", "", x)))) %>%
     # rename_at(.vars = all_of(panel_fcs$name), .funs = list(str_replace(., "[ -]", ""),
     # str_replace(., "-", ""),
     # str_replace(., "\\d+[A-Za-z]+_", ""))) %>% View()
-    select(markers, batch_ids, sample_ids) %>%
+    select(markers, Batch, Sample) %>%
     mutate_at(.vars = all_of(markers),
               .funs = function(x) asinh(ceiling(x)/cofactor))
 
-  return(data)
+  return(input)
 }
 # transform_asinh <- function(fcs_raw, markers){
 #   # De-randomize and transform data using asinh
@@ -64,8 +64,8 @@ create_sample <- function(combined_expr,
   sample <- sample(1:nrow(combined_expr), 100000)
   combined_expr <- combined_expr[sample,] %>%
     tibble::as_tibble() %>%
-    mutate(batch_ids = batch_ids[sample],
-           sample_ids = sample_ids[sample])
+    mutate(Batch = batch_ids[sample],
+           Sample = sample_ids[sample])
   return(combined_expr)
 }
 

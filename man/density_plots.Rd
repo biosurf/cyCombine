@@ -4,14 +4,7 @@
 \alias{density_plots}
 \title{Density ridges for two sets}
 \usage{
-density_plots(
-  uncorrected,
-  corrected,
-  batch_ids,
-  uncorrected_order = as.factor(batch_ids),
-  corrected_order = as.factor(batch_ids),
-  filename
-)
+density_plots(uncorrected, corrected, markers, filename)
 }
 \description{
 Density ridges for two sets

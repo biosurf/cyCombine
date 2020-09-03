@@ -4,21 +4,35 @@
 #' @import ggplot2
 #' @import ggridges
 #' @import cowplot
+#' @importFrom dplyr select_if bind_rows rename
 #' @export
-density_plots <- function(uncorrected, corrected, batch_ids, uncorrected_order = as.factor(batch_ids), corrected_order = as.factor(batch_ids), filename) {
+density_plots <- function(uncorrected, corrected, markers, filename) {
+
+  uncorrected <- uncorrected %>%
+    select_if(names(.) %!in% c("Sample", "covar")) %>%
+    mutate(Type = "Uncorrected",
+           Batch = as.factor(Batch))
+
+  df <- corrected %>%
+    select_if(names(.) %!in% c("Sample", "covar")) %>%
+    mutate(Type = "Corrected",
+           Batch = as.factor(Batch)) %>%
+    bind_rows(uncorrected)
+
 
   # Extract data into dataframe format
-  uncor_df <- cbind.data.frame(uncorrected, uncorrected_order, rep('Uncorrected', nrow(uncorrected)))
-  cor_df <- cbind.data.frame(corrected, corrected_order, rep('Corrected', nrow(corrected)))
-  colnames(cor_df)[(ncol(cor_df)-1):ncol(cor_df)] <- colnames(uncor_df)[(ncol(uncor_df)-1):ncol(uncor_df)] <- c('Batch', 'Type')
-
-  df <- rbind.data.frame(uncor_df, cor_df)
+  # uncor_df <- cbind.data.frame(uncorrected, uncorrected_order, rep('Uncorrected', nrow(uncorrected)))
+  # cor_df <- cbind.data.frame(corrected, corrected_order, rep('Corrected', nrow(corrected)))
+  # colnames(df)[(ncol(df)-1):ncol(df)] <- c('Batch', 'Type')
+  #
+  # df <- rbind.data.frame(uncor_df, cor_df)
 
   # For each marker, make the plot
   p <- list()
-  for (c in 1:length(all_markers)) {
+  for (c in 1:length(markers)) {
 
-    p[[c]] <- ggplot(df, aes_string(x = all_markers[c], y = "Batch")) +
+    p[[c]] <- df %>%
+      ggplot(aes_string(x = markers[c], y = "Batch")) +
       geom_density_ridges(aes(color = Type, fill = Type), alpha = 0.4) +
       theme_bw()
   }
@@ -35,43 +49,44 @@ density_plots <- function(uncorrected, corrected, batch_ids, uncorrected_order =
 
 #' Dimensionality reduction plot
 #' @importFrom uwot umap
-#' @importFrom dplyr select_if rename
 #' @export
-dimred_plot <- function(data, batch_ids, name, type = 'pca', plot = 'batch', marker = NULL) {
+dimred_plot <- function(input, name, type = 'pca', plot = 'batch', marker = NULL) {
+  Batch <- input$Batch %>%
+    as.factor()
+  input <- input %>%
+    select_if(names(.) %!in% c("Batch", "Sample", "covar"))
 
   if (type == 'pca') {
     # Run PCA
-    pca <- data %>%
-      select_if(is.numeric) %>%
+    pca <- input %>%
       prcomp(scale. = TRUE, center = TRUE)
 
     # Make dataframe with output
     if (plot == 'batch') {
       df <- pca$x %>%
         as_tibble() %>%
-        mutate(Batch = as.factor(batch_ids))
+        mutate(Batch = as.factor(Batch))
       #cbind.data.frame(pca$x, as.factor(batch_ids)); colnames(df)[ncol(df)] <- 'Batch'
     } else {
-      df <- cbind.data.frame(pca$x, as.factor(batch_ids), data[,marker]); colnames(df)[(ncol(df)-1):ncol(df)] <- c('Batch', marker)
+      df <- cbind.data.frame(pca$x, as.factor(Batch), data[,marker]); colnames(df)[(ncol(df)-1):ncol(df)] <- c('Batch', marker)
     }
 
   } else if (type == 'umap') {
     # Run UMAP
     set.seed(758)
-    umap <- data %>%
-      select_if(is.numeric) %>%
+    umap <- input %>%
       uwot::umap(n_neighbors = 15, min_dist = 0.2, metric = 'euclidean')
 
     # Make dataframe with output
     if (plot == 'batch') {
       df <- umap %>%
         as_tibble() %>%
-        mutate(Batch = as.factor(batch_ids)) %>%
+        mutate(Batch = as.factor(Batch)) %>%
         rename(UMAP1 = V1,
                UMAP2 = V2)
       # cbind.data.frame(umap, as.factor(batch_ids)); colnames(df) <- c('UMAP1', 'UMAP2', 'Batch')
     } else {
-      df <- cbind.data.frame(umap, as.factor(batch_ids), data[,marker]); colnames(df) <- c('UMAP1', 'UMAP2', 'Batch', marker)
+      df <- cbind.data.frame(umap, as.factor(Batch), data[,marker]); colnames(df) <- c('UMAP1', 'UMAP2', 'Batch', marker)
     }
   }
 

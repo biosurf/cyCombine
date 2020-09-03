@@ -4,7 +4,7 @@
 \alias{batch_correct}
 \title{Run batch correction on preprocessed data}
 \usage{
-batch_correct(data, markers)
+batch_correct(input, markers)
 }
 \description{
 Run batch correction on preprocessed data
