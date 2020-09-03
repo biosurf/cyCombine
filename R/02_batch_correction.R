@@ -5,8 +5,8 @@
 #' @importFrom dplyr mutate_at group_by ungroup vars
 #' @family batch
 #' @export
-scale_expr <- function(combined_expr){
-  scaled_expr <- combined_expr %>%
+scale_expr <- function(expr){
+  scaled_expr <- expr %>%
     group_by(batch_ids) %>%
     mutate_at(vars(-c("batch_ids", "sample_ids")), .funs = scale) %>%
     ungroup()
@@ -28,7 +28,7 @@ create_som <- function(scaled_expr,
   # 10x10 SOM grid on overlapping markers, extract clustering per cell
   set.seed(seed)
   som <- scaled_expr %>%
-    select(all_of(all_markers)) %>%
+    select(-c("batch_ids", "sample_ids")) %>%
     as.matrix() %>%
     kohonen::som(grid = kohonen::somgrid(xdim = xdim,
                                          ydim = ydim),
