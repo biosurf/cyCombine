@@ -4,7 +4,7 @@
 \alias{scale_expr}
 \title{Batch-wise scaling of data}
 \usage{
-scale_expr(combined_expr)
+scale_expr(expr)
 }
 \description{
 Batch-wise scaling of data

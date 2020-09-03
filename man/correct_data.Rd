@@ -4,7 +4,7 @@
 \alias{correct_data}
 \title{Correct data using ComBat}
 \usage{
-correct_data(combined_expr, som_classes, markers)
+correct_data(data, som_classes, markers)
 }
 \description{
 Correct data using ComBat
