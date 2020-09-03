@@ -17,6 +17,7 @@
 #' @family preprocess
 #' @export
 transform_asinh <- function(data, markers, cofactor = 5, panel_fcs){
+  print(paste("Transforming data using asinh with a cofactor of", cofactor))
   colnames(data) <- c(gsub('[ -]', '', gsub("\\d+[A-Za-z]+_", "", panel_fcs$desc)), "batch_ids", "sample_ids")
   data <- data %>%
     # rename_at(.vars = all_of(panel_fcs$name), .funs = function(x)gsub(' ', '', gsub('-', '', gsub("\\d+[A-Za-z]+_", "", x)))) %>%
@@ -58,6 +59,7 @@ create_sample <- function(combined_expr,
                           sample_ids,
                           sample_size = 100000,
                           seed = 473){
+  print(paste("Down-sampling to", sample_size, "samples"))
   set.seed(seed)
   sample <- sample(1:nrow(combined_expr), 100000)
   combined_expr <- combined_expr[sample,] %>%
@@ -74,6 +76,7 @@ create_sample <- function(combined_expr,
 preprocess <- function(input,
                        sample_size = 100000,
                        seed = 473){
+  print("Extracting objects")
   # Extract objects
   fcs_raw <- input$fcs_raw
   all_markers <- input$all_markers
@@ -84,7 +87,7 @@ preprocess <- function(input,
     flowCore::parameters() %>%
     Biobase::pData()
 
-  #
+  print("Extracting expression data")
   combined_expr <- fcs_raw %>%
     flowCore::fsApply(exprs) %>%            # Extract expression data
     create_sample(batch_ids = batch_ids,
@@ -93,7 +96,7 @@ preprocess <- function(input,
                   seed = seed) %>%
     transform_asinh(markers = all_markers,
                     panel_fcs = panel_fcs)
-
+  print("Done")
   return(list("data" = combined_expr,
               "markers" = all_markers))
 }

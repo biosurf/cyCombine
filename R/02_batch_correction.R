@@ -6,6 +6,7 @@
 #' @family batch
 #' @export
 scale_expr <- function(expr){
+  print("Scaling expression data")
   scaled_expr <- expr %>%
     group_by(batch_ids) %>%
     mutate_at(vars(-c("batch_ids", "sample_ids")), .funs = scale) %>%
@@ -26,6 +27,7 @@ create_som <- function(scaled_expr,
                        xdim = 10,
                        ydim = 10){
   # 10x10 SOM grid on overlapping markers, extract clustering per cell
+  print("Creating SOM grid")
   set.seed(seed)
   som <- scaled_expr %>%
     select(-c("batch_ids", "sample_ids")) %>%
@@ -134,14 +136,17 @@ correct_data2 <- function(input,
 batch_correct <- function(data,
                           markers){
 
+
   # Create SOM on scaled data
   som <- data %>%
     scale_expr() %>%
     create_som()
   # Run batch correction
+  print("Batch correcting data")
   corrected_data <- data %>%
     correct_data(som_classes = som$unit.classif,
                  markers = markers)
+  print("Done")
   return(corrected_data)
 }
 
