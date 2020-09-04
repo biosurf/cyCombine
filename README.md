@@ -35,9 +35,9 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 
 <!-- ``` -->
 
-## Installation
+## Install as package
 
-### renv
+### 1\. Create virtual environment with renv
 
 Initialize a local R environment:
 
@@ -49,13 +49,41 @@ library(renv)
 renv::init()
 ```
 
-### Install package from github
+### 2\. Install package from github
 
 ``` r
-# To ensure Rstudio looks up Bioc packages run:
+# To ensure Rstudio looks up BioConductor packages run:
 setRepositories(ind = c(1:6, 8))
-# The install package with
+# Then install package with
 devtools::install_github("shdam/cyCombine")
+```
+
+## Install as cloned repository
+
+### 1\. Clone repository
+
+``` sh
+# In terminal at desired directory
+git clone git@github.com:shdam/cyCombine.git
+```
+
+### 2\. Install dependecies
+
+``` r
+# Open cyCombine.Rproj in Rstudio
+# Install renv
+install.packages("renv")
+library(renv)
+# Restore from lock file
+renv::restore()
+```
+
+### 3\. Load package
+
+``` r
+install.packages("devtools")
+library(devtools)
+devtools::load_all("~/Rprojects/cyCombine")
 ```
 
 ## Example

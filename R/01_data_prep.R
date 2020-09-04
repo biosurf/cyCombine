@@ -1,4 +1,52 @@
-#### Data pre-processing ####
+#### Compile FCS files ----
+
+
+#' Compile all .fcs files in a directory
+#'
+#' @importFrom Biobase exprs
+#' @param data_dir Directory containing the .fcs files
+#' @export
+compile_fcs <- function(data_dir){
+  # Specifying files to use
+  files <- list.files(data_dir,
+                      pattern="\\.fcs",
+                      recursive = FALSE,
+                      full.names = TRUE)
+  print(str_c("Read", length(files), "file names to process",
+              sep = " "))
+
+  # Get metadata
+  meta_data <- str_c(data_dir, "/CyTOF samples cohort.xlsx",
+                     sep = "") %>%
+    readxl::read_xlsx()
+
+  # Read all the data files
+  fcs_raw <- files %>%
+    flowCore::read.flowSet(transformation = FALSE,
+                           truncate_max_range = FALSE,
+                           emptyValue = FALSE)
+  print("Read flowset")
+
+  # Get sample names
+  sample_ids <- basename(files) %>%
+    stringr::str_remove(".fcs") %>%
+    rep(flowCore::fsApply(fcs_raw, nrow))
+
+  print("Extracting expression data and adding sample and batch labels")
+  fcs_data <- fcs_raw %>%
+    flowCore::fsApply(Biobase::exprs) %>%
+    as_tibble() %>%
+    # rename(str_remove(., pattern = "\\d+[A-Za-z]+_")) %>%
+    mutate(Sample = sample_ids,
+           Batch = match(sample_ids, meta_data$FCS_name))
+    # colnames(input) <- c(gsub('[ -]', '', gsub("\\d+[A-Za-z]+_", "", panel_fcs$desc)), "Batch", "Sample")
+
+  print("Done")
+  return(fcs_data)
+}
+
+
+#### Data pre-processing ----
 
 # Load data - the loaded contains objects "fcs_raw", "sample_ids",
 # "batch_ids", "all_markers", which are the raw flowSet, sample ids per row, batch
@@ -72,6 +120,7 @@ create_sample <- function(combined_expr,
 #' Preprocess FlowSet data
 #'
 #' @importFrom flowCore fsApply
+#' @importFrom Biobase exprs
 #' @export
 preprocess <- function(input,
                        sample_size = 100000,
@@ -89,7 +138,7 @@ preprocess <- function(input,
 
   print("Extracting expression data")
   combined_expr <- fcs_raw %>%
-    flowCore::fsApply(exprs) %>%            # Extract expression data
+    flowCore::fsApply(Biobase::exprs) %>%            # Extract expression data
     create_sample(batch_ids = batch_ids,
                   sample_ids = sample_ids,
                   sample_size = sample_size,

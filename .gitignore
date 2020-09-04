@@ -6,7 +6,8 @@ data
 dev
 README.Rmd
 figs/
-inst/doc
+inst/
 doc
 Meta
 renv/
+tmp/
