@@ -25,7 +25,8 @@ Imports:
     dplyr,
     cowplot,
     ggridges,
-    BiocManager
+    BiocManager,
+    readxl
 Suggests: 
     knitr,
     rmarkdown

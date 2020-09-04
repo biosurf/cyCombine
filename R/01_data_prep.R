@@ -4,6 +4,7 @@
 #' Compile all .fcs files in a directory
 #'
 #' @importFrom Biobase exprs
+#' @importFrom readxl read_xlsx
 #' @param data_dir Directory containing the .fcs files
 #' @export
 compile_fcs <- function(data_dir){
