@@ -1,8 +1,7 @@
 #### Batch correction ####
 
-
+# @importFrom dplyr mutate_at group_by ungroup vars
 #' Batch-wise scaling of data
-#' @importFrom dplyr mutate_at group_by ungroup vars
 #' @family batch
 #' @export
 scale_expr <- function(input){
@@ -17,7 +16,6 @@ scale_expr <- function(input){
 
 #' Create SOM
 #'
-#' @importFrom dplyr select all_of
 #' @importFrom kohonen som somgrid
 #'
 #' @family batch
@@ -43,8 +41,6 @@ create_som <- function(scaled_expr,
 
 #' Correct data using ComBat
 #'
-#' @importFrom tibble tibble add_column
-#' @importFrom purrr when
 #' @importFrom sva ComBat
 #' @family batch
 #' @export
@@ -68,9 +64,7 @@ correct_data <- function(input,
   for (s in sort(unique(som_classes))) {
     # Extract original (non-scaled+ranked) data for cluster
     data_subset <- input[which(som_classes==s), ]
-    data_subset %>% count(Batch) %>%
-      print()
-    print(s)
+    print(str_c("som class:", s, sep = " "))
 
 
     # ComBat batch correction using disease status as covariate

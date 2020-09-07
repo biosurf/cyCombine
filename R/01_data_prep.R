@@ -7,6 +7,9 @@
 #' @importFrom readxl read_xlsx
 #' @import dplyr
 #' @import stringr
+#' @importFrom tibble as_tibble
+#' @importFrom purrr when
+#' @importFrom flowCore read.flowSet parameters fsApply
 #' @param data_dir Directory containing the .fcs files
 #' @export
 compile_fcs <- function(data_dir, down_sample = FALSE, sample_size = 100000, seed = 473){
@@ -34,8 +37,8 @@ compile_fcs <- function(data_dir, down_sample = FALSE, sample_size = 100000, see
     flowCore::parameters() %>%
     Biobase::pData() %>%
     pull(desc) %>%
-    str_remove_all("[ -]") %>%
-    str_remove_all("\\d+[A-Za-z]+_")
+    stringr::str_remove_all("[ -]") %>%
+    stringr::str_remove_all("\\d+[A-Za-z]+_")
 
 
   # Get sample names
@@ -51,7 +54,7 @@ compile_fcs <- function(data_dir, down_sample = FALSE, sample_size = 100000, see
              as.factor(),
            Sample = sample_ids) %>%
     # {if(down_sample) {set.seed(seed); sample_n(., sample_size)} else .}
-    purrr::when(down_sample ~ sample_n(., sample_size),
+    purrr::when(down_sample ~ slice_sample(., n = sample_size),
                 ~ .)
 
   print("Done")
@@ -74,6 +77,7 @@ prepare_flowset <- function(flowset,
                   sample_ids,
                   sample_size = sample_size,
                   seed = seed)
+  return(fcs_data)
 }
 
 #' Create subsample of combined expression matrix
@@ -85,7 +89,7 @@ create_sample <- function(fcs_data, batch_ids, sample_ids,
                           seed = 473){
   print(paste("Down-sampling to", sample_size, "samples"))
   set.seed(seed)
-  sample <- sample(1:nrow(fcs_data), 100000)
+  sample <- sample(1:nrow(fcs_data), sample_size)
   sample_set <- fcs_data[sample, ] %>%
     as_tibble() %>%
     mutate(Batch = batch_ids[sample],
@@ -106,7 +110,6 @@ create_sample <- function(fcs_data, batch_ids, sample_ids,
 #'
 #'
 #'
-#' @import flowCore
 #' @importFrom Biobase pData exprs
 #' @import magrittr
 #' @family preprocess
@@ -145,7 +148,6 @@ transform_asinh <- function(input, markers, cofactor = 5){
 
 #' Preprocess FlowSet data
 #'
-#' @importFrom flowCore fsApply
 #' @importFrom Biobase exprs
 #' @export
 preprocess <- function(compiled_fcs,

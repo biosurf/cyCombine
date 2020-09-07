@@ -1,10 +1,10 @@
 #### Plotting functions ----
 
+# @importFrom dplyr select_if bind_rows rename
 #' Density ridges for two sets
 #' @import ggplot2
 #' @import ggridges
 #' @import cowplot
-#' @importFrom dplyr select_if bind_rows rename
 #' @export
 density_plots <- function(uncorrected, corrected, markers, filename) {
 
