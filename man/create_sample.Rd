@@ -4,13 +4,7 @@
 \alias{create_sample}
 \title{Create subsample of combined expression matrix}
 \usage{
-create_sample(
-  combined_expr,
-  batch_ids,
-  sample_ids,
-  sample_size = 1e+05,
-  seed = 473
-)
+create_sample(fcs_data, batch_ids, sample_ids, sample_size = 1e+05, seed = 473)
 }
 \description{
 Create subsample of combined expression matrix

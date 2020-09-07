@@ -4,7 +4,7 @@
 \alias{preprocess}
 \title{Preprocess FlowSet data}
 \usage{
-preprocess(input, sample_size = 1e+05, seed = 473)
+preprocess(compiled_fcs, markers, sample_size = 1e+05, seed = 473)
 }
 \description{
 Preprocess FlowSet data

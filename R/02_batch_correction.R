@@ -44,29 +44,33 @@ create_som <- function(scaled_expr,
 #' Correct data using ComBat
 #'
 #' @importFrom tibble tibble add_column
+#' @importFrom purrr when
 #' @importFrom sva ComBat
 #' @family batch
 #' @export
 correct_data <- function(input,
-                         som_classes,
-                         markers){
+                         som_classes){
   # sample_ids <- combined_expr$sample_ids
   # batch_ids <- combined_expr$batch_ids
   # Processing and correcting data per-cluster
   #combined_expr <- combined
 
   # Create empty dataset
-  corrected_data <- tibble::tibble(.rows = nrow(input)) %>%
-    tibble::add_column(!!!set_names(as.list(rep(0, length(markers))), nm = markers)) %>%
-    mutate(Batch = 0,
-           Sample = "",
-           covar = "")
+  corrected_data <- input %>%
+    mutate(covar = "")
+  # corrected_data <- tibble::tibble(.rows = nrow(input)) %>%
+  #   tibble::add_column(!!!set_names(as.list(rep(0, ncol(input))), nm = markers)) %>%
+  #   mutate(Batch = 0,
+  #          Sample = "",
+  #          covar = "")
 
 
   for (s in sort(unique(som_classes))) {
-
     # Extract original (non-scaled+ranked) data for cluster
     data_subset <- input[which(som_classes==s), ]
+    data_subset %>% count(Batch) %>%
+      print()
+    print(s)
 
 
     # ComBat batch correction using disease status as covariate
@@ -81,7 +85,6 @@ correct_data <- function(input,
       mutate(Batch = data_subset$Batch,
              Sample = data_subset$Sample,
              covar = covar)
-      # t(sva::ComBat(t(data), batch = batches, mod = model.matrix(~covar)))
 
     corrected_data[which(som_classes==s), ] <- magic_output
   }
@@ -101,11 +104,8 @@ correct_data2 <- function(input,
   #combined_expr <- combined
 
   # Create empty dataset
-  corrected_data <- tibble::tibble(.rows = nrow(input)) %>%
-    tibble::add_column(!!!set_names(as.list(rep(0, length(markers))), nm = markers)) %>%
-    mutate(Batch = 0,
-           Sample = "",
-           covar = "")
+  # corrected_data <- input %>%
+  #   mutate(covar = "")
 
   corrected_data2 <- input %>%
     mutate(som = som_classes,
@@ -140,19 +140,18 @@ correct_data2 <- function(input,
 #'
 #' @family batch
 #' @export
-batch_correct <- function(input,
+batch_correct <- function(preprocessed_data,
                           markers){
 
 
   # Create SOM on scaled data
-  som <- input %>%
+  som <- preprocessed_data %>%
     scale_expr() %>%
     create_som()
   # Run batch correction
   print("Batch correcting data")
-  corrected_data <- input %>%
-    correct_data(som_classes = som$unit.classif,
-                 markers = markers)
+  corrected_data <- preprocessed_data %>%
+    correct_data(som_classes = som$unit.classif)
   print("Done")
   return(corrected_data)
 }

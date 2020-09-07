@@ -5,9 +5,11 @@
 #'
 #' @importFrom Biobase exprs
 #' @importFrom readxl read_xlsx
+#' @import dplyr
+#' @import stringr
 #' @param data_dir Directory containing the .fcs files
 #' @export
-compile_fcs <- function(data_dir){
+compile_fcs <- function(data_dir, down_sample = FALSE, sample_size = 100000, seed = 473){
   # Specifying files to use
   files <- list.files(data_dir,
                       pattern="\\.fcs",
@@ -26,7 +28,15 @@ compile_fcs <- function(data_dir){
     flowCore::read.flowSet(transformation = FALSE,
                            truncate_max_range = FALSE,
                            emptyValue = FALSE)
-  print("Read flowset")
+
+  # Clean column names
+  colnames(fcs_raw) <- fcs_raw[[1]] %>%
+    flowCore::parameters() %>%
+    Biobase::pData() %>%
+    pull(desc) %>%
+    str_remove_all("[ -]") %>%
+    str_remove_all("\\d+[A-Za-z]+_")
+
 
   # Get sample names
   sample_ids <- basename(files) %>%
@@ -37,13 +47,50 @@ compile_fcs <- function(data_dir){
   fcs_data <- fcs_raw %>%
     flowCore::fsApply(Biobase::exprs) %>%
     as_tibble() %>%
-    # rename(str_remove(., pattern = "\\d+[A-Za-z]+_")) %>%
-    mutate(Sample = sample_ids,
-           Batch = match(sample_ids, meta_data$FCS_name))
-    # colnames(input) <- c(gsub('[ -]', '', gsub("\\d+[A-Za-z]+_", "", panel_fcs$desc)), "Batch", "Sample")
+    mutate(Batch = meta_data$Batch[match(sample_ids, meta_data$FCS_name)] %>%
+             as.factor(),
+           Sample = sample_ids) %>%
+    # {if(down_sample) {set.seed(seed); sample_n(., sample_size)} else .}
+    purrr::when(down_sample ~ sample_n(., sample_size),
+                ~ .)
 
   print("Done")
   return(fcs_data)
+}
+
+#### Prepare FlowSet ----
+#' Prepare and downsample flowset
+#'
+#' @export
+prepare_flowset <- function(flowset,
+                    batch_ids,
+                    sample_ids,
+                    sample_size = 100000,
+                    seed = 473){
+  print("Extracting expression matrix")
+  fcs_data <- flowset %>%
+    flowCore::fsApply(Biobase::exprs) %>%
+    create_sample(batch_ids,
+                  sample_ids,
+                  sample_size = sample_size,
+                  seed = seed)
+}
+
+#' Create subsample of combined expression matrix
+#'
+#'
+#' @importFrom tibble as_tibble
+create_sample <- function(fcs_data, batch_ids, sample_ids,
+                          sample_size = 100000,
+                          seed = 473){
+  print(paste("Down-sampling to", sample_size, "samples"))
+  set.seed(seed)
+  sample <- sample(1:nrow(fcs_data), 100000)
+  sample_set <- fcs_data[sample, ] %>%
+    as_tibble() %>%
+    mutate(Batch = batch_ids[sample],
+           Sample = sample_ids[sample])
+  return(sample_set)
 }
 
 
@@ -62,22 +109,19 @@ compile_fcs <- function(data_dir){
 #' @import flowCore
 #' @importFrom Biobase pData exprs
 #' @import magrittr
-#' @importFrom dplyr select mutate_at
 #' @family preprocess
 #' @export
-transform_asinh <- function(input, markers, cofactor = 5, panel_fcs){
+transform_asinh <- function(input, markers, cofactor = 5){
   print(paste("Transforming data using asinh with a cofactor of", cofactor))
-  colnames(input) <- c(gsub('[ -]', '', gsub("\\d+[A-Za-z]+_", "", panel_fcs$desc)), "Batch", "Sample")
-  input <- input %>%
+  transformed <- input %>%
     # rename_at(.vars = all_of(panel_fcs$name), .funs = function(x)gsub(' ', '', gsub('-', '', gsub("\\d+[A-Za-z]+_", "", x)))) %>%
     # rename_at(.vars = all_of(panel_fcs$name), .funs = list(str_replace(., "[ -]", ""),
     # str_replace(., "-", ""),
     # str_replace(., "\\d+[A-Za-z]+_", ""))) %>% View()
-    select(markers, Batch, Sample) %>%
+    select(all_of(c(markers, "Batch", "Sample"))) %>%
     mutate_at(.vars = all_of(markers),
               .funs = function(x) asinh(ceiling(x)/cofactor))
-
-  return(input)
+  return(transformed)
 }
 # transform_asinh <- function(fcs_raw, markers){
 #   # De-randomize and transform data using asinh
@@ -97,58 +141,45 @@ transform_asinh <- function(input, markers, cofactor = 5, panel_fcs){
 #   return(fcs)
 # }
 
-#' Create subsample of combined expression matrix
-#'
-#'
-#' @importFrom tibble as_tibble
-#' @importFrom dplyr mutate
-#' @export
-create_sample <- function(combined_expr,
-                          batch_ids,
-                          sample_ids,
-                          sample_size = 100000,
-                          seed = 473){
-  print(paste("Down-sampling to", sample_size, "samples"))
-  set.seed(seed)
-  sample <- sample(1:nrow(combined_expr), 100000)
-  combined_expr <- combined_expr[sample,] %>%
-    tibble::as_tibble() %>%
-    mutate(Batch = batch_ids[sample],
-           Sample = sample_ids[sample])
-  return(combined_expr)
-}
+
 
 #' Preprocess FlowSet data
 #'
 #' @importFrom flowCore fsApply
 #' @importFrom Biobase exprs
 #' @export
-preprocess <- function(input,
+preprocess <- function(compiled_fcs,
+                       markers,
                        sample_size = 100000,
                        seed = 473){
-  print("Extracting objects")
+  if("data.frame" %!in% class(compiled_fcs) || is.null(compiled_fcs$Batch)){
+    stop(paste("Please make sure the input is in the right format",
+               "Use the prepare() function to convert a fcs expression matrix, batch_ids, and sample_ids into a data.frame",
+               "Or compile your fcs files using the compile_fcs() function.",
+               sep = "\n"))
+  }
+  # print("Extracting objects")
   # Extract objects
-  fcs_raw <- input$fcs_raw
-  all_markers <- input$all_markers
-  sample_ids <- input$sample_ids
-  batch_ids <- input$batch_ids
-
-  panel_fcs <- fcs_raw[[1]] %>%
-    flowCore::parameters() %>%
-    Biobase::pData()
-
-  print("Extracting expression data")
-  combined_expr <- fcs_raw %>%
-    flowCore::fsApply(Biobase::exprs) %>%            # Extract expression data
-    create_sample(batch_ids = batch_ids,
-                  sample_ids = sample_ids,
-                  sample_size = sample_size,
-                  seed = seed) %>%
-    transform_asinh(markers = all_markers,
-                    panel_fcs = panel_fcs)
+  # fcs_raw <- input$fcs_raw
+  # all_markers <- input$all_markers
+  # sample_ids <- input$sample_ids
+  # batch_ids <- input$batch_ids
+  #
+  # panel_fcs <- fcs_raw[[1]] %>%
+  #   flowCore::parameters() %>%
+  #   Biobase::pData()
+  #
+  # print("Extracting expression data")
+  # combined_expr <- fcs_raw %>%
+  #   flowCore::fsApply(Biobase::exprs) %>%            # Extract expression data
+  print(paste("Down-sampling to", sample_size, "samples"))
+  set.seed(seed)
+  preprocessed_data <- compiled_fcs %>%
+    # create_sample(sample_size = sample_size,
+    #               seed = seed) %>%
+    transform_asinh(markers = markers)
   print("Done")
-  return(list("data" = combined_expr,
-              "markers" = all_markers))
+  return(preprocessed_data)
 }
 
 
