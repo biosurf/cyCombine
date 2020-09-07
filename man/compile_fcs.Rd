@@ -4,7 +4,7 @@
 \alias{compile_fcs}
 \title{Compile all .fcs files in a directory}
 \usage{
-compile_fcs(data_dir, down_sample = FALSE, sample_size = 1e+05, seed = 473)
+compile_fcs(data_dir, down_sample = TRUE, sample_size = 1e+05, seed = 473)
 }
 \arguments{
 \item{data_dir}{Directory containing the .fcs files}

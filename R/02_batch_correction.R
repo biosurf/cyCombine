@@ -1,15 +1,17 @@
 #### Batch correction ####
 
 # @importFrom dplyr mutate_at group_by ungroup vars
+
 #' Batch-wise scaling of data
+#'
 #' @family batch
 #' @export
 scale_expr <- function(input){
   print("Scaling expression data")
   scaled_expr <- input %>%
-    group_by(Batch) %>%
-    mutate_at(vars(-c("Batch", "Sample")), .funs = scale) %>%
-    ungroup()
+    dplyr::group_by(Batch) %>%
+    dplyr::mutate_at(dplyr::vars(-c("Batch", "Sample")), .funs = scale) %>%
+    dplyr::ungroup()
   return(scaled_expr)
 }
 
@@ -28,7 +30,7 @@ create_som <- function(scaled_expr,
   print("Creating SOM grid")
   set.seed(seed)
   som <- scaled_expr %>%
-    select(-c("Batch", "Sample")) %>%
+    dplyr::select(-c("Batch", "Sample")) %>%
     as.matrix() %>%
     kohonen::som(grid = kohonen::somgrid(xdim = xdim,
                                          ydim = ydim),
@@ -53,7 +55,7 @@ correct_data <- function(input,
 
   # Create empty dataset
   corrected_data <- input %>%
-    mutate(covar = "")
+    dplyr::mutate(covar = "")
   # corrected_data <- tibble::tibble(.rows = nrow(input)) %>%
   #   tibble::add_column(!!!set_names(as.list(rep(0, ncol(input))), nm = markers)) %>%
   #   mutate(Batch = 0,
@@ -64,19 +66,19 @@ correct_data <- function(input,
   for (s in sort(unique(som_classes))) {
     # Extract original (non-scaled+ranked) data for cluster
     data_subset <- input[which(som_classes==s), ]
-    print(str_c("som class:", s, sep = " "))
+    print(stringr::str_c("som class:", s, sep = " "))
 
 
     # ComBat batch correction using disease status as covariate
     covar <- rep('CLL', nrow(data_subset))
     covar[grep('^HD', data_subset$Sample)] <- 'HD'
     magic_output <- data_subset %>%
-      select(-c("Batch", "Sample")) %>%
+      dplyr::select(-c("Batch", "Sample")) %>%
       t() %>%
       sva::ComBat(batch = data_subset$Batch, mod = model.matrix(~covar)) %>%
       t() %>%
-      as_tibble() %>%
-      mutate(Batch = data_subset$Batch,
+      tibble::as_tibble() %>%
+      dplyr::mutate(Batch = data_subset$Batch,
              Sample = data_subset$Sample,
              covar = covar)
 
@@ -102,28 +104,28 @@ correct_data2 <- function(input,
   #   mutate(covar = "")
 
   corrected_data2 <- input %>%
-    mutate(som = som_classes,
-           covar = case_when(str_starts(string = Sample,
+    dplyr::mutate(som = som_classes,
+           covar = case_when(stringr::str_starts(string = Sample,
                                         pattern = "HD") ~ "HD",
                              TRUE ~ "CLL")) %>%
     # nest_by(som) %>%
     # mutate(mean = mean(data$CD20))
-    group_by(som) %>%
-    group_modify(function(df, ...){
+    dplyr::group_by(som) %>%
+    dplyr::group_modify(function(df, ...){
       magic_output <- df %>%
-        select(markers) %>%
+        dplyr::select(markers) %>%
         t() %>%
         sva::ComBat(batch = df$Batch, mod = model.matrix(~df$covar)) %>%
         t() %>%
-        as_tibble() %>%
-        mutate(Batch = df$Batch,
+        tibble::as_tibble() %>%
+        dplyr::mutate(Batch = df$Batch,
                Sample = df$Sample,
                covar = df$covar)
       magic_output[magic_output < 0] <- 0
       return(magic_output)
     }) %>%
-    ungroup() %>%
-    select(-som)
+    dplyr::ungroup() %>%
+    dplyr::select(-som)
   return(corrected_data2)
 }
 
@@ -134,8 +136,7 @@ correct_data2 <- function(input,
 #'
 #' @family batch
 #' @export
-batch_correct <- function(preprocessed_data,
-                          markers){
+batch_correct <- function(preprocessed_data){
 
 
   # Create SOM on scaled data

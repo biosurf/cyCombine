@@ -10,19 +10,20 @@ if(FALSE){
   library(magrittr)
 
   ### From raw fcs files ----
-  data_dir <- paste0("~/Documents/thesis/raw/fcs")
+  data_dir <- "~/Documents/thesis/raw/fcs"
   markers <- c("CD20", "CD3", "CD27", "CD45RA", "CD279", "CD5", "CD19", "CD14", "CD45RO", "GranzymeA", "GranzymeK", "FCRL6", "CD355", "CD152", "CD69", "CD33", "CD4", "CD337", "CD8", "CD197", "LAG3", "CD56", "CD137", "CD161", "FoxP3", "CD80", "CD270", "CD275", "CD134", "CD278", "CD127", "KLRG1", "CD25", "HLADR", "TBet", "XCL1")
   fcs_data <- data_dir %>%
-    compile_fcs(down_sample = FALSE)
-  fcs_preprocessed <- fcs_data %>%
+    compile_fcs(down_sample = TRUE,
+                sample_size = 300000)
+  fcs_data <- fcs_data %>%
     transform_asinh(markers)
   # fcs_corrected <- fcs_preprocessed %>%
-    # batch_correct(markers)
-  som2 <- fcs_preprocessed %>%
+    # batch_correct()
+  som2 <- fcs_data %>%
     scale_expr() %>%
     create_som()
 
-  corrected_data <- fcs_preprocessed %>%
+  corrected_data <- fcs_data %>%
     correct_data(som_classes = som2$unit.classif)
 
 
@@ -62,7 +63,7 @@ if(FALSE){
   density_plots(uncorrected = preprocessed_data,
                 corrected = corrected_data,
                 markers = markers,
-                filename = 'figs/02_panel2_densities_withcovar.png')
+                filename = 'figs/02_raw_densities_withcovar.png')
 
   # PCA plot uncorrected
   pca1 <- preprocessed_data %>%
@@ -78,11 +79,11 @@ if(FALSE){
   # PCA plot corrected
   pca2 <- corrected_data %>%
     dimred_plot('corrected', type = 'pca')
-  save_two_plots(pca1, pca2, filename = 'figs/02_panel2_pca.png')
+  save_two_plots(pca1, pca2, filename = 'figs/02_raw_pca.png')
 
 
   # UMAP plot corrected
   umap2 <- dimred_plot(corrected_data, 'corrected', type = 'umap')
-  save_two_plots(umap1, umap2, filename = 'figs/02_umap.png')
+  save_two_plots(umap1, umap2, filename = 'figs/02_raw_umap.png')
 
 }

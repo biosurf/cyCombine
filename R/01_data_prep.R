@@ -12,17 +12,17 @@
 #' @importFrom flowCore read.flowSet parameters fsApply
 #' @param data_dir Directory containing the .fcs files
 #' @export
-compile_fcs <- function(data_dir, down_sample = FALSE, sample_size = 100000, seed = 473){
+compile_fcs <- function(data_dir, down_sample = TRUE, sample_size = 100000, seed = 473){
   # Specifying files to use
   files <- list.files(data_dir,
                       pattern="\\.fcs",
                       recursive = FALSE,
                       full.names = TRUE)
-  print(str_c("Read", length(files), "file names to process",
+  print(stringr::str_c("Read", length(files), "file names to process",
               sep = " "))
 
   # Get metadata
-  meta_data <- str_c(data_dir, "/CyTOF samples cohort.xlsx",
+  meta_data <- stringr::str_c(data_dir, "/CyTOF samples cohort.xlsx",
                      sep = "") %>%
     readxl::read_xlsx()
 
@@ -32,34 +32,71 @@ compile_fcs <- function(data_dir, down_sample = FALSE, sample_size = 100000, see
                            truncate_max_range = FALSE,
                            emptyValue = FALSE)
 
-  # Clean column names
-  colnames(fcs_raw) <- fcs_raw[[1]] %>%
-    flowCore::parameters() %>%
-    Biobase::pData() %>%
-    pull(desc) %>%
-    stringr::str_remove_all("[ -]") %>%
-    stringr::str_remove_all("\\d+[A-Za-z]+_")
-
 
   # Get sample names
   sample_ids <- basename(files) %>%
     stringr::str_remove(".fcs") %>%
     rep(flowCore::fsApply(fcs_raw, nrow))
+  batch_ids <- meta_data$Batch[match(sample_ids, meta_data$FCS_name)] %>%
+    as.factor()
+
+  # Down sampling setup
+  if(down_sample){
+    print(stringr::str_c("Down sampling to", sample_size, "samples",
+                         sep = " "))
+    set.seed(seed)
+    sample <- sample(1:length(sample_ids), sample_size)
+    sample_ids <- sample_ids[sample]
+    batch_ids <- batch_ids[sample]
+    # To down sample within fsApply
+    nrows <- flowCore::fsApply(fcs_raw, nrow)
+  }
+
 
   print("Extracting expression data and adding sample and batch labels")
   fcs_data <- fcs_raw %>%
-    flowCore::fsApply(Biobase::exprs) %>%
-    as_tibble() %>%
-    mutate(Batch = meta_data$Batch[match(sample_ids, meta_data$FCS_name)] %>%
-             as.factor(),
-           Sample = sample_ids) %>%
+    purrr::when(down_sample ~ flowCore::fsApply(., fcs_sample,
+                                                sample = sample,
+                                                nrows = nrows),
+                ~ flowCore::fsApply(., Biobase::exprs)) %>%
+    tibble::as_tibble() %>%
+    dplyr::mutate(Batch = batch_ids,
+           Sample = sample_ids) #%>%
     # {if(down_sample) {set.seed(seed); sample_n(., sample_size)} else .}
-    purrr::when(down_sample ~ slice_sample(., n = sample_size),
-                ~ .)
+    # purrr::when(down_sample ~ slice_sample(., n = sample_size),
+                # ~ .)
 
+
+  # Clean column names
+  col_names <- fcs_raw[[1]] %>%
+    flowCore::parameters() %>%
+    Biobase::pData() %>%
+    dplyr::pull(desc) %>%
+    stringr::str_remove_all("[ -]") %>%
+    stringr::str_remove_all("\\d+[A-Za-z]+_")
+
+  colnames(fcs_data) <- c(col_names, "Batch", "Sample")
   print("Done")
   return(fcs_data)
 }
+
+fcs_sample <- function(flowset, sample, nrows, seed = 473){
+  nrows_acc <- c(0, nrows %>%
+    purrr::accumulate(`+`))
+  fs_number <- stringr::str_c("^", nrow(flowset), "$") %>%
+    grep(nrows)
+
+  fs_sample <- sample - nrows_acc[fs_number]
+  fs_sample <- fs_sample[fs_sample > 0]
+  fs_sample <- fs_sample[fs_sample <= nrows[fs_number]]
+
+  fs <- flowset %>%
+    Biobase::exprs()
+  fs <- fs[fs_sample, ]
+
+  return(fs)
+}
+
 
 #### Prepare FlowSet ----
 #' Prepare and downsample flowset
@@ -91,8 +128,8 @@ create_sample <- function(fcs_data, batch_ids, sample_ids,
   set.seed(seed)
   sample <- sample(1:nrow(fcs_data), sample_size)
   sample_set <- fcs_data[sample, ] %>%
-    as_tibble() %>%
-    mutate(Batch = batch_ids[sample],
+    tibble::as_tibble() %>%
+    dplyr::mutate(Batch = batch_ids[sample],
            Sample = sample_ids[sample])
   return(sample_set)
 }
@@ -121,8 +158,8 @@ transform_asinh <- function(input, markers, cofactor = 5){
     # rename_at(.vars = all_of(panel_fcs$name), .funs = list(str_replace(., "[ -]", ""),
     # str_replace(., "-", ""),
     # str_replace(., "\\d+[A-Za-z]+_", ""))) %>% View()
-    select(all_of(c(markers, "Batch", "Sample"))) %>%
-    mutate_at(.vars = all_of(markers),
+    dplyr::select(dplyr::all_of(c(markers, "Batch", "Sample"))) %>%
+    dplyr::mutate_at(.vars = all_of(markers),
               .funs = function(x) asinh(ceiling(x)/cofactor))
   return(transformed)
 }

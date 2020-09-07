@@ -9,15 +9,15 @@
 density_plots <- function(uncorrected, corrected, markers, filename) {
 
   uncorrected <- uncorrected %>%
-    select_if(names(.) %!in% c("Sample", "covar")) %>%
-    mutate(Type = "Uncorrected",
+    dplyr::select_if(names(.) %!in% c("Sample", "covar")) %>%
+    dplyr::mutate(Type = "Uncorrected",
            Batch = as.factor(Batch))
 
   df <- corrected %>%
-    select_if(names(.) %!in% c("Sample", "covar")) %>%
-    mutate(Type = "Corrected",
+    dplyr::select_if(names(.) %!in% c("Sample", "covar")) %>%
+    dplyr::mutate(Type = "Corrected",
            Batch = as.factor(Batch)) %>%
-    bind_rows(uncorrected)
+    dplyr::bind_rows(uncorrected)
 
 
   # Extract data into dataframe format
@@ -33,7 +33,7 @@ density_plots <- function(uncorrected, corrected, markers, filename) {
 
     p[[c]] <- df %>%
       ggplot(aes_string(x = markers[c], y = "Batch")) +
-      geom_density_ridges(aes(color = Type, fill = Type), alpha = 0.4) +
+      ggridges::geom_density_ridges(aes(color = Type, fill = Type), alpha = 0.4) +
       theme_bw()
   }
 
@@ -54,7 +54,7 @@ dimred_plot <- function(input, name, type = 'pca', plot = 'batch', marker = NULL
   Batch <- input$Batch %>%
     as.factor()
   input <- input %>%
-    select_if(names(.) %!in% c("Batch", "Sample", "covar"))
+    dplyr::select_if(names(.) %!in% c("Batch", "Sample", "covar"))
 
   if (type == 'pca') {
     # Run PCA
@@ -64,8 +64,8 @@ dimred_plot <- function(input, name, type = 'pca', plot = 'batch', marker = NULL
     # Make dataframe with output
     if (plot == 'batch') {
       df <- pca$x %>%
-        as_tibble() %>%
-        mutate(Batch = as.factor(Batch))
+        tibble::as_tibble() %>%
+        dplyr::mutate(Batch = as.factor(Batch))
       #cbind.data.frame(pca$x, as.factor(batch_ids)); colnames(df)[ncol(df)] <- 'Batch'
     } else {
       df <- cbind.data.frame(pca$x, as.factor(Batch), data[,marker]); colnames(df)[(ncol(df)-1):ncol(df)] <- c('Batch', marker)
@@ -80,13 +80,13 @@ dimred_plot <- function(input, name, type = 'pca', plot = 'batch', marker = NULL
     # Make dataframe with output
     if (plot == 'batch') {
       df <- umap %>%
-        as_tibble() %>%
-        mutate(Batch = as.factor(Batch)) %>%
-        rename(UMAP1 = V1,
-               UMAP2 = V2)
+        tibble::as_tibble() %>%
+        dplyr::mutate(Batch = Batch) %>%
+        dplyr::rename(UMAP1 = V1,
+                      UMAP2 = V2)
       # cbind.data.frame(umap, as.factor(batch_ids)); colnames(df) <- c('UMAP1', 'UMAP2', 'Batch')
     } else {
-      df <- cbind.data.frame(umap, as.factor(Batch), data[,marker]); colnames(df) <- c('UMAP1', 'UMAP2', 'Batch', marker)
+      df <- cbind.data.frame(umap, Batch, data[,marker]); colnames(df) <- c('UMAP1', 'UMAP2', 'Batch', marker)
     }
   }
 
