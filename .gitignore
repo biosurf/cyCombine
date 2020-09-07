@@ -7,7 +7,6 @@ dev
 README.Rmd
 figs/
 inst/
-doc
 Meta
 renv/
 tmp/
