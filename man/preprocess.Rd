@@ -2,10 +2,10 @@
 % Please edit documentation in R/01_data_prep.R
 \name{preprocess}
 \alias{preprocess}
-\title{Preprocess FlowSet data}
+\title{Preprocess a directory of .fcs files}
 \usage{
-preprocess(compiled_fcs, markers, sample_size = 1e+05, seed = 473)
+preprocess(data_dir, markers, sample_size = 3e+05, seed = 473)
 }
 \description{
-Preprocess FlowSet data
+Preprocess a directory of .fcs files
 }

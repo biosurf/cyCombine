@@ -2,13 +2,13 @@
 % Please edit documentation in R/01_data_prep.R
 \name{compile_fcs}
 \alias{compile_fcs}
-\title{Compile all .fcs files in a directory}
+\title{Compile all .fcs files in a directory to a flowset}
 \usage{
-compile_fcs(data_dir, down_sample = TRUE, sample_size = 1e+05, seed = 473)
+compile_fcs(data_dir)
 }
 \arguments{
 \item{data_dir}{Directory containing the .fcs files}
 }
 \description{
-Compile all .fcs files in a directory
+Compile all .fcs files in a directory to a flowset
 }
