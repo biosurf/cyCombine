@@ -118,8 +118,8 @@ fcs_corrected <- fcs_preprocessed %>%
 library(cyCombine)
 library(magrittr)
 # Load data
+# Should contain the flowset, sample_ids, batch_ids, and markers of interest
 load("data/flowset.Rdata")
-
 
 # Convert flowset to workable datafram and transform data
 fcs_preprocessed <- flowset %>%

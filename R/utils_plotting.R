@@ -94,7 +94,7 @@ dimred_plot <- function(input, name, type = 'pca', plot = 'batch', marker = NULL
   if (plot == 'batch') {
     plot <- df %>%
       ggplot(aes_string(x = colnames(df)[1], y = colnames(df)[2])) +
-      geom_point(aes_string(color = "Batch"), alpha = 0.3, size = 0.4) +
+      geom_point(aes_string(color = "Batch"), alpha = 0.3, size = 0.4, shape = 1) +
       guides(color = guide_legend(override.aes = list(alpha = 1, size = 1))) +
       theme_bw() + theme(plot.title = element_text(hjust = 0.5)) +
       ggtitle(paste(toupper(type), '-', name))

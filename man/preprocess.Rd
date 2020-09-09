@@ -6,7 +6,7 @@
 \usage{
 preprocess(
   data_dir,
-  meta_file,
+  meta_filename,
   markers,
   down_sample = TRUE,
   sample_size = 1e+05,

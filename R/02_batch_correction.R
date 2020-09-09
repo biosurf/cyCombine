@@ -42,24 +42,14 @@ create_som <- function(scaled_expr,
 
 #' Correct data using ComBat
 #'
+#' Deprecated
 #' @importFrom sva ComBat
 #' @family batch
-#' @export
-correct_data <- function(input,
+correct_data_prev <- function(input,
                          som_classes){
-  # sample_ids <- combined_expr$sample_ids
-  # batch_ids <- combined_expr$batch_ids
-  # Processing and correcting data per-cluster
-  #combined_expr <- combined
-
-  # Create empty dataset
+  # Create copy dataset
   corrected_data <- input %>%
     dplyr::mutate(covar = "")
-  # corrected_data <- tibble::tibble(.rows = nrow(input)) %>%
-  #   tibble::add_column(!!!set_names(as.list(rep(0, ncol(input))), nm = markers)) %>%
-  #   mutate(Batch = 0,
-  #          Sample = "",
-  #          covar = "")
 
 
   for (s in sort(unique(som_classes))) {
@@ -81,38 +71,37 @@ correct_data <- function(input,
              Sample = data_subset$Sample,
              covar = covar)
 
+    # Fill copy dataset with corrected data
     corrected_data[which(som_classes==s), ] <- magic_output
   }
   # Fix values below zero
   corrected_data[corrected_data < 0] <- 0
+  corrected_data <- corrected_data %>%
+    arrange(Batch)
 
   return(corrected_data)
 }
 
+#' Correct data using ComBat
+#'
+#' @importFrom sva ComBat
+#' @family batch
+#' @export
+correct_data <- function(input,
+                         som_classes){
 
-correct_data2 <- function(input,
-                          som_classes,
-                          markers){
-  # sample_ids <- combined_expr$sample_ids
-  # batch_ids <- combined_expr$batch_ids
-  # Processing and correcting data per-cluster
-  #combined_expr <- combined
 
-  # Create empty dataset
-  # corrected_data <- input %>%
-  #   mutate(covar = "")
-
-  corrected_data2 <- input %>%
+  corrected_data <- input %>%
     dplyr::mutate(som = som_classes,
-           covar = case_when(stringr::str_starts(string = Sample,
-                                        pattern = "HD") ~ "HD",
-                             TRUE ~ "CLL")) %>%
-    # nest_by(som) %>%
-    # mutate(mean = mean(data$CD20))
+                  # Determine covariate
+                  covar = case_when(stringr::str_starts(string = Sample,
+                                                        pattern = "HD") ~ "HD",
+                                    TRUE ~ "CLL")) %>%
     dplyr::group_by(som) %>%
+    # Run ComBat on each SOM class
     dplyr::group_modify(function(df, ...){
-      magic_output <- df %>%
-        dplyr::select(markers) %>%
+      ComBat_output <- df %>%
+        dplyr::select(-c("Batch", "Sample", "covar")) %>%
         t() %>%
         sva::ComBat(batch = df$Batch, mod = model.matrix(~df$covar)) %>%
         t() %>%
@@ -120,12 +109,18 @@ correct_data2 <- function(input,
         dplyr::mutate(Batch = df$Batch,
                Sample = df$Sample,
                covar = df$covar)
-      magic_output[magic_output < 0] <- 0
-      return(magic_output)
+      return(ComBat_output)
     }) %>%
     dplyr::ungroup() %>%
-    dplyr::select(-som)
-  return(corrected_data2)
+    dplyr::select(-som) %>%
+    # Reduce all negative values to zero
+    dplyr::mutate_at(vars(-c("Batch", "Sample", "covar")),
+                     function(x) {
+                       x[x < 0] <- 0
+                       return(x)
+                       }) %>%
+    dplyr::arrange(Batch)
+  return(corrected_data)
 }
 
 
@@ -135,21 +130,21 @@ correct_data2 <- function(input,
 #'
 #' @family batch
 #' @export
-batch_correct <- function(preprocessed_data,
+batch_correct <- function(preprocessed,
                           xdim = 10,
                           ydim = 10,
                           seed = 473){
 
 
   # Create SOM on scaled data
-  som <- preprocessed_data %>%
+  som <- preprocessed %>%
     scale_expr() %>%
     create_som(seed = seed,
                xdim = xdim,
                ydim = ydim)
   # Run batch correction
   cat("Batch correcting data\n")
-  corrected_data <- preprocessed_data %>%
+  corrected_data <- preprocessed %>%
     correct_data(som_classes = som$unit.classif)
   cat("Done!")
   return(corrected_data)

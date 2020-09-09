@@ -4,13 +4,14 @@
 \alias{batch_correct}
 \title{Run batch correction on preprocessed data}
 \usage{
-batch_correct(preprocessed_data)
+batch_correct(preprocessed, xdim = 10, ydim = 10, seed = 473)
 }
 \description{
 Run batch correction on preprocessed data
 }
 \seealso{
 Other batch: 
+\code{\link{correct_data_prev}()},
 \code{\link{correct_data}()},
 \code{\link{create_som}()},
 \code{\link{scale_expr}()}

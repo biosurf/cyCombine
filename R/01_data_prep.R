@@ -95,9 +95,7 @@ convert_flowset <- function(flowset,
     stringr::str_remove_all("\\d+[A-Za-z]+_")
 
   colnames(fcs_data) <- c(col_names, "Batch", "Sample")
-  cat("Your flowset is now converted into a dataframe.",
-  "Consider transforming the data with transform_asinh().",
-  sep = "\n")
+  cat("Your flowset is now converted into a dataframe.\n")
   return(fcs_data)
 }
 
@@ -138,7 +136,8 @@ transform_asinh <- function(input, markers, cofactor = 5){
     dplyr::select(dplyr::all_of(c(markers, "Batch", "Sample"))) %>%
     # Transform all data on those markers
     dplyr::mutate_at(.vars = all_of(markers),
-              .funs = function(x) asinh(ceiling(x)/cofactor))
+              .funs = function(x) asinh(ceiling(x)/cofactor)) %>%
+    arrange(Batch)
   return(transformed)
 }
 
