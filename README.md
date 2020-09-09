@@ -103,13 +103,13 @@ fcs_preprocessed <- preprocess(data_dir = data_dir,
                          meta_filename = "CyTOF samples cohort.xlsx",
                          markers = markers,
                          down_sample = TRUE,
-                         sample_size = 100000,
+                         sample_size = 300000,
                          seed = 473,
                          cofactor = 5) 
   
 # Run batch correction
 fcs_corrected <- fcs_preprocessed %>%
-  batch_correct()
+  batch_correct(seed = 473)
 ```
 
 ### From a flowset
@@ -126,13 +126,13 @@ fcs_preprocessed <- flowset %>%
   convert_flowset(batch_ids = batch_ids,
                   sample_ids = sample_ids,
                   down_sample = TRUE,
-                  sample_size = 300000,
+                  sample_size = 100000,
                   seed = 473) %>% 
   transform_asinh(markers = markers)
   
 # Run batch correction
 fcs_corrected <- fcs_preprocessed %>%
-  batch_correct()
+  batch_correct(seed = 473)
 ```
 
 ## Plotting
