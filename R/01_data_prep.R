@@ -10,7 +10,7 @@
 #' @importFrom flowCore read.flowSet fsApply
 #' @param data_dir Directory containing the .fcs files
 #' @export
-compile_fcs <- function(data_dir){
+compile_fcs <- function(data_dir, meta_file){
   # Specifying files to use
   files <- list.files(data_dir,
                       pattern="\\.fcs",
@@ -20,7 +20,7 @@ compile_fcs <- function(data_dir){
               sep = " ")
 
   # Get metadata
-  meta_data <- stringr::str_c(data_dir, "/CyTOF samples cohort.xlsx",
+  meta_data <- stringr::str_c(data_dir, meta_file,
                      sep = "") %>%
     readxl::read_xlsx()
 
@@ -62,10 +62,12 @@ convert_flowset <- function(flowset,
                             seed = 473){
   # Down sampling setup
   if(down_sample){
-    cat("Down sampling to", sample_size, "samples", "\n",
+    cat("Down sampling to", sample_size, "samples\n",
                          sep = " ")
     set.seed(seed)
-    sample <- sample(1:length(sample_ids), sample_size)
+    sample <- sample(1:length(sample_ids), sample_size) %>%
+      # Sorting here enables major resource savings when down-sampling
+      sort()
     sample_ids <- sample_ids[sample]
     batch_ids <- batch_ids[sample]
     # To down sample within fsApply
@@ -103,21 +105,21 @@ convert_flowset <- function(flowset,
 #'
 #' @importFrom purrr accumulate
 #' @export
-fcs_sample <- function(flowset, sample, nrows, seed = 473){
+fcs_sample <- function(flowframe, sample, nrows, seed = 473){
   nrows_acc <- c(0, nrows %>%
     purrr::accumulate(`+`))
-  fs_number <- stringr::str_c("^", nrow(flowset), "$") %>%
+  ff_number <- stringr::str_c("^", nrow(flowframe), "$") %>%
     grep(nrows)
 
-  fs_sample <- sample - nrows_acc[fs_number]
-  fs_sample <- fs_sample[fs_sample > 0]
-  fs_sample <- fs_sample[fs_sample <= nrows[fs_number]]
+  ff_sample <- sample - nrows_acc[ff_number]
+  ff_sample <- ff_sample[ff_sample > 0]
+  ff_sample <- ff_sample[ff_sample <= nrows[ff_number]]
 
-  fs <- flowset %>%
+  ff <- flowframe %>%
     Biobase::exprs()
-  fs <- fs[fs_sample, ]
+  ff <- ff[ff_sample, ]
 
-  return(fs)
+  return(ff)
 }
 
 
@@ -148,9 +150,12 @@ transform_asinh <- function(input, markers, cofactor = 5){
 #'
 #' @export
 preprocess <- function(data_dir,
+                       meta_file,
                        markers,
-                       sample_size = 300000,
-                       seed = 473){
+                       down_sample = TRUE,
+                       sample_size = 100000,
+                       seed = 473,
+                       cofactor = 5){
   if(class(data_dir) != "character"){
     stop(paste("This function only works with a directory of .fcs files.",
                "If you have already loaded a flowset, please see the convert_flowset() function.",
@@ -158,17 +163,17 @@ preprocess <- function(data_dir,
   }
   # Compile directory to flowset
   raw_flowset <- data_dir %>%
-    compile_fcs()
+    compile_fcs(meta_file = meta_file)
   # Convert flowset to dataframe
   fcs_data <- raw_flowset$fcs_raw %>%
     convert_flowset(batch_ids = raw_flowset$batch_ids,
                     sample_ids = raw_flowset$sample_ids,
-                    down_sample = TRUE,
-                    sample_size = 300000,
-                    seed = 473) %>%
+                    down_sample = down_sample,
+                    sample_size = sample_size,
+                    seed = seed) %>%
     # Transform dataset with asinh
     transform_asinh(markers = markers,
-                    cofactor = 5)
+                    cofactor = cofactor)
   cat("Done!")
   return(fcs_data)
 }

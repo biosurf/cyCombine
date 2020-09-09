@@ -4,7 +4,7 @@
 \alias{compile_fcs}
 \title{Compile all .fcs files in a directory to a flowset}
 \usage{
-compile_fcs(data_dir)
+compile_fcs(data_dir, meta_file)
 }
 \arguments{
 \item{data_dir}{Directory containing the .fcs files}

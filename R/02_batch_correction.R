@@ -6,7 +6,7 @@
 #' @family batch
 #' @export
 scale_expr <- function(input){
-  cat("Scaling expression data")
+  cat("Scaling expression data\n")
   scaled_expr <- input %>%
     dplyr::group_by(Batch) %>%
     dplyr::mutate_at(dplyr::vars(-c("Batch", "Sample")), .funs = scale) %>%
@@ -26,7 +26,7 @@ create_som <- function(scaled_expr,
                        xdim = 10,
                        ydim = 10){
   # 10x10 SOM grid on overlapping markers, extract clustering per cell
-  cat("Creating SOM grid")
+  cat("Creating SOM grid\n")
   set.seed(seed)
   som <- scaled_expr %>%
     dplyr::select(-c("Batch", "Sample")) %>%
@@ -65,7 +65,7 @@ correct_data <- function(input,
   for (s in sort(unique(som_classes))) {
     # Extract original (non-scaled+ranked) data for cluster
     data_subset <- input[which(som_classes==s), ]
-    cat("som class:", s, sep = " ")
+    cat("som class:", s, "\n", sep = " ")
 
 
     # ComBat batch correction using disease status as covariate
@@ -143,7 +143,7 @@ batch_correct <- function(preprocessed_data){
     scale_expr() %>%
     create_som()
   # Run batch correction
-  cat("Batch correcting data")
+  cat("Batch correcting data\n")
   corrected_data <- preprocessed_data %>%
     correct_data(som_classes = som$unit.classif)
   cat("Done!")

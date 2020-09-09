@@ -4,7 +4,15 @@
 \alias{preprocess}
 \title{Preprocess a directory of .fcs files}
 \usage{
-preprocess(data_dir, markers, sample_size = 3e+05, seed = 473)
+preprocess(
+  data_dir,
+  meta_file,
+  markers,
+  down_sample = TRUE,
+  sample_size = 1e+05,
+  seed = 473,
+  cofactor = 5
+)
 }
 \description{
 Preprocess a directory of .fcs files

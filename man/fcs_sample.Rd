@@ -4,7 +4,7 @@
 \alias{fcs_sample}
 \title{Extract from a flowset given a sample of indices}
 \usage{
-fcs_sample(flowset, sample, nrows, seed = 473)
+fcs_sample(flowframe, sample, nrows, seed = 473)
 }
 \description{
 Extract from a flowset given a sample of indices
