@@ -10,7 +10,7 @@
 #' @importFrom flowCore read.flowSet fsApply
 #' @param data_dir Directory containing the .fcs files
 #' @export
-compile_fcs <- function(data_dir, meta_file){
+compile_fcs <- function(data_dir, meta_filename){
   # Specifying files to use
   files <- list.files(data_dir,
                       pattern="\\.fcs",
@@ -20,7 +20,7 @@ compile_fcs <- function(data_dir, meta_file){
               sep = " ")
 
   # Get metadata
-  meta_data <- stringr::str_c(data_dir, meta_file,
+  meta_data <- stringr::str_c(data_dir, meta_filename,
                      sep = "/") %>%
     readxl::read_xlsx()
 
@@ -150,7 +150,7 @@ transform_asinh <- function(input, markers, cofactor = 5){
 #'
 #' @export
 preprocess <- function(data_dir,
-                       meta_file,
+                       meta_filename,
                        markers,
                        down_sample = TRUE,
                        sample_size = 100000,
@@ -163,7 +163,7 @@ preprocess <- function(data_dir,
   }
   # Compile directory to flowset
   raw_flowset <- data_dir %>%
-    compile_fcs(meta_file = meta_file)
+    compile_fcs(meta_filename = meta_filename)
   # Convert flowset to dataframe
   fcs_data <- raw_flowset$fcs_raw %>%
     convert_flowset(batch_ids = raw_flowset$batch_ids,

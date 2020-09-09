@@ -135,13 +135,18 @@ correct_data2 <- function(input,
 #'
 #' @family batch
 #' @export
-batch_correct <- function(preprocessed_data){
+batch_correct <- function(preprocessed_data,
+                          xdim = 10,
+                          ydim = 10,
+                          seed = 473){
 
 
   # Create SOM on scaled data
   som <- preprocessed_data %>%
     scale_expr() %>%
-    create_som()
+    create_som(seed = seed,
+               xdim = xdim,
+               ydim = ydim)
   # Run batch correction
   cat("Batch correcting data\n")
   corrected_data <- preprocessed_data %>%
