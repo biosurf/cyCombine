@@ -86,18 +86,78 @@ library(devtools)
 devtools::load_all("~/Rprojects/cyCombine")
 ```
 
-## Example
+## Usage
+
+### From a directory of .fcs files
 
 ``` r
 library(cyCombine)
 library(magrittr)
-# Load input data
-load("data/raw_data.Rdata")
-# Preprocess
-preprocessed_data <- raw_data %>% 
-  preprocess()
+# Direcory containing .fcs files
+data_dir <- "data/raw"
+# Markers of interest
+markers <- c("CD20", "CD3", "CD27", "CD45RA", "CD279", "CD5", "CD19", "CD14", "CD45RO", "GranzymeA", "GranzymeK", "FCRL6", "CD355", "CD152", "CD69", "CD33", "CD4", "CD337", "CD8", "CD197", "LAG3", "CD56", "CD137", "CD161", "FoxP3", "CD80", "CD270", "CD275", "CD134", "CD278", "CD127", "KLRG1", "CD25", "HLADR", "TBet", "XCL1")
 
-# Batch correct
-corrected_data <- preprocessed_data %>% 
+# Compile fcs files, down-sample, and preprocess
+fcs_preprocessed <- preprocess(data_dir = data_dir,
+                         meta_filename = "CyTOF samples cohort.xlsx",
+                         markers = markers,
+                         down_sample = TRUE,
+                         sample_size = 100000,
+                         seed = 473,
+                         cofactor = 5) 
+  
+# Run batch correction
+fcs_corrected <- fcs_preprocessed %>%
   batch_correct()
+```
+
+### From a flowset
+
+``` r
+library(cyCombine)
+library(magrittr)
+# Load data
+load("data/flowset.Rdata")
+
+
+# Convert flowset to workable datafram and transform data
+fcs_preprocessed <- flowset %>%
+  convert_flowset(batch_ids = batch_ids,
+                  sample_ids = sample_ids,
+                  down_sample = TRUE,
+                  sample_size = 300000,
+                  seed = 473) %>% 
+  transform_asinh(markers = markers)
+  
+# Run batch correction
+fcs_corrected <- fcs_preprocessed %>%
+  batch_correct()
+```
+
+## Plotting
+
+``` r
+density_plots(uncorrected = fcs_preprocessed,
+                corrected = fcs_corrected,
+                markers = markers,
+                filename = 'figs/densities_withcovar.png')
+
+# PCA plot uncorrected
+pca1 <- preprocessed_data %>%
+  dimred_plot('uncorrected', type = 'pca')
+  
+# PCA plot corrected
+pca2 <- corrected_data %>%
+  dimred_plot('corrected', type = 'pca')
+save_two_plots(pca1, pca2, filename = 'figs/pca.png')
+
+# UMAP
+# UMAP plot uncorrected
+umap1 <- preprocessed_data %>%
+  dimred_plot('uncorrected', type = 'umap')
+
+# UMAP plot corrected
+umap2 <- dimred_plot(corrected_data, 'corrected', type = 'umap')
+save_two_plots(umap1, umap2, filename = 'figs/umap.png')
 ```

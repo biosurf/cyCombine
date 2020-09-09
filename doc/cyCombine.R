@@ -13,7 +13,7 @@ if(FALSE){
   data_dir <- "~/Documents/thesis/raw/fcs"
   markers <- c("CD20", "CD3", "CD27", "CD45RA", "CD279", "CD5", "CD19", "CD14", "CD45RO", "GranzymeA", "GranzymeK", "FCRL6", "CD355", "CD152", "CD69", "CD33", "CD4", "CD337", "CD8", "CD197", "LAG3", "CD56", "CD137", "CD161", "FoxP3", "CD80", "CD270", "CD275", "CD134", "CD278", "CD127", "KLRG1", "CD25", "HLADR", "TBet", "XCL1")
   fcs_data <- preprocess(data_dir = data_dir,
-                         meta_file = "/CyTOF samples cohort.xlsx",
+                         meta_filename = "CyTOF samples cohort.xlsx",
                          markers = markers,
                          down_sample = TRUE,
                          sample_size = 100000,

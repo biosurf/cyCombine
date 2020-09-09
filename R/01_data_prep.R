@@ -21,7 +21,7 @@ compile_fcs <- function(data_dir, meta_file){
 
   # Get metadata
   meta_data <- stringr::str_c(data_dir, meta_file,
-                     sep = "") %>%
+                     sep = "/") %>%
     readxl::read_xlsx()
 
   # Read all the data files
