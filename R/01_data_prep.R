@@ -137,7 +137,7 @@ transform_asinh <- function(input, markers, cofactor = 5){
     # Transform all data on those markers
     dplyr::mutate_at(.vars = all_of(markers),
               .funs = function(x) asinh(ceiling(x)/cofactor)) %>%
-    arrange(Batch)
+    arrange(Batch, Sample, colnames(.)[1])
   return(transformed)
 }
 

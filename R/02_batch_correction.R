@@ -119,7 +119,7 @@ correct_data <- function(input,
                        x[x < 0] <- 0
                        return(x)
                        }) %>%
-    dplyr::arrange(Batch)
+    dplyr::arrange(Batch, Sample, colnames(.)[1])
   return(corrected_data)
 }
 
