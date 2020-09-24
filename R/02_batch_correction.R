@@ -114,7 +114,7 @@ correct_data <- function(input,
     dplyr::ungroup() %>%
     dplyr::select(-som) %>%
     # Reduce all negative values to zero
-    dplyr::mutate_at(vars(-c("Batch", "Sample", "covar")),
+    dplyr::mutate_at(vars(-c("Batch", "Sample", "covar")),#, "som")),
                      function(x) {
                        x[x < 0] <- 0
                        return(x)

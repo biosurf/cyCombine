@@ -22,12 +22,10 @@ compile_fcs <- function(data_dir, meta_filename){
 
   # Get metadata
   if(endsWith(meta_filename, suffix = ".xlsx")){
-    meta_data <- stringr::str_c(data_dir, meta_filename,
-                                sep = "/") %>%
+    meta_data <- file.path(data_dir, meta_filename) %>%
       readxl::read_xlsx()
   } else if(endsWith(meta_filename, suffix = ".csv")){
-    meta_data <- stringr::str_c(data_dir, meta_filename,
-                                sep = "/") %>%
+    meta_data <- file.path(data_dir, meta_filename) %>%
       readr::read_csv()
   } else {
     stop(stringr::str_c("Sorry, file", meta_filename, "is not in a supported format. Please use a .xlsx or .csv file.",
