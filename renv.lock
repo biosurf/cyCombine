@@ -207,10 +207,10 @@
     },
     "backports": {
       "Package": "backports",
-      "Version": "1.1.9",
+      "Version": "1.1.10",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "b29e2d989dfb2e71ca3fd7d5bb1c0d58"
+      "Hash": "05ffd2d4acb51aee70f1de68ad7a6aed"
     },
     "base64enc": {
       "Package": "base64enc",
@@ -476,10 +476,10 @@
     },
     "knitr": {
       "Package": "knitr",
-      "Version": "1.29",
+      "Version": "1.30",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "e5f4c41c17df8cdf7b0df12117c0d99a"
+      "Hash": "eed7ee0d02eee88d53881cdc92457c62"
     },
     "kohonen": {
       "Package": "kohonen",
@@ -796,10 +796,10 @@
     },
     "tinytex": {
       "Package": "tinytex",
-      "Version": "0.25",
+      "Version": "0.26",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "a4b9662282097d1033c60420dcb83350"
+      "Hash": "db6477efcfbffcd9b3758c3c2882cf58"
     },
     "utf8": {
       "Package": "utf8",
@@ -831,10 +831,10 @@
     },
     "withr": {
       "Package": "withr",
-      "Version": "2.2.0",
+      "Version": "2.3.0",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "ecd17882a0b4419545691e095b74ee89"
+      "Hash": "7307d79f58d1885b38c4f4f1a8cb19dd"
     },
     "xfun": {
       "Package": "xfun",

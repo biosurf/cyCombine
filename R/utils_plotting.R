@@ -9,14 +9,14 @@
 density_plots <- function(uncorrected, corrected, markers, filename) {
 
   uncorrected <- uncorrected %>%
-    dplyr::select_if(names(.) %!in% c("Sample", "covar")) %>%
+    dplyr::select_if(names(.) %!in% c("sample", "covar", "id")) %>%
     dplyr::mutate(Type = "Uncorrected",
-           Batch = as.factor(Batch))
+           batch = as.factor(batch))
 
   df <- corrected %>%
-    dplyr::select_if(names(.) %!in% c("Sample", "covar")) %>%
+    dplyr::select_if(names(.) %!in% c("sample", "covar", "id")) %>%
     dplyr::mutate(Type = "Corrected",
-           Batch = as.factor(Batch)) %>%
+           batch = as.factor(batch)) %>%
     dplyr::bind_rows(uncorrected)
 
 
@@ -32,7 +32,7 @@ density_plots <- function(uncorrected, corrected, markers, filename) {
   for (c in 1:length(markers)) {
 
     p[[c]] <- df %>%
-      ggplot(aes_string(x = markers[c], y = "Batch")) +
+      ggplot(aes_string(x = markers[c], y = "batch")) +
       ggridges::geom_density_ridges(aes(color = Type, fill = Type), alpha = 0.4) +
       theme_bw()
   }
@@ -51,10 +51,10 @@ density_plots <- function(uncorrected, corrected, markers, filename) {
 #' @importFrom uwot umap
 #' @export
 dimred_plot <- function(input, name, type = 'pca', plot = 'batch', marker = NULL) {
-  Batch <- input$Batch %>%
+  Batch <- input$batch %>%
     as.factor()
   input <- input %>%
-    dplyr::select_if(names(.) %!in% c("Batch", "Sample", "covar"))
+    dplyr::select_if(names(.) %!in% c("batch", "sample", "covar", "id"))
 
   if (type == 'pca') {
     # Run PCA
@@ -65,10 +65,10 @@ dimred_plot <- function(input, name, type = 'pca', plot = 'batch', marker = NULL
     if (plot == 'batch') {
       df <- pca$x %>%
         tibble::as_tibble() %>%
-        dplyr::mutate(Batch = as.factor(Batch))
+        dplyr::mutate(batch = as.factor(batch))
       #cbind.data.frame(pca$x, as.factor(batch_ids)); colnames(df)[ncol(df)] <- 'Batch'
     } else {
-      df <- cbind.data.frame(pca$x, as.factor(Batch), data[,marker]); colnames(df)[(ncol(df)-1):ncol(df)] <- c('Batch', marker)
+      df <- cbind.data.frame(pca$x, as.factor(batch), data[,marker]); colnames(df)[(ncol(df)-1):ncol(df)] <- c('Batch', marker)
     }
 
   } else if (type == 'umap') {

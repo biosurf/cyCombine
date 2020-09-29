@@ -31,14 +31,12 @@ if(FALSE){
   ### From .Rdata file ----
   load("data/raw/DFCI_panel1_data.Rdata")
 
-  panel1 <- panel1_data$fcs_raw %>%
+  preprocessed <- panel1_data$fcs_raw %>%
     convert_flowset(sample_ids = panel1_data$sample_ids,
                     batch_ids = panel1_data$batch_ids,
                     down_sample = TRUE,
                     sample_size = 100000,
-                    seed = 473)
-
-  preprocessed <- panel1 %>%
+                    seed = 473) %>%
     transform_asinh(panel1_data$all_markers)
 
   som <- preprocessed %>%

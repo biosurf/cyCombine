@@ -8,8 +8,8 @@
 scale_expr <- function(input){
   cat("Scaling expression data\n")
   scaled_expr <- input %>%
-    dplyr::group_by(Batch) %>%
-    dplyr::mutate_at(dplyr::vars(-c("Batch", "Sample")), .funs = scale) %>%
+    dplyr::group_by(batch) %>%
+    dplyr::mutate_at(dplyr::vars(-c("batch", "sample", "id")), .funs = scale) %>%
     dplyr::ungroup()
   return(scaled_expr)
 }
@@ -29,7 +29,7 @@ create_som <- function(scaled_expr,
   cat("Creating SOM grid\n")
   set.seed(seed)
   som <- scaled_expr %>%
-    dplyr::select(-c("Batch", "Sample")) %>%
+    dplyr::select(-c("batch", "sample", "id")) %>%
     as.matrix() %>%
     kohonen::som(grid = kohonen::somgrid(xdim = xdim,
                                          ydim = ydim),
@@ -60,16 +60,17 @@ correct_data_prev <- function(input,
 
     # ComBat batch correction using disease status as covariate
     covar <- rep('CLL', nrow(data_subset))
-    covar[grep('^HD', data_subset$Sample)] <- 'HD'
+    covar[grep('^HD', data_subset$sample)] <- 'HD'
     magic_output <- data_subset %>%
-      dplyr::select(-c("Batch", "Sample")) %>%
+      dplyr::select(-c("batch", "sample", "id")) %>%
       t() %>%
-      sva::ComBat(batch = data_subset$Batch, mod = model.matrix(~covar)) %>%
+      sva::ComBat(batch = data_subset$batch, mod = model.matrix(~covar)) %>%
       t() %>%
       tibble::as_tibble() %>%
-      dplyr::mutate(Batch = data_subset$Batch,
-             Sample = data_subset$Sample,
-             covar = covar)
+      dplyr::mutate(batch = data_subset$batch,
+             sample = data_subset$sample,
+             covar = covar,
+             id = data_subset$id)
 
     # Fill copy dataset with corrected data
     corrected_data[which(som_classes==s), ] <- magic_output
@@ -77,7 +78,7 @@ correct_data_prev <- function(input,
   # Fix values below zero
   corrected_data[corrected_data < 0] <- 0
   corrected_data <- corrected_data %>%
-    arrange(Batch)
+    arrange(id)
 
   return(corrected_data)
 }
@@ -94,32 +95,33 @@ correct_data <- function(input,
   corrected_data <- input %>%
     dplyr::mutate(som = som_classes,
                   # Determine covariate
-                  covar = case_when(stringr::str_starts(string = Sample,
+                  covar = case_when(stringr::str_starts(string = sample,
                                                         pattern = "HD") ~ "HD",
                                     TRUE ~ "CLL")) %>%
     dplyr::group_by(som) %>%
     # Run ComBat on each SOM class
     dplyr::group_modify(function(df, ...){
       ComBat_output <- df %>%
-        dplyr::select(-c("Batch", "Sample", "covar")) %>%
+        dplyr::select(-c("batch", "sample", "covar", "id")) %>%
         t() %>%
-        sva::ComBat(batch = df$Batch, mod = model.matrix(~df$covar)) %>%
+        sva::ComBat(batch = df$batch, mod = model.matrix(~df$covar)) %>%
         t() %>%
         tibble::as_tibble() %>%
-        dplyr::mutate(Batch = df$Batch,
-               Sample = df$Sample,
-               covar = df$covar)
+        dplyr::mutate(batch = df$batch,
+               sample = df$sample,
+               covar = df$covar,
+               id = df$id)
       return(ComBat_output)
     }) %>%
     dplyr::ungroup() %>%
     dplyr::select(-som) %>%
     # Reduce all negative values to zero
-    dplyr::mutate_at(vars(-c("Batch", "Sample", "covar")),#, "som")),
+    dplyr::mutate_at(vars(-c("batch", "sample", "covar", "id")),#, "som")),
                      function(x) {
                        x[x < 0] <- 0
                        return(x)
                        }) %>%
-    dplyr::arrange(Batch, Sample, colnames(.)[1])
+    dplyr::arrange(id)
   return(corrected_data)
 }
 

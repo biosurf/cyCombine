@@ -44,7 +44,7 @@ compile_fcs <- function(data_dir, meta_filename){
   sample_ids <- basename(files) %>%
     stringr::str_remove(".fcs") %>%
     rep(flowCore::fsApply(fcs_raw, nrow))
-  batch_ids <- meta_data$Batch[match(sample_ids, meta_data$FCS_name)] %>%
+  batch_ids <- meta_data$batch[match(sample_ids, meta_data$FCS_name)] %>%
     as.factor()
   return(list("fcs_raw" = fcs_raw,
               "sample_ids" = sample_ids,
@@ -90,8 +90,9 @@ convert_flowset <- function(flowset,
                                                 nrows = nrows),
                 ~ flowCore::fsApply(., Biobase::exprs)) %>%
     tibble::as_tibble() %>%
-    dplyr::mutate(Batch = batch_ids,
-                  Sample = sample_ids)
+    dplyr::mutate(batch = batch_ids,
+                  sample = sample_ids,
+                  id = 1:nrow(.))
   # {if(down_sample) {set.seed(seed); sample_n(., sample_size)} else .}
 
 
@@ -103,7 +104,7 @@ convert_flowset <- function(flowset,
     stringr::str_remove_all("[ -]") %>%
     stringr::str_remove_all("\\d+[A-Za-z]+_")
 
-  colnames(fcs_data) <- c(col_names, "Batch", "Sample")
+  colnames(fcs_data) <- c(col_names, "batch", "sample", "id")
   cat("Your flowset is now converted into a dataframe.\n")
   return(fcs_data)
 }
@@ -142,11 +143,11 @@ transform_asinh <- function(input, markers, cofactor = 5){
   cat("Transforming data using asinh with a cofactor of", cofactor, "\n")
   transformed <- input %>%
     # Select markers of interest
-    dplyr::select(dplyr::all_of(c(markers, "Batch", "Sample"))) %>%
+    dplyr::select(dplyr::all_of(c(markers, "batch", "sample", "id"))) %>%
     # Transform all data on those markers
     dplyr::mutate_at(.vars = all_of(markers),
               .funs = function(x) asinh(ceiling(x)/cofactor)) %>%
-    arrange(Batch, Sample, colnames(.)[1])
+    arrange(id)
   return(transformed)
 }
 
