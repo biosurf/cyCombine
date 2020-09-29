@@ -7,3 +7,6 @@
 ^data$
 ^doc$
 ^Meta$
+^figs$
+^dev$
+^tmp$

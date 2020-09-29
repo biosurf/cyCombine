@@ -39,15 +39,15 @@ if(FALSE){
                     seed = 473) %>%
     transform_asinh(panel1_data$all_markers)
 
-  som <- preprocessed %>%
-    scale_expr() %>%
-    create_som()
-
-  corrected <- preprocessed %>%
-    correct_data(som_classes = som$unit.classif)
-
-  corrected2 <- preprocessed %>%
-    correct_data_prev(som_classes = som$unit.classif)
+  # som <- preprocessed %>%
+  #   scale_expr() %>%
+  #   create_som()
+  #
+  # corrected <- preprocessed %>%
+  #   correct_data(som_classes = som$unit.classif)
+  #
+  # corrected2 <- preprocessed %>%
+  #   correct_data_prev(som_classes = som$unit.classif)
 
   # Run batch correction
   corrected <- preprocessed %>%

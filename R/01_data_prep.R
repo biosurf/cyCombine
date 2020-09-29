@@ -44,7 +44,7 @@ compile_fcs <- function(data_dir, meta_filename){
   sample_ids <- basename(files) %>%
     stringr::str_remove(".fcs") %>%
     rep(flowCore::fsApply(fcs_raw, nrow))
-  batch_ids <- meta_data$batch[match(sample_ids, meta_data$FCS_name)] %>%
+  batch_ids <- meta_data$Batch[match(sample_ids, meta_data$FCS_name)] %>%
     as.factor()
   return(list("fcs_raw" = fcs_raw,
               "sample_ids" = sample_ids,
