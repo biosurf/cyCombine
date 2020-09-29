@@ -11,12 +11,12 @@ density_plots <- function(uncorrected, corrected, markers, filename) {
   uncorrected <- uncorrected %>%
     dplyr::select_if(names(.) %!in% c("sample", "covar", "id")) %>%
     dplyr::mutate(Type = "Uncorrected",
-           batch = as.factor(batch))
+                  batch = as.factor(batch))
 
   df <- corrected %>%
     dplyr::select_if(names(.) %!in% c("sample", "covar", "id")) %>%
     dplyr::mutate(Type = "Corrected",
-           batch = as.factor(batch)) %>%
+                  batch = as.factor(batch)) %>%
     dplyr::bind_rows(uncorrected)
 
 
@@ -65,10 +65,10 @@ dimred_plot <- function(input, name, type = 'pca', plot = 'batch', marker = NULL
     if (plot == 'batch') {
       df <- pca$x %>%
         tibble::as_tibble() %>%
-        dplyr::mutate(batch = as.factor(batch))
+        dplyr::mutate(Batch = as.factor(Batch))
       #cbind.data.frame(pca$x, as.factor(batch_ids)); colnames(df)[ncol(df)] <- 'Batch'
     } else {
-      df <- cbind.data.frame(pca$x, as.factor(batch), data[,marker]); colnames(df)[(ncol(df)-1):ncol(df)] <- c('Batch', marker)
+      df <- cbind.data.frame(pca$x, as.factor(Batch), data[,marker]); colnames(df)[(ncol(df)-1):ncol(df)] <- c('Batch', marker)
     }
 
   } else if (type == 'umap') {
