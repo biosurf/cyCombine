@@ -6,7 +6,7 @@
 #' @import ggridges
 #' @import cowplot
 #' @export
-density_plots <- function(uncorrected, corrected, markers, filename) {
+plot_density <- function(uncorrected, corrected, markers, filename) {
 
   uncorrected <- uncorrected %>%
     dplyr::select_if(names(.) %!in% c("sample", "covar", "id")) %>%
@@ -50,7 +50,7 @@ density_plots <- function(uncorrected, corrected, markers, filename) {
 #' Dimensionality reduction plot
 #' @importFrom uwot umap
 #' @export
-dimred_plot <- function(input, name, type = 'pca', plot = 'batch', marker = NULL) {
+plot_dimred <- function(input, name, type = 'pca', plot = 'batch', marker = NULL) {
   Batch <- input$batch %>%
     as.factor()
   input <- input %>%
@@ -114,7 +114,7 @@ dimred_plot <- function(input, name, type = 'pca', plot = 'batch', marker = NULL
 
 #' Save two plots aligned with cowplot
 #' @export
-save_two_plots <- function(plot1, plot2, filename) {
+plot_save_two <- function(plot1, plot2, filename) {
   plot <- cowplot::plot_grid(plot1, plot2, align = 'v', scale = 0.9)
   cowplot::save_plot(filename = filename, plot, base_width = 12, base_height = 6)
 }
@@ -122,7 +122,7 @@ save_two_plots <- function(plot1, plot2, filename) {
 
 #' Save four plots aligned with cowplot
 #' @export
-save_four_plots <- function(plot1, plot2, plot3, plot4, filename) {
+plot_save_four <- function(plot1, plot2, plot3, plot4, filename) {
   plot <- cowplot::plot_grid(plot1, plot2, plot3, plot4, align = 'v', scale = 0.9, nrow = 2)
   cowplot::save_plot(filename = filename, plot, base_width = 12, base_height = 12)
 }

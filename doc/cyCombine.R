@@ -57,30 +57,55 @@ if(FALSE){
 
 
   ### Plotting ----
-  density_plots(uncorrected = preprocessed,
+  plot_density(uncorrected = preprocessed,
                 corrected = corrected,
                 markers = panel1_data$all_markers,
                 filename = 'figs/02_panel1_densities_withcovar.png')
 
   # PCA plot uncorrected
   pca1 <- preprocessed %>%
-    dimred_plot('uncorrected', type = 'pca')
+    plot_dimred('uncorrected', type = 'pca')
 
 
   # UMAP plot uncorrected
   umap1 <- preprocessed %>%
-    dimred_plot('uncorrected', type = 'umap')
+    plot_dimred('uncorrected', type = 'umap')
 
 
 
   # PCA plot corrected
   pca2 <- corrected %>%
-    dimred_plot('corrected', type = 'pca')
-  save_two_plots(pca1, pca2, filename = 'figs/02_raw_pca.png')
+    plot_dimred('corrected', type = 'pca')
+  plot_save_two(pca1, pca2, filename = 'figs/02_raw_pca.png')
 
 
   # UMAP plot corrected
-  umap2 <- dimred_plot(corrected, 'corrected', type = 'umap')
-  save_two_plots(umap1, umap2, filename = 'figs/02_raw_umap.png')
+  umap2 <- plot_dimred(corrected, 'corrected', type = 'umap')
+  plot_save_two(umap1, umap2, filename = 'figs/02_raw_umap.png')
+
+
+
+
+  ### Evaluate performance ----
+  load("data/02_corrected.Rdata")
+  load("data/01_preprocessed.Rdata")
+
+  # Run clustering
+  corrected <- corrected %>%
+    dplyr::mutate(label = run_flowsom(.))
+  preprocessed <- preprocessed %>%
+    dplyr::mutate(label = run_flowsom(.))
+
+  # Compute LISI score
+  lisi_cor <- corrected %>%
+    dplyr::slice_sample(n = 50000) %>%
+    evaluate_lisi()
+  lisi_prep <- preprocessed %>%
+    dplyr::slice_sample(n = 50000) %>%
+    evaluate_lisi()
+
+  # Compute EMD reduction
+  emd_val <- preprocessed %>%
+    evaluate_emd(corrected)
 
 }
