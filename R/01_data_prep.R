@@ -183,7 +183,7 @@ preprocess <- function(data_dir,
     # Transform dataset with asinh
     transform_asinh(markers = markers,
                     cofactor = cofactor)
-  cat("Done!")
+  cat("Done!\n")
   return(fcs_data)
 }
 

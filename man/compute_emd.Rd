@@ -2,10 +2,16 @@
 % Please edit documentation in R/evaluate_performance.R
 \name{compute_emd}
 \alias{compute_emd}
-\title{Evaluate EMD}
+\title{Compute EMD}
 \usage{
-compute_emd(df, binSize = 0.1, non_markers)
+compute_emd(
+  df,
+  binSize = 0.1,
+  non_markers,
+  cell_col = "label",
+  batch_col = "batch"
+)
 }
 \description{
-Evaluate EMD
+Compute EMD
 }

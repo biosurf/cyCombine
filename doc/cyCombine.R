@@ -6,26 +6,31 @@ knitr::opts_chunk$set(
 
 ## ----setup--------------------------------------------------------------------
 if(FALSE){
+  pkgload::load_all()
   library(cyCombine)
   library(magrittr)
 
   ### From raw fcs files ----
+  system.time({
   data_dir <- "~/Documents/thesis/raw/fcs"
   markers <- c("CD20", "CD3", "CD27", "CD45RA", "CD279", "CD5", "CD19", "CD14", "CD45RO", "GranzymeA", "GranzymeK", "FCRL6", "CD355", "CD152", "CD69", "CD33", "CD4", "CD337", "CD8", "CD197", "LAG3", "CD56", "CD137", "CD161", "FoxP3", "CD80", "CD270", "CD275", "CD134", "CD278", "CD127", "KLRG1", "CD25", "HLADR", "TBet", "XCL1")
-  fcs_preprocessed <- preprocess(data_dir = data_dir,
+  preprocessed <- preprocess(data_dir = data_dir,
                          meta_filename = "CyTOF samples cohort.xlsx",
                          markers = markers,
                          down_sample = TRUE,
-                         sample_size = 300000,
+                         sample_size = 500000,
                          seed = 473,
                          cofactor = 5)
+
+  save(preprocessed, file = "data/02_preprocessed_500k.Rdata")
   # Batch correct
-  fcs_corrected <- fcs_preprocessed %>%
+
+  corrected <- preprocessed %>%
     batch_correct()
 
   # Save result
-  save(fcs_corrected, file = "data/02_fcs_corrected.Rdata")
-
+  save(corrected, file = "data/02_corrected_500k.Rdata")
+  })
 
 
   ### From .Rdata file ----
@@ -39,15 +44,15 @@ if(FALSE){
                     seed = 473) %>%
     transform_asinh(panel1_data$all_markers)
 
-  # som <- preprocessed %>%
-  #   scale_expr() %>%
-  #   create_som()
+  som <- preprocessed %>%
+    scale_expr() %>%
+    create_som(seed = 473)
   #
-  # corrected <- preprocessed %>%
-  #   correct_data(som_classes = som$unit.classif)
+  corrected <- preprocessed %>%
+    correct_data(som_classes = som$unit.classif)
   #
-  # corrected2 <- preprocessed %>%
-  #   correct_data_prev(som_classes = som$unit.classif)
+
+
 
   # Run batch correction
   corrected <- preprocessed %>%
@@ -59,8 +64,8 @@ if(FALSE){
   ### Plotting ----
   plot_density(uncorrected = preprocessed,
                 corrected = corrected,
-                markers = panel1_data$all_markers,
-                filename = 'figs/02_panel1_densities_withcovar.png')
+                markers = markers,
+                filename = 'figs/02_densities_withcovar_500k.png')
 
   # PCA plot uncorrected
   pca1 <- preprocessed %>%
@@ -76,7 +81,7 @@ if(FALSE){
   # PCA plot corrected
   pca2 <- corrected %>%
     plot_dimred('corrected', type = 'pca')
-  plot_save_two(pca1, pca2, filename = 'figs/02_raw_pca.png')
+  plot_save_two(pca1, pca2, filename = 'figs/02_pca_500k.png')
 
 
   # UMAP plot corrected

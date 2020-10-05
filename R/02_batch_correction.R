@@ -22,7 +22,7 @@ scale_expr <- function(input){
 #' @family batch
 #' @export
 create_som <- function(scaled_expr,
-                       seed = 548,
+                       seed = 473,
                        xdim = 10,
                        ydim = 10){
   # 10x10 SOM grid on overlapping markers, extract clustering per cell
@@ -91,20 +91,22 @@ correct_data_prev <- function(input,
 correct_data <- function(input,
                          som_classes){
 
-
   corrected_data <- input %>%
     dplyr::mutate(som = som_classes,
                   # Determine covariate
                   covar = case_when(stringr::str_starts(string = sample,
                                                         pattern = "HD") ~ "HD",
-                                    TRUE ~ "CLL")) %>%
+                                    TRUE ~ "CLL") %>%
+                    as.factor()) %>%
     dplyr::group_by(som) %>%
     # Run ComBat on each SOM class
     dplyr::group_modify(function(df, ...){
+
       ComBat_output <- df %>%
-        dplyr::select(-c("batch", "sample", "covar", "id")) %>%
+        dplyr::select_if(colnames(.) %!in% c("batch", "sample", "covar", "id")) %>%
         t() %>%
-        sva::ComBat(batch = df$batch, mod = model.matrix(~df$covar)) %>%
+        # The as.character is to remove factor levels not present in the SOM node
+        sva::ComBat(batch = as.character(df$batch), mod = model.matrix(~df$covar)) %>%
         t() %>%
         tibble::as_tibble() %>%
         dplyr::mutate(batch = df$batch,
@@ -146,10 +148,10 @@ batch_correct <- function(preprocessed,
                ydim = ydim)
   # Run batch correction
   cat("Batch correcting data\n")
-  corrected_data <- preprocessed %>%
+  corrected <- preprocessed %>%
     correct_data(som_classes = som$unit.classif)
-  cat("Done!")
-  return(corrected_data)
+  cat("Done!\n")
+  return(corrected)
 }
 
 
