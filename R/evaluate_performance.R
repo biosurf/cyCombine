@@ -39,17 +39,17 @@ compute_emd <- function(df, binSize = 0.1, non_markers, cell_col = "label", batc
     select_if(colnames(.) %!in% non_markers) %>%
     colnames()
   batches <- df %>%
-    pull(batch_col) %>%
+    dplyr::pull(batch_col) %>%
     unique() %>%
     sort()
   cellTypes <- df %>%
-    pull(cell_col) %>%
+    dplyr::pull(cell_col) %>%
     unique() %>%
     sort()
 
   distr <- list()
   for (b in batches) {
-    print(b)
+    # cat("Batch:", b, "\n")
     distr[[b]] <- list()
     for (cellType in cellTypes) {
 
@@ -70,10 +70,21 @@ compute_emd <- function(df, binSize = 0.1, non_markers, cell_col = "label", batc
     }
   }
 
-  # bin_corrected <- fcs_corrected %>%
+  # bin_corrected <- corrected %>%
+  #   group_by(batch, label) %>%
+  #   tidyr::nest() %>%
+  #   mutate(bin = purrr::map(data, ~function(x){
+  #     binned <- x %>%
+  #       select_if(colnames(.) %!in% non_markers) %>%
+  #       apply(2, function(x) {
+  #         graphics::hist(x, breaks = seq(-1, 50, by = binSize),
+  #                        plot = FALSE)$counts
+  #       })
+  #     return(binned)
+  #   }))
   #   select(all_of(markers)) %>%
   #   apply(2, function(x) {
-  #     graphics::hist(x, breaks = seq(-100, 100, by = binSize),
+  #     graphics::hist(x, breaks = seq(-1, 50, by = binSize),
   #     plot = FALSE)$counts
   #     })
 
@@ -112,23 +123,24 @@ compute_emd <- function(df, binSize = 0.1, non_markers, cell_col = "label", batc
 #' @export
 evaluate_emd <- function(preprocessed, corrected, cell_col = "label", batch_col = "batch", non_markers = c("batch", "sample", "covar", "som", "label", "id")){
 
-
+  cat("Computing emd for corrected data\n")
   emd_corrected <- corrected %>%
-    arrange(id) %>%
+    dplyr::arrange(id) %>%
     cyCombine::compute_emd(non_markers = non_markers)
 
+  cat("Computing emd for uncorrected data\n")
   emd_uncorrected <- preprocessed %>%
-    arrange(id) %>%
+    dplyr::arrange(id) %>%
     cyCombine::compute_emd(non_markers = non_markers)
 
   cellTypes <- corrected %>%
-    pull(cell_col) %>%
+    dplyr::pull(cell_col) %>%
     unique() %>%
     sort()
   markers <- corrected %>%
-    select_if(colnames(.) %!in% non_markers) %>%
+    dplyr::select_if(colnames(.) %!in% non_markers) %>%
     colnames()
-
+  cat("Computing reduction in emd\n")
   reduction <- matrix(NA, nrow = length(cellTypes), ncol = length(markers),
                       dimnames = list(cellTypes, markers))
   for (cellType in cellTypes){
@@ -143,7 +155,7 @@ evaluate_emd <- function(preprocessed, corrected, cell_col = "label", batch_col 
 
     }
   }
-
+  cat("Creating plots\n")
   scat_ori <- emd_uncorrected %>%
     tibble::as_tibble() %>%
     tidyr::pivot_longer(cols = all_of(colnames(.))) %>%
@@ -154,16 +166,16 @@ evaluate_emd <- function(preprocessed, corrected, cell_col = "label", batch_col 
     dplyr::select(value)
 
   scat <- scat_ori %>%
-    bind_cols(scat_cor)
-  colnames(scat) <- c("scat_ori", "scat_cor")
+    dplyr::bind_cols(scat_cor, .name_repair = "minimal")
+  colnames(scat) <- c("EMD - Uncorrected", "EMD - Corrected")
 
   plt <- scat %>%
     ggplot(aes(x = scat_cor, y = scat_ori)) +
     geom_point() +
-    geom_abline(slope=1, intercept=0)
+    geom_abline(slope = 1, intercept = 0)
 
   red <- mean(reduction, na.rm = TRUE)
-
+  cat("Evaluation complete\n")
   return(list("plot" = plt, "reduction" = red))
 
 }

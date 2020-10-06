@@ -32,13 +32,11 @@ compile_fcs <- function(data_dir, meta_filename){
                         sep = " "))
   }
 
-
   # Read all the data files
   fcs_raw <- files %>%
     flowCore::read.flowSet(transformation = FALSE,
                            truncate_max_range = FALSE,
                            emptyValue = FALSE)
-
 
   # Get sample names
   sample_ids <- basename(files) %>%

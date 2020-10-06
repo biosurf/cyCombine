@@ -18,20 +18,24 @@ if(FALSE){
                          meta_filename = "CyTOF samples cohort.xlsx",
                          markers = markers,
                          down_sample = TRUE,
-                         sample_size = 500000,
+                         sample_size = 700000,
                          seed = 473,
                          cofactor = 5)
 
-  save(preprocessed, file = "data/02_preprocessed_500k.Rdata")
+  save(preprocessed, file = "data/01_preprocessed_700k.Rdata")
   # Batch correct
 
   corrected <- preprocessed %>%
     batch_correct()
 
   # Save result
-  save(corrected, file = "data/02_corrected_500k.Rdata")
+  save(corrected, file = "data/02_corrected_700k.Rdata")
   })
 
+  # 100: 1.8 min
+  # 300: 4.2 min
+  # 500: 6.7 min
+  # 700: 9.2 min
 
   ### From .Rdata file ----
   load("data/raw/DFCI_panel1_data.Rdata")
@@ -92,14 +96,14 @@ if(FALSE){
 
 
   ### Evaluate performance ----
-  load("data/02_corrected.Rdata")
-  load("data/01_preprocessed.Rdata")
+  load("data/02_corrected_500k.Rdata")
+  load("data/02_preprocessed_500k.Rdata")
 
   # Run clustering
   corrected <- corrected %>%
-    dplyr::mutate(label = run_flowsom(.))
+    dplyr::mutate(label = run_flowsom(., k = 10))
   preprocessed <- preprocessed %>%
-    dplyr::mutate(label = run_flowsom(.))
+    dplyr::mutate(label = run_flowsom(., k = 10))
 
   # Compute LISI score
   lisi_cor <- corrected %>%
