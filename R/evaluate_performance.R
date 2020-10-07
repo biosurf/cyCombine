@@ -167,11 +167,13 @@ evaluate_emd <- function(preprocessed, corrected, cell_col = "label", batch_col 
 
   scat <- scat_ori %>%
     dplyr::bind_cols(scat_cor, .name_repair = "minimal")
-  colnames(scat) <- c("EMD - Uncorrected", "EMD - Corrected")
+  colnames(scat) <- c("scat_ori", "scat_cor")
 
   plt <- scat %>%
     ggplot(aes(x = scat_cor, y = scat_ori)) +
     geom_point() +
+    labs(x = "EMD - Corrected",
+         y = "EMD - Uncorrected") +
     geom_abline(slope = 1, intercept = 0)
 
   red <- mean(reduction, na.rm = TRUE)

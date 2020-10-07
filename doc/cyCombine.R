@@ -18,7 +18,7 @@ if(FALSE){
                          meta_filename = "CyTOF samples cohort.xlsx",
                          markers = markers,
                          down_sample = TRUE,
-                         sample_size = 700000,
+                         sample_size = 500000,
                          seed = 473,
                          cofactor = 5)
 
@@ -117,4 +117,15 @@ if(FALSE){
   emd_val <- preprocessed %>%
     evaluate_emd(corrected)
 
+
+
+
+  preprocessed %>%
+    # scale_expr() %>%
+    plot_dimred('uncorrected', type = 'pca')
+
+  corrected %>%
+    select(-covar) %>%
+    scale_expr() %>%
+    plot_dimred("corrected", type = "pca")
 }
