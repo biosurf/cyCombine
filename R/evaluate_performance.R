@@ -36,7 +36,7 @@ evaluate_lisi <- function(df, batch_col = "batch", cell_col = "label", perplexit
 #' @export
 compute_emd <- function(df, binSize = 0.1, non_markers, cell_col = "label", batch_col = "batch"){
   markers <- df %>%
-    select_if(colnames(.) %!in% non_markers) %>%
+    dplyr::select_if(colnames(.) %!in% non_markers) %>%
     colnames()
   batches <- df %>%
     dplyr::pull(batch_col) %>%
@@ -54,9 +54,9 @@ compute_emd <- function(df, binSize = 0.1, non_markers, cell_col = "label", batc
     for (cellType in cellTypes) {
 
       distr[[b]][[cellType]] <- df %>%
-        filter(label == cellType,
-               batch == b) %>%
-        select(all_of(markers)) %>%
+        dplyr::filter(label == cellType,
+                      batch == b) %>%
+        dplyr::select(all_of(markers)) %>%
         apply(2, function(x) {
           bins <- seq(-1, 100, by = binSize)
           if (length(x) == 0) {
@@ -155,6 +155,122 @@ evaluate_emd <- function(preprocessed, corrected, cell_col = "label", batch_col 
 
     }
   }
+  cat("Creating plots\n")
+  scat_ori <- emd_uncorrected %>%
+    tibble::as_tibble() %>%
+    tidyr::pivot_longer(cols = all_of(colnames(.))) %>%
+    dplyr::select(value)
+  scat_cor <- emd_corrected %>%
+    tibble::as_tibble() %>%
+    tidyr::pivot_longer(cols = all_of(colnames(.))) %>%
+    dplyr::select(value)
+
+  scat <- scat_ori %>%
+    dplyr::bind_cols(scat_cor, .name_repair = "minimal")
+  colnames(scat) <- c("scat_ori", "scat_cor")
+
+  plt <- scat %>%
+    ggplot(aes(x = scat_cor, y = scat_ori)) +
+    geom_point() +
+    labs(x = "EMD - Corrected",
+         y = "EMD - Uncorrected") +
+    geom_abline(slope = 1, intercept = 0)
+
+  red <- mean(reduction, na.rm = TRUE)
+  cat("Evaluation complete\n")
+  return(list("plot" = plt, "reduction" = red))
+
+}
+
+
+## EMD Without population ----
+
+#' Compute EMD without population
+#' @importFrom emdist emd2d
+#' @export
+compute_emd2 <- function(df, binSize = 0.1, non_markers, batch_col = "batch"){
+  markers <- df %>%
+    dplyr::select_if(colnames(.) %!in% non_markers) %>%
+    colnames()
+  batches <- df %>%
+    dplyr::pull(batch_col) %>%
+    unique() %>%
+    sort()
+
+  distr <- list()
+  for (b in batches) {
+    distr[[b]] <- df %>%
+      dplyr::filter(batch == b) %>%
+      dplyr::select(dplyr::all_of(markers)) %>%
+      apply(2, function(x) {
+        bins <- seq(-1, 100, by = binSize)
+        if (length(x) == 0) {
+          rep(0, times = length(bins) - 1)
+        }else{
+          graphics::hist(x, breaks = bins,
+                         plot = FALSE)$counts
+        }
+      })
+  }
+
+  distances <- list()
+  for (marker in markers) {
+    distances[[marker]] <- matrix(NA,
+                                  nrow = length(batches),
+                                  ncol = length(batches),
+                                  dimnames = list(batches, batches))
+    for (i in seq_along(batches)[-length(batches)]) {
+      batch1 <- batches[i]
+      for (j in seq(i + 1, length(batches))) {
+        batch2 <- batches[j]
+        A <- matrix(distr[[batch1]][,marker])
+        B <- matrix(distr[[batch2]][,marker])
+        distances[[marker]][batch1, batch2] <- emdist::emd2d(A, B)
+      }
+    }
+  }
+
+  comparison <- matrix(NA, nrow = 1, ncol = length(markers),
+                       dimnames = list("1", markers))
+  for (marker in markers) {
+    comparison[1, marker] <- max(distances[[marker]],
+                                 na.rm = TRUE)
+  }
+  return(comparison)
+}
+
+#' Evaluate EMD without population
+#' @importFrom tidyr pivot_longer
+#' @export
+evaluate_emd2 <- function(preprocessed, corrected, batch_col = "batch", non_markers = c("batch", "sample", "covar", "som", "label", "id")){
+
+  cat("Computing emd for corrected data\n")
+  emd_corrected <- corrected %>%
+    dplyr::arrange(id) %>%
+    cyCombine::compute_emd2(non_markers = non_markers)
+
+  cat("Computing emd for uncorrected data\n")
+  emd_uncorrected <- preprocessed %>%
+    dplyr::arrange(id) %>%
+    cyCombine::compute_emd2(non_markers = non_markers)
+
+  markers <- corrected %>%
+    dplyr::select_if(colnames(.) %!in% non_markers) %>%
+    colnames()
+  cat("Computing reduction in emd\n")
+  reduction <- matrix(NA, nrow = 1, ncol = length(markers),
+                      dimnames = list("1", markers))
+  for (marker in markers){
+    emd_ori <- emd_uncorrected[1, marker]
+    emd_cor <- emd_corrected[1, marker]
+    if(emd_ori > 2){
+      reduction[1, marker] <- (emd_ori - emd_cor) / emd_ori
+    }else{
+      reduction[1, marker] <- NA
+    }
+
+  }
+
   cat("Creating plots\n")
   scat_ori <- emd_uncorrected %>%
     tibble::as_tibble() %>%

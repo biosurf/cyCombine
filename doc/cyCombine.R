@@ -64,7 +64,7 @@ if(FALSE){
   # Save result
   save(corrected, file = "data/02_panel1_corrected.Rdata")
 
-
+  .
   ### Plotting ----
   plot_density(uncorrected = preprocessed,
                 corrected = corrected,
@@ -96,8 +96,8 @@ if(FALSE){
 
 
   ### Evaluate performance ----
-  load("data/02_corrected_500k.Rdata")
-  load("data/02_preprocessed_500k.Rdata")
+  load("data/02_corrected_700k.Rdata")
+  load("data/02_preprocessed_700k.Rdata")
 
   # Run clustering
   corrected <- corrected %>%
@@ -105,27 +105,20 @@ if(FALSE){
   preprocessed <- preprocessed %>%
     dplyr::mutate(label = run_flowsom(., k = 10))
 
-  # Compute LISI score
-  lisi_cor <- corrected %>%
-    dplyr::slice_sample(n = 50000) %>%
-    evaluate_lisi()
-  lisi_prep <- preprocessed %>%
-    dplyr::slice_sample(n = 50000) %>%
-    evaluate_lisi()
-
   # Compute EMD reduction
   emd_val <- preprocessed %>%
-    evaluate_emd(corrected)
+    cyCombine::evaluate_emd(corrected)
+  emd_val2 <- preprocessed %>%
+    cyCombine::evaluate_emd2(corrected)
+  # Compute LISI score
+  lisi_cor <- corrected %>%
+    dplyr::slice_sample(n = 10000) %>%
+    evaluate_lisi()
+  lisi_prep <- preprocessed %>%
+    dplyr::slice_sample(n = 10000) %>%
+    evaluate_lisi()
 
 
 
 
-  preprocessed %>%
-    # scale_expr() %>%
-    plot_dimred('uncorrected', type = 'pca')
-
-  corrected %>%
-    select(-covar) %>%
-    scale_expr() %>%
-    plot_dimred("corrected", type = "pca")
 }
