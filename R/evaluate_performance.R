@@ -297,3 +297,121 @@ evaluate_emd2 <- function(preprocessed, corrected, batch_col = "batch", non_mark
   return(list("plot" = plt, "reduction" = red))
 
 }
+
+
+
+
+## Silhouette scores ----
+
+# a_i: average Euclidean between cell i and all other cells in the same group
+# b_i: minimum of average distances between cell i and the cells in other groups not containing i
+# s_i: b_i - a_i / max(b_i, a_i)
+if(FALSE){
+load("data/02_preprocessed_700k.Rdata")
+load("data/02_corrected_700k.Rdata")
+
+corrected <- corrected %>%
+  dplyr::mutate(label = run_flowsom(., k = 10))
+preprocessed <- preprocessed %>%
+  dplyr::mutate(label = run_flowsom(., k = 10))
+
+cor_sample <- corrected %>%
+  slice_sample(n = 10000)
+pre_sample <- preprocessed %>%
+  slice_sample(n = 10000)
+
+batches <- cor_sample %>%
+  dplyr::pull(batch) %>%
+  unique() %>%
+  sort()
+
+
+cors_s <- cor_sample %>%
+  group_by(batch) %>%
+  group_modify(function(df, ...){
+    d <- df %>%
+      dplyr::select(all_of(markers)) %>%
+      dist() %>%
+      as.matrix() %>%
+      apply(1, mean)
+    df <- df %>%
+      dplyr::mutate(a_i = d)
+    return(df)
+  })
+# euc.dist <- function(x1, x2) sqrt(sum((x1 - x2) ^ 2))
+cor_sample %>%
+  arrange(id) %>%
+  dplyr::mutate(a_i = compute_ai(., group = "label")) %>%
+  group_by(batch) %>%
+  summarise(m = mean(a_i))
+
+
+compute_ai <- function(df, group = "batch"){
+  df <- df %>%
+    group_by(.data[[group]]) %>%
+    group_modify(function(df, ...){
+      # Compute distances within each group
+      d <- df %>%
+        dplyr::select(all_of(markers)) %>%
+        dist() %>%
+        as.matrix() %>%
+        apply(1, mean)
+      df <- df %>%
+        dplyr::mutate(a_i = d)
+    return(df)
+    }) %>%
+    ungroup() %>%
+    arrange(id)
+  a_i <- df %>%
+    pull(a_i)
+  return(a_i)
+}
+
+compute_bi <- function(df, group = "batch"){
+  for(i in nrow(df)){
+    cell_i <- df[i, ]
+    group <- cell_i %>%
+      pull(group)
+
+  }
+
+
+  return(group)
+}
+
+cor_sample %>%
+  mutate(test = compute_bi(.)) %>%
+  select(batch, test)
+
+for(group in batches){
+  cell_group <- cor_sample %>%
+    dplyr::filter(batch == group)
+
+  d1 <- cell_group %>%
+    dplyr::select(all_of(markers)) %>%
+    dist() %>%
+    as.matrix() %>%
+    apply(1, mean)
+
+
+
+}
+
+for(i in nrow(cor_sample)){
+  cell_i <- cor_sample[i, ]
+
+
+  a_i <- cell_group %>%
+    # dplyr::select(all_of(markers)) %>%
+    dplyr::mutate(d = dist(select(., all_of(markers)), select(cell_i, all_of(markers))))
+}
+
+cor_sample %>%
+  mutate(a_i = function(x){
+    a_i <- x %>%
+      dplyr::select(markers) %>%
+      dplyr::filter()
+      mean()
+    return(a_i)
+  })
+}

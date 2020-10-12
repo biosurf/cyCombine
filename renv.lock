@@ -1,6 +1,6 @@
 {
   "R": {
-    "Version": "4.0.2",
+    "Version": "4.0.3",
     "Repositories": [
       {
         "Name": "CRAN",
@@ -198,10 +198,10 @@
     },
     "RSQLite": {
       "Package": "RSQLite",
-      "Version": "2.2.0",
+      "Version": "2.2.1",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "2e813101e637bfd423f763d20350ed3d"
+      "Hash": "66fe0e309e72a1d0f9cceed5c01fab94"
     },
     "RSpectra": {
       "Package": "RSpectra",
@@ -341,10 +341,10 @@
     },
     "callr": {
       "Package": "callr",
-      "Version": "3.4.4",
+      "Version": "3.5.0",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "e56fe17ffeddfdcfcef40981e41e1c40"
+      "Hash": "dea3322c701bbb5dd31c353a72a1ebf9"
     },
     "cellranger": {
       "Package": "cellranger",
@@ -362,10 +362,10 @@
     },
     "clipr": {
       "Package": "clipr",
-      "Version": "0.7.0",
+      "Version": "0.7.1",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "08cf4045c149a0f0eaf405324c7495bd"
+      "Hash": "ebaa97ac99cc2daf04e77eecc7b781d7"
     },
     "clue": {
       "Package": "clue",
@@ -404,10 +404,10 @@
     },
     "cpp11": {
       "Package": "cpp11",
-      "Version": "0.2.1",
+      "Version": "0.2.2",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "c4c83167f43ca762a9fa998d4fead3ae"
+      "Hash": "f28776fbc53c699a788792a89c4465a6"
     },
     "crayon": {
       "Package": "crayon",
@@ -660,10 +660,10 @@
     },
     "igraph": {
       "Package": "igraph",
-      "Version": "1.2.5",
+      "Version": "1.2.6",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "3878c30ce67cdb7f2d7f72554e37f476"
+      "Hash": "7b1f856410253d56ea67ad808f7cdff6"
     },
     "irlba": {
       "Package": "irlba",
@@ -797,10 +797,10 @@
     },
     "matrixStats": {
       "Package": "matrixStats",
-      "Version": "0.56.0",
+      "Version": "0.57.0",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "d16f18aeb023d7a80c090d9458fc75a6"
+      "Hash": "7249fc52d19eab5af7a02925ab534d9c"
     },
     "mclust": {
       "Package": "mclust",
@@ -963,17 +963,17 @@
     },
     "ps": {
       "Package": "ps",
-      "Version": "1.3.4",
+      "Version": "1.4.0",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "a54a7dfd68124abb2225dbfa9a85c457"
+      "Hash": "f5d7d94cc097aa9dade988e3e6715067"
     },
     "psych": {
       "Package": "psych",
-      "Version": "2.0.8",
+      "Version": "2.0.9",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "9128ebb61543ceb9936e554722dc59b0"
+      "Hash": "37e3b62b45abb6a52898a494403af1f1"
     },
     "purrr": {
       "Package": "purrr",
@@ -984,10 +984,10 @@
     },
     "readr": {
       "Package": "readr",
-      "Version": "1.3.1",
+      "Version": "1.4.0",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "af8ab99cd936773a148963905736907b"
+      "Hash": "2639976851f71f330264a9c9c3d43a61"
     },
     "readxl": {
       "Package": "readxl",
@@ -1012,17 +1012,17 @@
     },
     "rlang": {
       "Package": "rlang",
-      "Version": "0.4.7",
+      "Version": "0.4.8",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "c06d2a6887f4b414f8e927afd9ee976a"
+      "Hash": "843a6af51414bce7f8a8e372f11d6cd0"
     },
     "rmarkdown": {
       "Package": "rmarkdown",
-      "Version": "2.3",
+      "Version": "2.4",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "202260e1b2c410edc086d5b8f1ed946e"
+      "Hash": "ec8febc2bd653b754d5b03c9d4b996bb"
     },
     "robustbase": {
       "Package": "robustbase",
@@ -1186,10 +1186,10 @@
     },
     "xfun": {
       "Package": "xfun",
-      "Version": "0.17",
+      "Version": "0.18",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "5016afba2a931ac92bbb3c6feb03d2c8"
+      "Hash": "d1c0b777b432e4b4c039c8aaecc54e0f"
     },
     "xml2": {
       "Package": "xml2",
