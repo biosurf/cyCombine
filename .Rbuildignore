@@ -10,3 +10,4 @@
 ^figs$
 ^dev$
 ^tmp$
+^data-raw$

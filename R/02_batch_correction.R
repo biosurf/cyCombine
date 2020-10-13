@@ -3,11 +3,12 @@
 
 #' Batch-wise scaling of data
 #'
+#' @param df Data.frame with expression values
 #' @family batch
 #' @export
-scale_expr <- function(input){
+scale_expr <- function(df){
   cat("Scaling expression data\n")
-  scaled_expr <- input %>%
+  scaled_expr <- df %>%
     dplyr::group_by(batch) %>%
     dplyr::mutate_at(dplyr::vars(-c("batch", "sample", "id")), .funs = scale) %>%
     dplyr::ungroup()
