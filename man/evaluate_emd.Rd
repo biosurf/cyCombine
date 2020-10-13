@@ -4,13 +4,7 @@
 \alias{evaluate_emd}
 \title{Evaluate EMD}
 \usage{
-evaluate_emd(
-  preprocessed,
-  corrected,
-  cell_col = "label",
-  batch_col = "batch",
-  non_markers = c("batch", "sample", "covar", "som", "label", "id")
-)
+evaluate_emd(preprocessed, corrected, cell_col = "label", batch_col = "batch")
 }
 \description{
 Evaluate EMD

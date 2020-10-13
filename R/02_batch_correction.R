@@ -8,9 +8,13 @@
 #' @export
 scale_expr <- function(df){
   cat("Scaling expression data\n")
+  # Get markers
+  markers <- df %>%
+    cyCombine::get_markers()
+  # Scale at marker positions
   scaled_expr <- df %>%
     dplyr::group_by(batch) %>%
-    dplyr::mutate_at(dplyr::vars(-c("batch", "sample", "id")), .funs = scale) %>%
+    dplyr::mutate_at(dplyr::vars(markers), .funs = scale) %>%
     dplyr::ungroup()
   return(scaled_expr)
 }
@@ -30,7 +34,7 @@ create_som <- function(scaled_expr,
   cat("Creating SOM grid\n")
   set.seed(seed)
   som <- scaled_expr %>%
-    dplyr::select(-c("batch", "sample", "id")) %>%
+    dplyr::select_if(colnames(.) %!in% non_markers) %>%
     as.matrix() %>%
     kohonen::som(grid = kohonen::somgrid(xdim = xdim,
                                          ydim = ydim),
@@ -63,7 +67,7 @@ correct_data_prev <- function(input,
     covar <- rep('CLL', nrow(data_subset))
     covar[grep('^HD', data_subset$sample)] <- 'HD'
     magic_output <- data_subset %>%
-      dplyr::select(-c("batch", "sample", "id")) %>%
+      dplyr::select_if(colnames(.) %!in% non_markers) %>%
       t() %>%
       sva::ComBat(batch = data_subset$batch, mod = model.matrix(~covar)) %>%
       t() %>%
@@ -91,6 +95,9 @@ correct_data_prev <- function(input,
 #' @export
 correct_data <- function(input,
                          som_classes){
+  # Get markers
+  markers <- df %>%
+    cyCombine::get_markers()
 
   corrected_data <- input %>%
     dplyr::mutate(som = som_classes,
@@ -104,7 +111,7 @@ correct_data <- function(input,
     dplyr::group_modify(function(df, ...){
 
       ComBat_output <- df %>%
-        dplyr::select_if(colnames(.) %!in% c("batch", "sample", "covar", "id")) %>%
+        dplyr::select_if(colnames(.) %!in% non_markers) %>%
         t() %>%
         # The as.character is to remove factor levels not present in the SOM node
         sva::ComBat(batch = as.character(df$batch), mod = model.matrix(~df$covar)) %>%
@@ -119,7 +126,7 @@ correct_data <- function(input,
     dplyr::ungroup() %>%
     dplyr::select(-som) %>%
     # Reduce all negative values to zero
-    dplyr::mutate_at(vars(-c("batch", "sample", "covar", "id")),#, "som")),
+    dplyr::mutate_at(dplyr::vars(markers),
                      function(x) {
                        x[x < 0] <- 0
                        return(x)

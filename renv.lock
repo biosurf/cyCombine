@@ -290,6 +290,13 @@
       "Source": "Bioconductor",
       "Hash": "61677ca20165e7790955cdd1fc27281e"
     },
+    "askpass": {
+      "Package": "askpass",
+      "Version": "1.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "e8a22846fff485f0be3770c2da758713"
+    },
     "assertthat": {
       "Package": "assertthat",
       "Version": "0.2.1",
@@ -415,6 +422,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "0d57bc8e27b7ba9e45dba825ebc0de6b"
+    },
+    "curl": {
+      "Package": "curl",
+      "Version": "4.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "2b7d10581cc730804e9ed178c8374bd6"
     },
     "cytolib": {
       "Package": "cytolib",
@@ -549,6 +563,13 @@
       "Repository": "CRAN",
       "Hash": "ad36e26eeeb7393886d8a0e19bc6ee42"
     },
+    "fs": {
+      "Package": "fs",
+      "Version": "1.5.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "44594a07a42e5f91fac9f93fda6d0109"
+    },
     "futile.logger": {
       "Package": "futile.logger",
       "Version": "1.4.3",
@@ -595,6 +616,20 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "b5c4e55a3856dff3c05595630a40edfc"
+    },
+    "gh": {
+      "Package": "gh",
+      "Version": "1.1.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "89ea5998938d1ad55f035c8a86f96b74"
+    },
+    "git2r": {
+      "Package": "git2r",
+      "Version": "0.27.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "531a82d1beed1f545beb25f4f5945bf7"
     },
     "glue": {
       "Package": "glue",
@@ -658,12 +693,26 @@
       "Repository": "CRAN",
       "Hash": "7d651b7131794fe007b1ad6f21aaa401"
     },
+    "httr": {
+      "Package": "httr",
+      "Version": "1.4.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "a525aba14184fec243f9eaec62fbed43"
+    },
     "igraph": {
       "Package": "igraph",
       "Version": "1.2.6",
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "7b1f856410253d56ea67ad808f7cdff6"
+    },
+    "ini": {
+      "Package": "ini",
+      "Version": "0.3.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "6154ec2223172bce8162d4153cda21f7"
     },
     "irlba": {
       "Package": "irlba",
@@ -877,6 +926,13 @@
       "Source": "Bioconductor",
       "Hash": "1d09e5023bd73ee71a9670f50fb39782"
     },
+    "openssl": {
+      "Package": "openssl",
+      "Version": "1.4.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "a399e4773075fc2375b71f45fca186c4"
+    },
     "pcaPP": {
       "Package": "pcaPP",
       "Version": "1.9-73",
@@ -1003,6 +1059,13 @@
       "Repository": "CRAN",
       "Hash": "c66b930d20bb6d858cd18e1cebcfae5c"
     },
+    "rematch2": {
+      "Package": "rematch2",
+      "Version": "2.1.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "76c9e04c712a05848ae7a23d2f170a40"
+    },
     "renv": {
       "Package": "renv",
       "Version": "0.12.0",
@@ -1100,6 +1163,13 @@
       "Source": "Bioconductor",
       "Hash": "8161634f3482e2a6af7bd48745464fa3"
     },
+    "sys": {
+      "Package": "sys",
+      "Version": "3.4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "b227d13e29222b4574486cfcbde077fa"
+    },
     "testthat": {
       "Package": "testthat",
       "Version": "2.3.2",
@@ -1149,6 +1219,13 @@
       "Repository": "CRAN",
       "Hash": "7a6f77f5bdfa8a876f4995b8accfa68b"
     },
+    "usethis": {
+      "Package": "usethis",
+      "Version": "1.6.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "c541a7aed5f7fb3b487406bf92842e34"
+    },
     "utf8": {
       "Package": "utf8",
       "Version": "1.1.4",
@@ -1176,6 +1253,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "ce4f6271baa94776db692f1cb2055bee"
+    },
+    "whisker": {
+      "Package": "whisker",
+      "Version": "0.4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "ca970b96d894e90397ed20637a0c1bbe"
     },
     "withr": {
       "Package": "withr",

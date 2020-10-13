@@ -4,7 +4,7 @@
 \alias{plot_dimred}
 \title{Dimensionality reduction plot}
 \usage{
-plot_dimred(input, name, type = "pca", plot = "batch", marker = NULL)
+plot_dimred(df, name, type = "pca", plot = "batch", marker = NULL)
 }
 \description{
 Dimensionality reduction plot

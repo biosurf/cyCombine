@@ -137,9 +137,9 @@ fcs_sample <- function(flowframe, sample, nrows, seed = 473){
 #'
 #' @family preprocess
 #' @export
-transform_asinh <- function(input, markers, cofactor = 5){
+transform_asinh <- function(df, markers, cofactor = 5){
   cat("Transforming data using asinh with a cofactor of", cofactor, "\n")
-  transformed <- input %>%
+  transformed <- df %>%
     # Select markers of interest
     dplyr::select(dplyr::all_of(c(markers, "batch", "sample", "id"))) %>%
     # Transform all data on those markers

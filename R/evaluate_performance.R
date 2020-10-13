@@ -34,7 +34,7 @@ evaluate_lisi <- function(df, batch_col = "batch", cell_col = "label", perplexit
 #' Compute EMD
 #' @importFrom emdist emd2d
 #' @export
-compute_emd <- function(df, binSize = 0.1, non_markers, cell_col = "label", batch_col = "batch"){
+compute_emd <- function(df, binSize = 0.1, cell_col = "label", batch_col = "batch"){
   markers <- df %>%
     dplyr::select_if(colnames(.) %!in% non_markers) %>%
     colnames()
@@ -121,17 +121,17 @@ compute_emd <- function(df, binSize = 0.1, non_markers, cell_col = "label", batc
 #' Evaluate EMD
 #' @importFrom tidyr pivot_longer
 #' @export
-evaluate_emd <- function(preprocessed, corrected, cell_col = "label", batch_col = "batch", non_markers = c("batch", "sample", "covar", "som", "label", "id")){
+evaluate_emd <- function(preprocessed, corrected, cell_col = "label", batch_col = "batch"){
 
   cat("Computing emd for corrected data\n")
   emd_corrected <- corrected %>%
     dplyr::arrange(id) %>%
-    cyCombine::compute_emd(non_markers = non_markers)
+    cyCombine::compute_emd()
 
   cat("Computing emd for uncorrected data\n")
   emd_uncorrected <- preprocessed %>%
     dplyr::arrange(id) %>%
-    cyCombine::compute_emd(non_markers = non_markers)
+    cyCombine::compute_emd()
 
   cellTypes <- corrected %>%
     dplyr::pull(cell_col) %>%
@@ -188,7 +188,7 @@ evaluate_emd <- function(preprocessed, corrected, cell_col = "label", batch_col 
 #' Compute EMD without population
 #' @importFrom emdist emd2d
 #' @export
-compute_emd2 <- function(df, binSize = 0.1, non_markers, batch_col = "batch"){
+compute_emd2 <- function(df, binSize = 0.1, batch_col = "batch"){
   markers <- df %>%
     dplyr::select_if(colnames(.) %!in% non_markers) %>%
     colnames()
@@ -242,17 +242,17 @@ compute_emd2 <- function(df, binSize = 0.1, non_markers, batch_col = "batch"){
 #' Evaluate EMD without population
 #' @importFrom tidyr pivot_longer
 #' @export
-evaluate_emd2 <- function(preprocessed, corrected, batch_col = "batch", non_markers = c("batch", "sample", "covar", "som", "label", "id")){
+evaluate_emd2 <- function(preprocessed, corrected, batch_col = "batch"){
 
   cat("Computing emd for corrected data\n")
   emd_corrected <- corrected %>%
     dplyr::arrange(id) %>%
-    cyCombine::compute_emd2(non_markers = non_markers)
+    cyCombine::compute_emd2()
 
   cat("Computing emd for uncorrected data\n")
   emd_uncorrected <- preprocessed %>%
     dplyr::arrange(id) %>%
-    cyCombine::compute_emd2(non_markers = non_markers)
+    cyCombine::compute_emd2()
 
   markers <- corrected %>%
     dplyr::select_if(colnames(.) %!in% non_markers) %>%

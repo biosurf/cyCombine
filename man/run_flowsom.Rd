@@ -4,12 +4,7 @@
 \alias{run_flowsom}
 \title{Cumpute flowsom clustering}
 \usage{
-run_flowsom(
-  dataset,
-  k = 7,
-  seed = 473,
-  non_markers = c("batch", "sample", "covar", "som", "label", "id")
-)
+run_flowsom(dataset, k = 7, seed = 473)
 }
 \description{
 Cumpute flowsom clustering

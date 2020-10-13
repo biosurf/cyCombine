@@ -4,7 +4,10 @@
 \alias{scale_expr}
 \title{Batch-wise scaling of data}
 \usage{
-scale_expr(input)
+scale_expr(df)
+}
+\arguments{
+\item{df}{Data.frame with expression values}
 }
 \description{
 Batch-wise scaling of data

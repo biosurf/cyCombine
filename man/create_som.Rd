@@ -4,7 +4,7 @@
 \alias{create_som}
 \title{Create SOM}
 \usage{
-create_som(scaled_expr, seed = 548, xdim = 10, ydim = 10)
+create_som(scaled_expr, seed = 473, xdim = 10, ydim = 10)
 }
 \description{
 Create SOM

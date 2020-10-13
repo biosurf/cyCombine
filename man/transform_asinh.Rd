@@ -4,7 +4,7 @@
 \alias{transform_asinh}
 \title{Transform data using asinh}
 \usage{
-transform_asinh(input, markers, cofactor = 5)
+transform_asinh(df, markers, cofactor = 5)
 }
 \description{
 Transform data using asinh

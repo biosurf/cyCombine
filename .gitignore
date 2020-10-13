@@ -2,7 +2,7 @@
 .Rhistory
 .RData
 .Rprofile
-data
+_data/
 dev
 README.Rmd
 figs/

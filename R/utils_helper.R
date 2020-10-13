@@ -3,18 +3,26 @@
 #' @noRd
 #'
 #' @examples
-#' 1 %not_in% 1:10
+#' 1 %!in% 1:10
 #' not_null(NULL)
 `%!in%` <- Negate(`%in%`)
 
+#' Get markers from dataframe
+#'
+#' @export
+get_markers <- function(df){
+  marker_pos <- colnames(df) %!in% non_markers
+  markers <- colnames(df)[marker_pos]
+  return(markers)
+}
 
 #' Run PCA analysis
 #' @importFrom stats prcomp
-run_pca <- function(df, pcs = 20, non_markers = c("batch", "sample", "covar", "som", "label", "id")){
-  df <- df %>%
-    dplyr::select_if(names(.) %!in% non_markers)
-  # Run PCA
+#' @export
+run_pca <- function(df, pcs = 20){
   pca <- df %>%
+    dplyr::select_if(names(.) %!in% non_markers) %>%
+    # Run PCA
     stats::prcomp(scale. = TRUE, center = TRUE)
 
   return(pca$x[, 1:pcs])
@@ -23,11 +31,12 @@ run_pca <- function(df, pcs = 20, non_markers = c("batch", "sample", "covar", "s
 #' Cumpute flowsom clustering
 #' @importFrom flowCore flowFrame colnames
 #' @importFrom FlowSOM ReadInput BuildSOM BuildMST metaClustering_consensus
-run_flowsom <- function(dataset, k = 7, seed = 473, non_markers = c("batch", "sample", "covar", "som", "label", "id")){
+#' @export
+run_flowsom <- function(dataset, k = 7, seed = 473){
   # Create FlowFrame from data
 
   data_FlowSOM <- dataset %>%
-    select_if(colnames(.) %!in% non_markers) %>%
+    dplyr::select_if(colnames(.) %!in% non_markers) %>%
     as.matrix() %>%
     flowCore::flowFrame()
   # Set seed for reproducibility
