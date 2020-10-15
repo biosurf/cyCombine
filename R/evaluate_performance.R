@@ -189,22 +189,27 @@ evaluate_emd <- function(preprocessed, corrected, cell_col = "label", batch_col 
 #' @importFrom emdist emd2d
 #' @export
 compute_emd2 <- function(df, binSize = 0.1, batch_col = "batch"){
+  # Define markers in dataframe
   markers <- df %>%
     dplyr::select_if(colnames(.) %!in% non_markers) %>%
     colnames()
+  # Extract batches
   batches <- df %>%
     dplyr::pull(batch_col) %>%
     unique() %>%
     sort()
 
+  # Create list of distribution matrices
   distr <- list()
   for (b in batches) {
+    # Filter data on batch and bin
     distr[[b]] <- df %>%
       dplyr::filter(batch == b) %>%
       dplyr::select(dplyr::all_of(markers)) %>%
       apply(2, function(x) {
         bins <- seq(-1, 100, by = binSize)
         if (length(x) == 0) {
+          # If no cells, fill with zeros
           rep(0, times = length(bins) - 1)
         }else{
           graphics::hist(x, breaks = bins,
@@ -213,6 +218,7 @@ compute_emd2 <- function(df, binSize = 0.1, batch_col = "batch"){
       })
   }
 
+  # Compute emd from binned distributions
   distances <- list()
   for (marker in markers) {
     distances[[marker]] <- matrix(NA,
@@ -223,13 +229,13 @@ compute_emd2 <- function(df, binSize = 0.1, batch_col = "batch"){
       batch1 <- batches[i]
       for (j in seq(i + 1, length(batches))) {
         batch2 <- batches[j]
-        A <- matrix(distr[[batch1]][,marker])
-        B <- matrix(distr[[batch2]][,marker])
+        A <- matrix(distr[[batch1]][, marker])
+        B <- matrix(distr[[batch2]][, marker])
         distances[[marker]][batch1, batch2] <- emdist::emd2d(A, B)
       }
     }
   }
-
+  # Extract max from each marker
   comparison <- matrix(NA, nrow = 1, ncol = length(markers),
                        dimnames = list("1", markers))
   for (marker in markers) {

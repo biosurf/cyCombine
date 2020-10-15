@@ -2,11 +2,11 @@
 .Rhistory
 .RData
 .Rprofile
-_data/
+_data
 dev
 README.Rmd
-figs/
-inst/
+figs
+inst
 Meta
-renv/
-tmp/
+renv
+tmp

@@ -1,1 +1,1 @@
-utils::globalVariables(c(".data", "non_markers"))
+utils::globalVariables(c(".data", "non_markers", "."))

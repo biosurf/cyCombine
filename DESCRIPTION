@@ -30,7 +30,12 @@ Imports:
     readr,
     emdist,
     psych,
-    lisi
+    lisi,
+    Biobase,
+    FlowSOM,
+    purrr,
+    stringr,
+    tidyr
 Suggests: 
     knitr,
     rmarkdown,

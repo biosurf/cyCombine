@@ -13,7 +13,7 @@ scale_expr <- function(df){
     cyCombine::get_markers()
   # Scale at marker positions
   scaled_expr <- df %>%
-    dplyr::group_by(batch) %>%
+    dplyr::group_by(.data$batch) %>%
     dplyr::mutate_at(dplyr::vars(markers), .funs = scale) %>%
     dplyr::ungroup()
   return(scaled_expr)
@@ -50,16 +50,16 @@ create_som <- function(scaled_expr,
 #' Deprecated
 #' @importFrom sva ComBat
 #' @family batch
-correct_data_prev <- function(input,
+correct_data_prev <- function(df,
                          som_classes){
   # Create copy dataset
-  corrected_data <- input %>%
+  corrected_data <- df %>%
     dplyr::mutate(covar = "")
 
 
   for (s in sort(unique(som_classes))) {
     # Extract original (non-scaled+ranked) data for cluster
-    data_subset <- input[which(som_classes==s), ]
+    data_subset <- df[which(som_classes==s), ]
     cat("som class:", s, "\n", sep = " ")
 
 
@@ -69,7 +69,7 @@ correct_data_prev <- function(input,
     magic_output <- data_subset %>%
       dplyr::select_if(colnames(.) %!in% non_markers) %>%
       t() %>%
-      sva::ComBat(batch = data_subset$batch, mod = model.matrix(~covar)) %>%
+      sva::ComBat(batch = data_subset$batch, mod = stats::model.matrix(~covar)) %>%
       t() %>%
       tibble::as_tibble() %>%
       dplyr::mutate(batch = data_subset$batch,
@@ -91,15 +91,16 @@ correct_data_prev <- function(input,
 #' Correct data using ComBat
 #'
 #' @importFrom sva ComBat
+#' @importFrom stats model.matrix
 #' @family batch
 #' @export
-correct_data <- function(input,
+correct_data <- function(df,
                          som_classes){
   # Get markers
   markers <- df %>%
     cyCombine::get_markers()
 
-  corrected_data <- input %>%
+  corrected_data <- df %>%
     dplyr::mutate(som = som_classes,
                   # Determine covariate
                   covar = case_when(stringr::str_starts(string = sample,
@@ -114,13 +115,13 @@ correct_data <- function(input,
         dplyr::select_if(colnames(.) %!in% non_markers) %>%
         t() %>%
         # The as.character is to remove factor levels not present in the SOM node
-        sva::ComBat(batch = as.character(df$batch), mod = model.matrix(~df$covar)) %>%
+        sva::ComBat(batch = as.character(df$batch), mod = stats::model.matrix(~df$covar)) %>%
         t() %>%
         tibble::as_tibble() %>%
         dplyr::mutate(batch = df$batch,
-               sample = df$sample,
-               covar = df$covar,
-               id = df$id)
+                      sample = df$sample,
+                      covar = df$covar,
+                      id = df$id)
       return(ComBat_output)
     }) %>%
     dplyr::ungroup() %>%

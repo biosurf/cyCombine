@@ -38,7 +38,7 @@ plot_density <- function(uncorrected, corrected, markers = NULL, filename) {
 
     p[[c]] <- df %>%
       ggplot(aes_string(x = markers[c], y = "batch")) +
-      ggridges::geom_density_ridges(aes(color = Type, fill = Type), alpha = 0.4) +
+      ggridges::geom_density_ridges(aes(color = .data$Type, fill = .data$Type), alpha = 0.4) +
       theme_bw()
   }
 
@@ -79,7 +79,7 @@ plot_dimred <- function(df, name, type = "pca", plot = "batch", marker = NULL) {
   } else if (type == "umap") {
     # Run UMAP
     set.seed(758)
-    umap <- input %>%
+    umap <- df %>%
       uwot::umap(n_neighbors = 15, min_dist = 0.2, metric = "euclidean")
 
     # Make dataframe with output

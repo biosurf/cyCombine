@@ -4,7 +4,7 @@
 \alias{correct_data}
 \title{Correct data using ComBat}
 \usage{
-correct_data(input, som_classes)
+correct_data(df, som_classes)
 }
 \description{
 Correct data using ComBat

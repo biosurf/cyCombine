@@ -4,10 +4,18 @@
 \alias{compile_fcs}
 \title{Compile all .fcs files in a directory to a flowset}
 \usage{
-compile_fcs(data_dir, meta_filename)
+compile_fcs(
+  data_dir,
+  meta_filename,
+  sample_col = NULL,
+  batch_col = "Batch",
+  filename_col = "FCS_name"
+)
 }
 \arguments{
 \item{data_dir}{Directory containing the .fcs files}
+
+\item{meta_filename}{Filename of the metadata file}
 }
 \description{
 Compile all .fcs files in a directory to a flowset

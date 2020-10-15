@@ -10,8 +10,13 @@
 #' @importFrom stringr str_remove
 #' @importFrom flowCore read.flowSet fsApply
 #' @param data_dir Directory containing the .fcs files
+#' @param meta_filename Filename of the metadata file
 #' @export
-compile_fcs <- function(data_dir, meta_filename){
+compile_fcs <- function(data_dir,
+                        meta_filename,
+                        sample_col = NULL,
+                        batch_col = "Batch",
+                        filename_col = "FCS_name"){
   # Specifying files to use
   files <- list.files(data_dir,
                       pattern="\\.fcs",
@@ -38,11 +43,22 @@ compile_fcs <- function(data_dir, meta_filename){
                            truncate_max_range = FALSE,
                            emptyValue = FALSE)
 
+  if(!endsWith(meta_data[[filename_col]][1], ".fcs")){
+    meta_data[[filename_col]] <- paste0(meta_data[[filename_col]], ".fcs")
+  }
+
   # Get sample names
-  sample_ids <- basename(files) %>%
-    stringr::str_remove(".fcs") %>%
-    rep(flowCore::fsApply(fcs_raw, nrow))
-  batch_ids <- meta_data$Batch[match(sample_ids, meta_data$FCS_name)] %>%
+  if (is.null(sample_col)){
+    sample_ids <- basename(files) %>%
+      stringr::str_remove(".fcs") %>%
+      rep(flowCore::fsApply(fcs_raw, nrow))
+  } else{
+    sample_ids <- meta_data[[sample_col]][match(basename(files), meta_data[[filename_col]])] %>%
+      rep(flowCore::fsApply(fcs_raw, nrow)) %>%
+      stringr::str_remove(".fcs")
+  }
+
+  batch_ids <- meta_data[[batch_col]][match(sample_ids, stringr::str_remove(meta_data[[filename_col]], ".fcs"))] %>%
     as.factor()
   return(list("fcs_raw" = fcs_raw,
               "sample_ids" = sample_ids,

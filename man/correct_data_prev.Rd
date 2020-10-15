@@ -4,7 +4,7 @@
 \alias{correct_data_prev}
 \title{Correct data using ComBat}
 \usage{
-correct_data_prev(input, som_classes)
+correct_data_prev(df, som_classes)
 }
 \description{
 Deprecated
