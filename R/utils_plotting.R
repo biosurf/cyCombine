@@ -8,6 +8,12 @@
 #' @export
 plot_density <- function(uncorrected, corrected, markers = NULL, filename) {
 
+  # Check for packages
+  missing_package("ggridges", "CRAN")
+  missing_package("ggplot2", "CRAN")
+  missing_package("cowplot", "CRAN")
+
+
   if(is.null(markers)){
     markers <- uncorrected %>%
       get_markers()
@@ -45,7 +51,7 @@ plot_density <- function(uncorrected, corrected, markers = NULL, filename) {
   # Save the plots
   # ggsave(filename = filename, plot = plot_grid(plotlist = p, ncol = 6),
          # device = "png", width = 28, height = 40)
-  save_plot(filename, plot_grid(plotlist = p, ncol = 6), base_width = 28, base_height = 40)
+  save_plot(filename, cowplot::plot_grid(plotlist = p, ncol = 6), base_width = 28, base_height = 40)
 
 }
 
@@ -56,6 +62,12 @@ plot_density <- function(uncorrected, corrected, markers = NULL, filename) {
 #' @importFrom uwot umap
 #' @export
 plot_dimred <- function(df, name, type = "pca", plot = "batch", marker = NULL) {
+
+  missing_package("uwot", "CRAN")
+  missing_package("ggplot2", "CRAN")
+  missing_package("ggridges", "CRAN")
+
+
   Batch <- df$batch %>%
     as.factor()
   df <- df %>%
@@ -120,6 +132,7 @@ plot_dimred <- function(df, name, type = "pca", plot = "batch", marker = NULL) {
 #' Save two plots aligned with cowplot
 #' @export
 plot_save_two <- function(plot1, plot2, filename) {
+  missing_package("cowplot", "CRAN")
   plot <- cowplot::plot_grid(plot1, plot2, align = "v", scale = 0.9)
   cowplot::save_plot(filename = filename, plot, base_width = 12, base_height = 6)
 }
@@ -128,6 +141,7 @@ plot_save_two <- function(plot1, plot2, filename) {
 #' Save four plots aligned with cowplot
 #' @export
 plot_save_four <- function(plot1, plot2, plot3, plot4, filename) {
+  missing_package("cowplot", "CRAN")
   plot <- cowplot::plot_grid(plot1, plot2, plot3, plot4, align = "v", scale = 0.9, nrow = 2)
   cowplot::save_plot(filename = filename, plot, base_width = 12, base_height = 12)
 }

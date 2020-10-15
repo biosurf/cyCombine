@@ -17,29 +17,28 @@ Imports:
     magrittr,
     flowCore,
     RColorBrewer,
-    ggplot2,
     kohonen,
     tibble,
     sva,
-    uwot,
     dplyr,
-    cowplot,
-    ggridges,
     BiocManager,
     readxl,
     readr,
-    emdist,
-    psych,
-    lisi,
     Biobase,
-    FlowSOM,
     purrr,
     stringr,
     tidyr
 Suggests: 
     knitr,
     rmarkdown,
-    testthat
+    testthat,
+    lisi,
+    emdist,
+    FlowSOM,
+    ggridges,
+    psych,
+    uwot,
+    ggplot2
 VignetteBuilder: knitr
 Depends: 
     R (>= 4.0)

@@ -2,8 +2,13 @@
 
 #' Evaluate LISI
 #' @importFrom lisi compute_lisi
+#' @importFrom psych harmonic.mean
 #' @export
 evaluate_lisi <- function(df, batch_col = "batch", cell_col = "label", perplexity = 40){
+
+  # Check for package
+  missing_package("lisi", "github")
+  missing_package("psych", "CRAN")
 
   # Run PCA
   pca_df <- df %>%
@@ -35,6 +40,10 @@ evaluate_lisi <- function(df, batch_col = "batch", cell_col = "label", perplexit
 #' @importFrom emdist emd2d
 #' @export
 compute_emd <- function(df, binSize = 0.1, cell_col = "label", batch_col = "batch"){
+
+  # Check for package
+  missing_package("emdist", "CRAN")
+
   markers <- df %>%
     dplyr::select_if(colnames(.) %!in% non_markers) %>%
     colnames()
@@ -123,6 +132,9 @@ compute_emd <- function(df, binSize = 0.1, cell_col = "label", batch_col = "batc
 #' @export
 evaluate_emd <- function(preprocessed, corrected, cell_col = "label", batch_col = "batch"){
 
+  # Check for package
+  missing_package("emdist", "CRAN")
+
   cat("Computing emd for corrected data\n")
   emd_corrected <- corrected %>%
     dplyr::arrange(id) %>%
@@ -189,6 +201,10 @@ evaluate_emd <- function(preprocessed, corrected, cell_col = "label", batch_col 
 #' @importFrom emdist emd2d
 #' @export
 compute_emd2 <- function(df, binSize = 0.1, batch_col = "batch"){
+
+  # Check for package
+  missing_package("emdist", "CRAN")
+
   # Define markers in dataframe
   markers <- df %>%
     dplyr::select_if(colnames(.) %!in% non_markers) %>%
@@ -249,6 +265,9 @@ compute_emd2 <- function(df, binSize = 0.1, batch_col = "batch"){
 #' @importFrom tidyr pivot_longer
 #' @export
 evaluate_emd2 <- function(preprocessed, corrected, batch_col = "batch"){
+
+  # Check for package
+  missing_package("emdist", "CRAN")
 
   cat("Computing emd for corrected data\n")
   emd_corrected <- corrected %>%

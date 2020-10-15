@@ -7,6 +7,27 @@
 #' not_null(NULL)
 `%!in%` <- Negate(`%in%`)
 
+
+#' Wrapper for missing packages
+#'
+missing_package <- function(package, repo = "CRAN"){
+
+  if (repo == "CRAN"){
+    install_function <- "install.packages('"
+  } else if (repo == "github") {
+    install_function <- "devtools::install_github('"
+  } else if (repo == "Bioc"){
+    install_function <- "BiocManager::install('"
+  }
+
+  if(package %!in% rownames(installed.packages())){
+    stop(paste0("Package ", package," is not installed.\n",
+         "Please run: ", install_function, package, "')"))
+  }
+}
+
+
+
 #' Get markers from dataframe
 #'
 #' @export
@@ -20,6 +41,8 @@ get_markers <- function(df){
 #' @importFrom stats prcomp
 #' @export
 run_pca <- function(df, pcs = 20){
+
+
   pca <- df %>%
     dplyr::select_if(names(.) %!in% non_markers) %>%
     # Run PCA
@@ -33,6 +56,10 @@ run_pca <- function(df, pcs = 20){
 #' @importFrom FlowSOM ReadInput BuildSOM BuildMST metaClustering_consensus
 #' @export
 run_flowsom <- function(dataset, k = 7, seed = 473){
+
+  # Check for package
+  missing_package("FlowSOM", "Bioc")
+
   # Create FlowFrame from data
 
   data_FlowSOM <- dataset %>%
