@@ -51,14 +51,17 @@ run_pca <- function(df, pcs = 20){
   return(pca$x[, 1:pcs])
 }
 
+# @importFrom FlowSOM ReadInput BuildSOM BuildMST metaClustering_consensus
+
+
 #' Cumpute flowsom clustering
 #' @importFrom flowCore flowFrame colnames
-#' @importFrom FlowSOM ReadInput BuildSOM BuildMST metaClustering_consensus
 #' @export
 run_flowsom <- function(dataset, k = 7, seed = 473){
 
   # Check for package
   missing_package("FlowSOM", "Bioc")
+  requireNamespace("FlowSOM", quietly = TRUE)
 
   # Create FlowFrame from data
 

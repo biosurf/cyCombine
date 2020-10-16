@@ -1,10 +1,11 @@
 #### Plotting functions ----
 
+# @import ggplot2
+# @import ggridges
+# @import cowplot
+
 # @importFrom dplyr select_if bind_rows rename
 #' Density ridges for two sets
-#' @import ggplot2
-#' @import ggridges
-#' @import cowplot
 #' @export
 plot_density <- function(uncorrected, corrected, markers = NULL, filename) {
 
@@ -12,6 +13,10 @@ plot_density <- function(uncorrected, corrected, markers = NULL, filename) {
   missing_package("ggridges", "CRAN")
   missing_package("ggplot2", "CRAN")
   missing_package("cowplot", "CRAN")
+  requireNamespace("uwot", quietly = TRUE)
+  requireNamespace("ggridges", quietly = TRUE)
+  requireNamespace("ggplot2", quietly = TRUE)
+
 
 
   if(is.null(markers)){
@@ -57,15 +62,17 @@ plot_density <- function(uncorrected, corrected, markers = NULL, filename) {
 
 
 
-
+# @importFrom uwot umap
 #' Dimensionality reduction plot
-#' @importFrom uwot umap
 #' @export
 plot_dimred <- function(df, name, type = "pca", plot = "batch", marker = NULL) {
 
   missing_package("uwot", "CRAN")
   missing_package("ggplot2", "CRAN")
   missing_package("ggridges", "CRAN")
+  requireNamespace("uwot", quietly = TRUE)
+  requireNamespace("ggplot2", quietly = TRUE)
+  requireNamespace("ggridges", quietly = TRUE)
 
 
   Batch <- df$batch %>%
@@ -133,6 +140,7 @@ plot_dimred <- function(df, name, type = "pca", plot = "batch", marker = NULL) {
 #' @export
 plot_save_two <- function(plot1, plot2, filename) {
   missing_package("cowplot", "CRAN")
+  requireNamespace("cowplot", quietly = TRUE)
   plot <- cowplot::plot_grid(plot1, plot2, align = "v", scale = 0.9)
   cowplot::save_plot(filename = filename, plot, base_width = 12, base_height = 6)
 }
@@ -142,6 +150,7 @@ plot_save_two <- function(plot1, plot2, filename) {
 #' @export
 plot_save_four <- function(plot1, plot2, plot3, plot4, filename) {
   missing_package("cowplot", "CRAN")
+  requireNamespace("cowplot", quietly = TRUE)
   plot <- cowplot::plot_grid(plot1, plot2, plot3, plot4, align = "v", scale = 0.9, nrow = 2)
   cowplot::save_plot(filename = filename, plot, base_width = 12, base_height = 12)
 }
