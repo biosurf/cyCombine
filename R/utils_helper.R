@@ -10,12 +10,12 @@
 
 #' Wrapper for missing packages
 #'
-missing_package <- function(package, repo = "CRAN"){
+missing_package <- function(package, repo = "CRAN", git_repo = ""){
 
   if (repo == "CRAN"){
     install_function <- "install.packages('"
   } else if (repo == "github") {
-    install_function <- "devtools::install_github('"
+    install_function <- paste0("devtools::install_github('", git_rep, "/")
   } else if (repo == "Bioc"){
     install_function <- "BiocManager::install('"
   }
@@ -24,6 +24,7 @@ missing_package <- function(package, repo = "CRAN"){
     stop(paste0("Package ", package," is not installed.\n",
          "Please run: ", install_function, package, "')"))
   }
+  requireNamespace(package, quietly = TRUE)
 }
 
 
@@ -61,7 +62,6 @@ run_flowsom <- function(dataset, k = 7, seed = 473){
 
   # Check for package
   missing_package("FlowSOM", "Bioc")
-  requireNamespace("FlowSOM", quietly = TRUE)
 
   # Create FlowFrame from data
 

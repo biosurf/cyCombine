@@ -6,7 +6,7 @@
 #' @importFrom readxl read_xlsx
 #' @importFrom readr read_csv
 #' @import dplyr
-#' @import magrittr
+#' @importFrom magrittr %>%
 #' @importFrom stringr str_remove
 #' @importFrom flowCore read.flowSet fsApply
 #' @param data_dir Directory containing the .fcs files

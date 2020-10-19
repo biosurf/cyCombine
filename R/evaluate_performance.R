@@ -7,11 +7,9 @@
 evaluate_lisi <- function(df, batch_col = "batch", cell_col = "label", perplexity = 40){
 
   # Check for package
-  missing_package("lisi", "github")
+  missing_package("lisi", "github", "immunogenomics")
   missing_package("psych", "CRAN")
 
-  requireNamespace("psych", quietly = TRUE)
-  requireNamespace("lisi", quietly = TRUE)
 
   # Run PCA
   pca_df <- df %>%
@@ -45,7 +43,7 @@ compute_emd <- function(df, binSize = 0.1, cell_col = "label", batch_col = "batc
 
   # Check for package
   missing_package("emdist", "CRAN")
-  requireNamespace("emdist", quietly = TRUE)
+
 
   markers <- df %>%
     dplyr::select_if(colnames(.) %!in% non_markers) %>%
@@ -137,7 +135,7 @@ evaluate_emd <- function(preprocessed, corrected, cell_col = "label", batch_col 
 
   # Check for package
   missing_package("emdist", "CRAN")
-  requireNamespace("emdist", quietly = TRUE)
+
 
   cat("Computing emd for corrected data\n")
   emd_corrected <- corrected %>%
@@ -207,7 +205,7 @@ compute_emd2 <- function(df, binSize = 0.1, batch_col = "batch"){
 
   # Check for package
   missing_package("emdist", "CRAN")
-  requireNamespace("emdist", quietly = TRUE)
+
 
   # Define markers in dataframe
   markers <- df %>%
@@ -272,7 +270,7 @@ evaluate_emd2 <- function(preprocessed, corrected, batch_col = "batch"){
 
   # Check for package
   missing_package("emdist", "CRAN")
-  requireNamespace("emdist", quietly = TRUE)
+
 
   cat("Computing emd for corrected data\n")
   emd_corrected <- corrected %>%

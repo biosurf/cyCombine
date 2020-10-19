@@ -21,13 +21,13 @@ Imports:
     tibble,
     sva,
     dplyr,
-    BiocManager,
     readxl,
     readr,
     Biobase,
     purrr,
     stringr,
-    tidyr
+    tidyr,
+    ggplot2
 Suggests: 
     knitr,
     rmarkdown,
@@ -37,8 +37,7 @@ Suggests:
     FlowSOM,
     ggridges,
     psych,
-    uwot,
-    ggplot2
+    uwot
 VignetteBuilder: knitr
 Depends: 
     R (>= 4.0)

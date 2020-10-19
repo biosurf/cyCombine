@@ -80,7 +80,7 @@ if(FALSE){
     slice_sample(n = 10000)
 
   corrected_sliced <- corrected %>%
-    semi_join(preprocessed_umap, by = "id")
+    semi_join(preprocessed_sliced, by = "id")
 
   # PCA plot uncorrected
   pca1 <- preprocessed_sliced %>%

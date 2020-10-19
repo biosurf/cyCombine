@@ -4,7 +4,7 @@
 \alias{missing_package}
 \title{Wrapper for missing packages}
 \usage{
-missing_package(package, repo = "CRAN")
+missing_package(package, repo = "CRAN", git_repo = "")
 }
 \description{
 Wrapper for missing packages
