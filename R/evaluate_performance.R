@@ -135,6 +135,7 @@ evaluate_emd <- function(preprocessed, corrected, cell_col = "label", batch_col 
 
   # Check for package
   missing_package("emdist", "CRAN")
+  missing_package("viridis", "CRAN")
 
 
   cat("Computing emd for corrected data\n")
@@ -169,28 +170,42 @@ evaluate_emd <- function(preprocessed, corrected, cell_col = "label", batch_col 
 
     }
   }
+  # Mean reducion
+  red <- mean(reduction, na.rm = TRUE) %>%
+    round(2)
+
   cat("Creating plots\n")
   scat_ori <- emd_uncorrected %>%
     tibble::as_tibble() %>%
     tidyr::pivot_longer(cols = all_of(colnames(.))) %>%
-    dplyr::select(value)
+    dplyr::rename(scat_ori = value,
+                  Marker = name)
+    # dplyr::select(value)
   scat_cor <- emd_corrected %>%
     tibble::as_tibble() %>%
     tidyr::pivot_longer(cols = all_of(colnames(.))) %>%
-    dplyr::select(value)
+    dplyr::rename(scat_cor = value,
+                  Marker = name)
+    # dplyr::select(value)
 
   scat <- scat_ori %>%
+    select(scat_ori) %>%
+    # dplyr::left_join(scat_cor, by = "name")
     dplyr::bind_cols(scat_cor, .name_repair = "minimal")
-  colnames(scat) <- c("scat_ori", "scat_cor")
-
+  # colnames(scat) <- c("Marker", "scat_ori", "scat_cor")
+  # opts <- options(ggplot2.continuous.colour="viridis")
   plt <- scat %>%
-    ggplot(aes(x = scat_cor, y = scat_ori)) +
+    ggplot(aes(x = scat_cor, y = scat_ori, color = Marker)) +
     geom_point() +
     labs(x = "EMD - Corrected",
-         y = "EMD - Uncorrected") +
+         y = "EMD - Uncorrected",
+         title = "With cell population",
+         subtitle = paste("Reduction:", red)) +
+    # scale_colour_brewer(palette="Set1") +
+    viridis::scale_color_viridis(discrete = TRUE) +
     geom_abline(slope = 1, intercept = 0)
 
-  red <- mean(reduction, na.rm = TRUE)
+
   cat("Evaluation complete\n")
   return(list("plot" = plt, "reduction" = red))
 
@@ -270,6 +285,7 @@ evaluate_emd2 <- function(preprocessed, corrected, batch_col = "batch"){
 
   # Check for package
   missing_package("emdist", "CRAN")
+  missing_package("viridis", "CRAN")
 
 
   cat("Computing emd for corrected data\n")
@@ -298,29 +314,36 @@ evaluate_emd2 <- function(preprocessed, corrected, batch_col = "batch"){
     }
 
   }
+  # Mean reduction
+  red <- mean(reduction, na.rm = TRUE) %>%
+    round(2)
 
   cat("Creating plots\n")
   scat_ori <- emd_uncorrected %>%
     tibble::as_tibble() %>%
-    tidyr::pivot_longer(cols = all_of(colnames(.))) %>%
-    dplyr::select(value)
+    tidyr::pivot_longer(cols = all_of(colnames(.)))# %>%
+    # dplyr::select(value)
   scat_cor <- emd_corrected %>%
     tibble::as_tibble() %>%
-    tidyr::pivot_longer(cols = all_of(colnames(.))) %>%
-    dplyr::select(value)
+    tidyr::pivot_longer(cols = all_of(colnames(.)))# %>%
+    # dplyr::select(value)
 
   scat <- scat_ori %>%
-    dplyr::bind_cols(scat_cor, .name_repair = "minimal")
-  colnames(scat) <- c("scat_ori", "scat_cor")
+    dplyr::left_join(scat_cor, by = "name")
+    # dplyr::bind_cols(scat_cor, .name_repair = "minimal")
+  colnames(scat) <- c("Marker", "scat_ori", "scat_cor")
 
   plt <- scat %>%
-    ggplot(aes(x = scat_cor, y = scat_ori)) +
+    ggplot(aes(x = scat_cor, y = scat_ori, color = Marker)) +
     geom_point() +
     labs(x = "EMD - Corrected",
-         y = "EMD - Uncorrected") +
+         y = "EMD - Uncorrected",
+         title = "Without cell population",
+         subtitle = paste("Reduction:", red)) +
+    viridis::scale_color_viridis(discrete = TRUE) +
     geom_abline(slope = 1, intercept = 0)
 
-  red <- mean(reduction, na.rm = TRUE)
+
   cat("Evaluation complete\n")
   return(list("plot" = plt, "reduction" = red))
 

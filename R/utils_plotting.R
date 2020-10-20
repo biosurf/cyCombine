@@ -63,7 +63,7 @@ plot_density <- function(uncorrected, corrected, markers = NULL, filename) {
 # @importFrom uwot umap
 #' Dimensionality reduction plot
 #' @export
-plot_dimred <- function(df, name, type = "pca", plot = "batch", marker = NULL) {
+plot_dimred <- function(df, name, type = "pca", plot = "batch", marker = NULL, seed = 473) {
 
   missing_package("uwot", "CRAN")
   missing_package("ggplot2", "CRAN")
@@ -75,7 +75,7 @@ plot_dimred <- function(df, name, type = "pca", plot = "batch", marker = NULL) {
   df <- df %>%
     dplyr::select_if(names(.) %!in% c("batch", "sample", "covar", "id"))
 
-  if (type == "pca2") {
+  if (type == "pca") {
     # Run PCA
     pca <- df %>%
       prcomp(scale. = TRUE, center = TRUE)
@@ -92,7 +92,7 @@ plot_dimred <- function(df, name, type = "pca", plot = "batch", marker = NULL) {
 
   } else if (type == "umap") {
     # Run UMAP
-    set.seed(758)
+    set.seed(seed)
     umap <- df %>%
       uwot::umap(n_neighbors = 15, min_dist = 0.2, metric = "euclidean")
 
