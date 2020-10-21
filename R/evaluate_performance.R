@@ -46,16 +46,19 @@ compute_emd <- function(df, binSize = 0.1, cell_col = "label", batch_col = "batc
 
 
   markers <- df %>%
-    dplyr::select_if(colnames(.) %!in% non_markers) %>%
-    colnames()
+    get_markers()
   batches <- df %>%
     dplyr::pull(batch_col) %>%
     unique() %>%
-    sort()
+    sort() #%>%
+    # as.character()
   cellTypes <- df %>%
     dplyr::pull(cell_col) %>%
     unique() %>%
-    sort()
+    sort() #%>%
+    # as.factor() %>%
+    # as.numeric()
+    # as.character()
 
   distr <- list()
   for (b in batches) {
@@ -98,6 +101,7 @@ compute_emd <- function(df, binSize = 0.1, cell_col = "label", batch_col = "batc
   #     plot = FALSE)$counts
   #     })
 
+
   distances <- list()
   for (cellType in cellTypes) {
     distances[[cellType]] <- list()
@@ -111,7 +115,12 @@ compute_emd <- function(df, binSize = 0.1, cell_col = "label", batch_col = "batc
           batch2 <- batches[j]
           A <- matrix(distr[[batch1]][[cellType]][,marker])
           B <- matrix(distr[[batch2]][[cellType]][,marker])
-          distances[[cellType]][[marker]][batch1, batch2] <- emdist::emd2d(A, B)
+          if(sum(A) < 300 | sum(B) < 300){
+            distances[[cellType]][[marker]][batch1, batch2] <- NA
+          } else{
+            distances[[cellType]][[marker]][batch1, batch2] <- emdist::emd2d(A, B)
+          }
+
         }
       }
     }
@@ -137,6 +146,10 @@ evaluate_emd <- function(preprocessed, corrected, cell_col = "label", batch_col 
   missing_package("emdist", "CRAN")
   missing_package("viridis", "CRAN")
 
+  corrected[[cell_col]] <- corrected[[cell_col]] %>%
+    as.character()
+  preprocessed[[cell_col]] <- preprocessed[[cell_col]] %>%
+    as.character()
 
   cat("Computing emd for corrected data\n")
   emd_corrected <- corrected %>%
@@ -152,9 +165,9 @@ evaluate_emd <- function(preprocessed, corrected, cell_col = "label", batch_col 
     dplyr::pull(cell_col) %>%
     unique() %>%
     sort()
+
   markers <- corrected %>%
-    dplyr::select_if(colnames(.) %!in% non_markers) %>%
-    colnames()
+    get_markers()
   cat("Computing reduction in emd\n")
   reduction <- matrix(NA, nrow = length(cellTypes), ncol = length(markers),
                       dimnames = list(cellTypes, markers))
@@ -194,20 +207,27 @@ evaluate_emd <- function(preprocessed, corrected, cell_col = "label", batch_col 
     dplyr::bind_cols(scat_cor, .name_repair = "minimal")
   # colnames(scat) <- c("Marker", "scat_ori", "scat_cor")
   # opts <- options(ggplot2.continuous.colour="viridis")
+
+  limit <- scat_ori$scat_ori %>%
+    max() %>%
+    plyr::round_any(5, f = ceiling) +1
+    # ceiling() * 10
+
   plt <- scat %>%
-    ggplot(aes(x = scat_cor, y = scat_ori, color = Marker)) +
-    geom_point() +
+    ggplot(aes(x = scat_cor, y = scat_ori, color = Marker, label = Marker)) +
+    geom_text() +
     labs(x = "EMD - Corrected",
          y = "EMD - Uncorrected",
          title = "With cell population",
          subtitle = paste("Reduction:", red)) +
+    coord_cartesian(xlim = c(0, limit), ylim = c(0, limit)) +
     # scale_colour_brewer(palette="Set1") +
     viridis::scale_color_viridis(discrete = TRUE) +
     geom_abline(slope = 1, intercept = 0)
 
 
   cat("Evaluation complete\n")
-  return(list("plot" = plt, "reduction" = red))
+  return(list("plot" = plt, "reduction" = red, "emd_cor" = emd_corrected, "emd_uncor" = emd_uncorrected))
 
 }
 
@@ -230,7 +250,8 @@ compute_emd2 <- function(df, binSize = 0.1, batch_col = "batch"){
   batches <- df %>%
     dplyr::pull(batch_col) %>%
     unique() %>%
-    sort()
+    sort() %>%
+    as.character()
 
   # Create list of distribution matrices
   distr <- list()
@@ -334,13 +355,14 @@ evaluate_emd2 <- function(preprocessed, corrected, batch_col = "batch"){
   colnames(scat) <- c("Marker", "scat_ori", "scat_cor")
 
   plt <- scat %>%
-    ggplot(aes(x = scat_cor, y = scat_ori, color = Marker)) +
-    geom_point() +
+    ggplot(aes(x = scat_cor, y = scat_ori, color = Marker, label = Marker)) +
+    # geom_point() +
     labs(x = "EMD - Corrected",
          y = "EMD - Uncorrected",
          title = "Without cell population",
          subtitle = paste("Reduction:", red)) +
     viridis::scale_color_viridis(discrete = TRUE) +
+    geom_text() +
     geom_abline(slope = 1, intercept = 0)
 
 
