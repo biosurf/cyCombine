@@ -37,7 +37,8 @@ Suggests:
     FlowSOM,
     ggridges,
     psych,
-    uwot
+    uwot,
+    plyr
 VignetteBuilder: knitr
 Depends: 
     R (>= 4.0)

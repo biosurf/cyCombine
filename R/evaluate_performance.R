@@ -145,6 +145,7 @@ evaluate_emd <- function(preprocessed, corrected, cell_col = "label", batch_col 
   # Check for package
   missing_package("emdist", "CRAN")
   missing_package("viridis", "CRAN")
+  missing_package("plyr", "CRAN")
 
   corrected[[cell_col]] <- corrected[[cell_col]] %>%
     as.character()
@@ -202,7 +203,7 @@ evaluate_emd <- function(preprocessed, corrected, cell_col = "label", batch_col 
     # dplyr::select(value)
 
   scat <- scat_ori %>%
-    select(scat_ori) %>%
+    dplyr::select(scat_ori) %>%
     # dplyr::left_join(scat_cor, by = "name")
     dplyr::bind_cols(scat_cor, .name_repair = "minimal")
   # colnames(scat) <- c("Marker", "scat_ori", "scat_cor")
