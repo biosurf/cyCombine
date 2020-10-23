@@ -13,7 +13,7 @@
 #' @param meta_filename Filename of the metadata file
 #' @export
 compile_fcs <- function(data_dir,
-                        meta_filename,
+                        meta_filename = NULL,
                         sample_col = NULL,
                         batch_col = "Batch",
                         filename_col = "FCS_name"){
@@ -24,6 +24,13 @@ compile_fcs <- function(data_dir,
                       full.names = TRUE)
   cat("Read", length(files), "file names to process", "\n",
               sep = " ")
+
+    # Read all the data files
+  fcs_raw <- files %>%
+    flowCore::read.flowSet(transformation = FALSE,
+                           truncate_max_range = FALSE,
+                           emptyValue = FALSE)
+  if(is.null(meta_data)) return(fcs_raw)
 
   # Get metadata
   if(endsWith(meta_filename, suffix = ".xlsx")){
@@ -36,12 +43,6 @@ compile_fcs <- function(data_dir,
     stop(stringr::str_c("Sorry, file", meta_filename, "is not in a supported format. Please use a .xlsx or .csv file.",
                         sep = " "))
   }
-
-  # Read all the data files
-  fcs_raw <- files %>%
-    flowCore::read.flowSet(transformation = FALSE,
-                           truncate_max_range = FALSE,
-                           emptyValue = FALSE)
 
   if(!endsWith(meta_data[[filename_col]][1], ".fcs")){
     meta_data[[filename_col]] <- paste0(meta_data[[filename_col]], ".fcs")
