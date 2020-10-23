@@ -95,18 +95,27 @@ correct_data_prev <- function(df,
 #' @family batch
 #' @export
 correct_data <- function(df,
-                         som_classes){
+                         som_classes,
+                         covar = NULL){
   # Get markers
   markers <- df %>%
     cyCombine::get_markers()
 
+  if(is.null(covar)){
+    df <- df %>%
+      dplyr::mutate(som = som_classes,
+                    # Determine covariate
+                    covar = case_when(stringr::str_starts(string = sample,
+                                                          pattern = "HD") ~ "HD",
+                                      TRUE ~ "CLL") %>%
+                      as.factor())
+  }else{
+    df <- df %>%
+      dplyr::mutate(som = som_classes,
+                    covar = as.factor(covar))
+  }
+
   corrected_data <- df %>%
-    dplyr::mutate(som = som_classes,
-                  # Determine covariate
-                  covar = case_when(stringr::str_starts(string = sample,
-                                                        pattern = "HD") ~ "HD",
-                                    TRUE ~ "CLL") %>%
-                    as.factor()) %>%
     dplyr::group_by(som) %>%
     # Run ComBat on each SOM class
     dplyr::group_modify(function(df, ...){
@@ -146,7 +155,8 @@ correct_data <- function(df,
 batch_correct <- function(preprocessed,
                           xdim = 10,
                           ydim = 10,
-                          seed = 473){
+                          seed = 473,
+                          covar = NULL){
 
 
   # Create SOM on scaled data
@@ -158,7 +168,8 @@ batch_correct <- function(preprocessed,
   # Run batch correction
   cat("Batch correcting data\n")
   corrected <- preprocessed %>%
-    correct_data(som_classes = som$unit.classif)
+    correct_data(som_classes = som$unit.classif,
+                 covar = covar)
   cat("Done!\n")
   return(corrected)
 }
