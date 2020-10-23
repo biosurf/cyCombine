@@ -30,7 +30,7 @@ compile_fcs <- function(data_dir,
     flowCore::read.flowSet(transformation = FALSE,
                            truncate_max_range = FALSE,
                            emptyValue = FALSE)
-  if(is.null(meta_data)) return(fcs_raw)
+  if(is.null(meta_filename)) return(fcs_raw)
 
   # Get metadata
   if(endsWith(meta_filename, suffix = ".xlsx")){
