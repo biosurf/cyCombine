@@ -134,7 +134,7 @@ correct_data <- function(df,
       return(ComBat_output)
     }) %>%
     dplyr::ungroup() %>%
-    dplyr::select(-som) %>%
+    # dplyr::select(-som) %>%
     # Reduce all negative values to zero
     dplyr::mutate_at(dplyr::vars(markers),
                      function(x) {
