@@ -48,6 +48,7 @@ plot_density <- function(uncorrected, corrected, markers = NULL, filename) {
     p[[c]] <- df %>%
       ggplot(aes_string(x = markers[c], y = "batch")) +
       ggridges::geom_density_ridges(aes(color = .data$Type, fill = .data$Type), alpha = 0.4) +
+      coord_cartesian(xlim = c(-1, 10)) +
       theme_bw()
   }
 
