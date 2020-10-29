@@ -8,7 +8,7 @@
 #' Density ridges for two sets
 #' @import ggplot2
 #' @export
-plot_density <- function(uncorrected, corrected, markers = NULL, filename) {
+plot_density <- function(uncorrected, corrected, markers = NULL, filename, y = "batch") {
 
   # Check for packages
   missing_package("ggridges", "CRAN")
@@ -25,12 +25,12 @@ plot_density <- function(uncorrected, corrected, markers = NULL, filename) {
   uncorrected <- uncorrected %>%
     dplyr::select(all_of(markers)) %>%
     dplyr::mutate(Type = "Uncorrected",
-                  batch = as.factor(uncorrected$batch))
+                  batch = as.factor(uncorrected[[y]]))
 
   df <- corrected %>%
     dplyr::select(all_of(markers)) %>%
     dplyr::mutate(Type = "Corrected",
-                  batch = as.factor(corrected$batch)) %>%
+                  batch = as.factor(corrected[[y]])) %>%
     dplyr::bind_rows(uncorrected)
 
 
@@ -49,6 +49,7 @@ plot_density <- function(uncorrected, corrected, markers = NULL, filename) {
       ggplot(aes_string(x = markers[c], y = "batch")) +
       ggridges::geom_density_ridges(aes(color = .data$Type, fill = .data$Type), alpha = 0.4) +
       coord_cartesian(xlim = c(-1, 10)) +
+      labs(y = y) +
       theme_bw()
   }
 

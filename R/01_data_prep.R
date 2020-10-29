@@ -53,6 +53,7 @@ compile_fcs <- function(data_dir,
     sample_ids <- basename(files) %>%
       stringr::str_remove(".fcs") %>%
       rep(flowCore::fsApply(fcs_raw, nrow))
+    sample_col <- "sample_ids"
   } else{
     sample_ids <- meta_data[[sample_col]][match(basename(files), meta_data[[filename_col]])] %>%
       rep(flowCore::fsApply(fcs_raw, nrow)) %>%
