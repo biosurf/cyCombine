@@ -48,20 +48,21 @@ compile_fcs <- function(data_dir,
     meta_data[[filename_col]] <- paste0(meta_data[[filename_col]], ".fcs")
   }
 
-  # Get sample names
+  # Get sample and batch ids
   if (is.null(sample_col)){
     sample_ids <- basename(files) %>%
       stringr::str_remove(".fcs") %>%
       rep(flowCore::fsApply(fcs_raw, nrow))
-    sample_col <- "sample_ids"
+    batch_ids <- meta_data[[batch_col]][match(sample_ids, stringr::str_remove(meta_data[[filename_col]], ".fcs"))] %>%
+      as.factor()
   } else{
     sample_ids <- meta_data[[sample_col]][match(basename(files), meta_data[[filename_col]])] %>%
       rep(flowCore::fsApply(fcs_raw, nrow)) %>%
       stringr::str_remove(".fcs")
+    batch_ids <- meta_data[[batch_col]][match(sample_ids, meta_data[[sample_col]])] %>%
+      as.factor()
   }
-  # Get batch ids
-  batch_ids <- meta_data[[batch_col]][match(sample_ids, meta_data[[sample_col]])] %>%
-    as.factor()
+
   return(list("fcs_raw" = fcs_raw,
               "sample_ids" = sample_ids,
               "batch_ids" = batch_ids))

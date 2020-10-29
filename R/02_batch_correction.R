@@ -26,14 +26,14 @@ scale_expr <- function(df){
 #'
 #' @family batch
 #' @export
-create_som <- function(scaled_expr,
+create_som <- function(df,
                        seed = 473,
                        xdim = 10,
                        ydim = 10){
   # 10x10 SOM grid on overlapping markers, extract clustering per cell
   cat("Creating SOM grid\n")
   set.seed(seed)
-  som <- scaled_expr %>%
+  som <- df %>%
     dplyr::select_if(colnames(.) %!in% non_markers) %>%
     as.matrix() %>%
     kohonen::som(grid = kohonen::somgrid(xdim = xdim,
