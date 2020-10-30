@@ -75,7 +75,7 @@ plot_dimred <- function(df, name, type = "pca", plot = "batch", marker = NULL, s
   Batch <- df$batch %>%
     as.factor()
   df <- df %>%
-    dplyr::select_if(names(.) %!in% c("batch", "sample", "covar", "id"))
+    dplyr::select_if(names(.) %!in% non_markers)
 
   if (type == "pca") {
     # Run PCA
@@ -89,7 +89,7 @@ plot_dimred <- function(df, name, type = "pca", plot = "batch", marker = NULL, s
         dplyr::mutate(Batch = as.factor(Batch))
       #cbind.data.frame(pca$x, as.factor(batch_ids)); colnames(df)[ncol(df)] <- "Batch"
     } else {
-      df <- cbind.data.frame(pca$x, as.factor(Batch), data[,marker]); colnames(df)[(ncol(df)-1):ncol(df)] <- c("Batch", marker)
+      df <- cbind.data.frame(pca$x, as.factor(Batch), data[, marker]); colnames(df)[(ncol(df)-1):ncol(df)] <- c("Batch", marker)
     }
 
   } else if (type == "umap") {
