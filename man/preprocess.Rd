@@ -6,14 +6,39 @@
 \usage{
 preprocess(
   data_dir,
-  meta_filename,
+  meta_filename = NULL,
+  sample_col = NULL,
+  batch_col = "Batch",
+  filename_col = "FCS_name",
+  pattern = "\\\\.fcs",
   markers,
   down_sample = TRUE,
-  sample_size = 1e+05,
+  sample_size = 5e+05,
   seed = 473,
   cofactor = 5
 )
 }
+\arguments{
+\item{data_dir}{Directory containing the .fcs files}
+
+\item{meta_filename}{Filename of the metadata file. If NULL, sample and batch ids are not predicted nor returned}
+
+\item{sample_col}{The column in the metadata filename containing the sample ids. If NULL, sample ids will be the file names}
+
+\item{batch_col}{The column in the metadata filename containing the sample ids}
+
+\item{pattern}{The pattern to use to find the files in the folder.}
+
+\item{markers}{The markers to transform on}
+
+\item{down_sample}{If TRUE, the output will be down-sampled to size sample_size}
+
+\item{sample_size}{The size to down-sample to}
+
+\item{seed}{The seed to use for down-sampling}
+
+\item{cofactor}{The cofactor to use when transforming}
+}
 \description{
-Preprocess a directory of .fcs files
+This is a wrapper function that takes you from a directory of .fcs files to a transformed dataframe.
 }

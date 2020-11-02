@@ -6,16 +6,23 @@
 \usage{
 compile_fcs(
   data_dir,
-  meta_filename,
+  meta_filename = NULL,
   sample_col = NULL,
   batch_col = "Batch",
-  filename_col = "FCS_name"
+  filename_col = "FCS_name",
+  pattern = "\\\\.fcs"
 )
 }
 \arguments{
 \item{data_dir}{Directory containing the .fcs files}
 
-\item{meta_filename}{Filename of the metadata file}
+\item{meta_filename}{Filename of the metadata file. If NULL, sample and batch ids are not predicted nor returned}
+
+\item{sample_col}{The column in the metadata filename containing the sample ids. If NULL, sample ids will be the file names}
+
+\item{batch_col}{The column in the metadata filename containing the sample ids}
+
+\item{pattern}{The pattern to use to find the files in the folder.}
 }
 \description{
 Compile all .fcs files in a directory to a flowset

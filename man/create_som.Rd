@@ -2,17 +2,27 @@
 % Please edit documentation in R/02_batch_correction.R
 \name{create_som}
 \alias{create_som}
-\title{Create SOM}
+\title{Create Self-Organizing Map}
 \usage{
-create_som(scaled_expr, seed = 473, xdim = 10, ydim = 10)
+create_som(df, seed = 473, xdim = 10, ydim = 10)
+}
+\arguments{
+\item{df}{Dataframe with expression values}
+
+\item{seed}{The seed to use when creating the SOM}
+
+\item{xdim}{The x-dimension size of the SOM}
+
+\item{ydim}{The y-dimension size of the SOM}
 }
 \description{
-Create SOM
+The function uses the kohonen package to create a Self-Organizing Map.
+It is used to segregate the cells for the batch correction to make the correction less affected
+by samples with high abundances of a particular cell type.
 }
 \seealso{
 Other batch: 
 \code{\link{batch_correct}()},
-\code{\link{correct_data_prev}()},
 \code{\link{correct_data}()},
 \code{\link{scale_expr}()}
 }

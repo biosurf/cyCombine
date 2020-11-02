@@ -9,11 +9,3 @@ correct_data_prev(df, som_classes)
 \description{
 Deprecated
 }
-\seealso{
-Other batch: 
-\code{\link{batch_correct}()},
-\code{\link{correct_data}()},
-\code{\link{create_som}()},
-\code{\link{scale_expr}()}
-}
-\concept{batch}

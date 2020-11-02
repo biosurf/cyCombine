@@ -3,6 +3,8 @@
 
 #' Compile all .fcs files in a directory to a flowset
 #'
+#'
+#'
 #' @importFrom readxl read_xlsx
 #' @importFrom readr read_csv
 #' @import dplyr
@@ -10,10 +12,10 @@
 #' @importFrom stringr str_remove
 #' @importFrom flowCore read.flowSet fsApply
 #' @param data_dir Directory containing the .fcs files
-#' @param meta_filename Filename of the metadata file. If NULL, sample and batch ids are not predicted and returned
+#' @param meta_filename Filename of the metadata file. If NULL, sample and batch ids are not predicted nor returned
 #' @param sample_col The column in the metadata filename containing the sample ids. If NULL, sample ids will be the file names
-#' @param batch_col The column in the metadata filename containing the sample ids.
-#' @param pattern The pattern to use to find the files in the folder. Default: "\\.fcs"
+#' @param batch_col The column in the metadata filename containing the sample ids
+#' @param pattern The pattern to use to find the files in the folder.
 #' @export
 compile_fcs <- function(data_dir,
                         meta_filename = NULL,
@@ -187,6 +189,8 @@ transform_asinh <- function(df, markers, cofactor = 5){
 
 
 #' Preprocess a directory of .fcs files
+#'
+#' This is a wrapper function that takes you from a directory of .fcs files to a transformed dataframe.
 #'
 #'
 #' @inheritParams compile_fcs

@@ -6,6 +6,13 @@
 \usage{
 transform_asinh(df, markers, cofactor = 5)
 }
+\arguments{
+\item{df}{The dataframe to transform}
+
+\item{markers}{The markers to transform on}
+
+\item{cofactor}{The cofactor to use when transforming}
+}
 \description{
 Transform data using asinh
 }

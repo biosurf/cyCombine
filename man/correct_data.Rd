@@ -4,15 +4,21 @@
 \alias{correct_data}
 \title{Correct data using ComBat}
 \usage{
-correct_data(df, som_classes)
+correct_data(df, som_classes, covar = NULL)
+}
+\arguments{
+\item{df}{Dataframe with expression values}
+
+\item{som_classes}{The classes as returned by the \code{\link{create_som}} function}
+
+\item{covar}{The covariate ComBat uses. If NULL, MAKE MORE FLEXIBLE!}
 }
 \description{
-Correct data using ComBat
+This function computes the batch correction on the preprocessed data using the ComBat algorithm.
 }
 \seealso{
 Other batch: 
 \code{\link{batch_correct}()},
-\code{\link{correct_data_prev}()},
 \code{\link{create_som}()},
 \code{\link{scale_expr}()}
 }

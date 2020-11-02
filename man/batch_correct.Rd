@@ -4,14 +4,25 @@
 \alias{batch_correct}
 \title{Run batch correction on preprocessed data}
 \usage{
-batch_correct(preprocessed, xdim = 10, ydim = 10, seed = 473)
+batch_correct(preprocessed, xdim = 10, ydim = 10, seed = 473, covar = NULL)
+}
+\arguments{
+\item{preprocessed}{The preprocessed dataframe to run batch correction on}
+
+\item{xdim}{The x-dimension size of the SOM}
+
+\item{ydim}{The y-dimension size of the SOM}
+
+\item{seed}{The seed to use when creating the SOM}
+
+\item{covar}{The covariate ComBat uses. If NULL, MAKE MORE FLEXIBLE!}
 }
 \description{
-Run batch correction on preprocessed data
+This is a wrapper function for the cyCombine batch correction workflow.
+To run the workflow manually, type "batch_correct" to see the source code of this wrapper and follow along.
 }
 \seealso{
 Other batch: 
-\code{\link{correct_data_prev}()},
 \code{\link{correct_data}()},
 \code{\link{create_som}()},
 \code{\link{scale_expr}()}

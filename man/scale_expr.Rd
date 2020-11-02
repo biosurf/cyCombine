@@ -7,15 +7,15 @@
 scale_expr(df)
 }
 \arguments{
-\item{df}{Data.frame with expression values}
+\item{df}{Dataframe with expression values}
 }
 \description{
-Batch-wise scaling of data
+This function scales the data in a batch-wise manner.
+The purpose is to minimize the impact of batch correction when clustering the data prior to batch correction.
 }
 \seealso{
 Other batch: 
 \code{\link{batch_correct}()},
-\code{\link{correct_data_prev}()},
 \code{\link{correct_data}()},
 \code{\link{create_som}()}
 }

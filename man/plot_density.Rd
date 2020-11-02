@@ -4,7 +4,14 @@
 \alias{plot_density}
 \title{Density ridges for two sets}
 \usage{
-plot_density(uncorrected, corrected, markers = NULL, filename)
+plot_density(
+  uncorrected,
+  corrected,
+  markers = NULL,
+  filename,
+  y = "batch",
+  xlim = 10
+)
 }
 \description{
 Density ridges for two sets

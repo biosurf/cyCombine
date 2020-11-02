@@ -13,6 +13,19 @@ convert_flowset(
   seed = 473
 )
 }
+\arguments{
+\item{flowset}{The flowset to convert}
+
+\item{sample_ids}{Vector containing the sample ids}
+
+\item{batch_ids}{Vector containing the batch ids}
+
+\item{down_sample}{If TRUE, the output will be down-sampled to size sample_size}
+
+\item{sample_size}{The size to down-sample to}
+
+\item{seed}{The seed to use for down-sampling}
+}
 \description{
 Convert a flowset into a workable dataframe
 }

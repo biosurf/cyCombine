@@ -3,7 +3,10 @@
 
 #' Batch-wise scaling of data
 #'
-#' @param df Data.frame with expression values
+#' This function scales the data in a batch-wise manner.
+#'   The purpose is to minimize the impact of batch correction when clustering the data prior to batch correction.
+#'
+#' @param df Dataframe with expression values
 #' @family batch
 #' @export
 scale_expr <- function(df){
@@ -20,10 +23,17 @@ scale_expr <- function(df){
 }
 
 
-#' Create SOM
+#' Create Self-Organizing Map
+#'
+#' The function uses the kohonen package to create a Self-Organizing Map.
+#'   It is used to segregate the cells for the batch correction to make the correction less affected
+#'  by samples with high abundances of a particular cell type.
 #'
 #' @importFrom kohonen som somgrid
-#'
+#' @inheritParams scale_expr
+#' @param seed The seed to use when creating the SOM
+#' @param xdim The x-dimension size of the SOM
+#' @param ydim The y-dimension size of the SOM
 #' @family batch
 #' @export
 create_som <- function(df,
@@ -49,9 +59,8 @@ create_som <- function(df,
 #'
 #' Deprecated
 #' @importFrom sva ComBat
-#' @family batch
 correct_data_prev <- function(df,
-                         som_classes){
+                              som_classes){
   # Create copy dataset
   corrected_data <- df %>%
     dplyr::mutate(covar = "")
@@ -90,8 +99,13 @@ correct_data_prev <- function(df,
 
 #' Correct data using ComBat
 #'
+#' This function computes the batch correction on the preprocessed data using the ComBat algorithm.
+#'
 #' @importFrom sva ComBat
 #' @importFrom stats model.matrix
+#' @param som_classes The classes as returned by the \code{\link{create_som}} function
+#' @param covar The covariate ComBat uses. If NULL, MAKE MORE FLEXIBLE!
+#' @inheritParams scale_expr
 #' @family batch
 #' @export
 correct_data <- function(df,
@@ -149,7 +163,12 @@ correct_data <- function(df,
 
 #' Run batch correction on preprocessed data
 #'
+#' This is a wrapper function for the cyCombine batch correction workflow.
+#'   To run the workflow manually, type "batch_correct" to see the source code of this wrapper and follow along.
 #'
+#' @inheritParams create_som
+#' @inheritParams correct_data
+#' @param preprocessed The preprocessed dataframe to run batch correction on
 #' @family batch
 #' @export
 batch_correct <- function(preprocessed,
@@ -158,13 +177,13 @@ batch_correct <- function(preprocessed,
                           seed = 473,
                           covar = NULL){
 
-
   # Create SOM on scaled data
   som <- preprocessed %>%
     scale_expr() %>%
     create_som(seed = seed,
                xdim = xdim,
                ydim = ydim)
+
   # Run batch correction
   cat("Batch correcting data\n")
   corrected <- preprocessed %>%
