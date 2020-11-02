@@ -10,16 +10,20 @@
 #' @importFrom stringr str_remove
 #' @importFrom flowCore read.flowSet fsApply
 #' @param data_dir Directory containing the .fcs files
-#' @param meta_filename Filename of the metadata file
+#' @param meta_filename Filename of the metadata file. If NULL, sample and batch ids are not predicted and returned
+#' @param sample_col The column in the metadata filename containing the sample ids. If NULL, sample ids will be the file names
+#' @param batch_col The column in the metadata filename containing the sample ids.
+#' @param pattern The pattern to use to find the files in the folder. Default: "\\.fcs"
 #' @export
 compile_fcs <- function(data_dir,
                         meta_filename = NULL,
                         sample_col = NULL,
                         batch_col = "Batch",
-                        filename_col = "FCS_name"){
+                        filename_col = "FCS_name",
+                        pattern = "\\.fcs"){
   # Specifying files to use
   files <- list.files(data_dir,
-                      pattern="\\.fcs",
+                      pattern = pattern,
                       recursive = FALSE,
                       full.names = TRUE)
   cat("Read", length(files), "file names to process", "\n",
@@ -79,6 +83,14 @@ compile_fcs <- function(data_dir,
 #' @importFrom stringr str_remove_all
 #' @importFrom Biobase exprs pData
 #' @importFrom flowCore parameters
+#'
+#' @param flowset The flowset to convert
+#' @param sample_ids Vector containing the sample ids
+#' @param batch_ids Vector containing the batch ids
+#' @param down_sample If TRUE, the output will be down-sampled to size sample_size
+#' @param sample_size The size to down-sample to
+#' @param seed The seed to use for down-sampling
+#'
 #' @export
 convert_flowset <- function(flowset,
                             sample_ids,
@@ -153,7 +165,9 @@ fcs_sample <- function(flowframe, sample, nrows, seed = 473){
 #### Data transformation ----
 
 #' Transform data using asinh
-#'
+#' @param df The dataframe to transform
+#' @param markers The markers to transform on
+#' @param cofactor The cofactor to use when transforming
 #' @family preprocess
 #' @export
 transform_asinh <- function(df, markers, cofactor = 5){
@@ -174,12 +188,20 @@ transform_asinh <- function(df, markers, cofactor = 5){
 
 #' Preprocess a directory of .fcs files
 #'
+#'
+#' @inheritParams compile_fcs
+#' @inheritParams convert_flowset
+#' @inheritParams transform_asinh
 #' @export
 preprocess <- function(data_dir,
-                       meta_filename,
+                       meta_filename = NULL,
+                       sample_col = NULL,
+                       batch_col = "Batch",
+                       filename_col = "FCS_name",
+                       pattern = "\\.fcs",
                        markers,
                        down_sample = TRUE,
-                       sample_size = 100000,
+                       sample_size = 500000,
                        seed = 473,
                        cofactor = 5){
   if(class(data_dir) != "character"){
@@ -188,12 +210,16 @@ preprocess <- function(data_dir,
                sep = "\n"))
   }
   # Compile directory to flowset
-  raw_flowset <- data_dir %>%
-    compile_fcs(meta_filename = meta_filename)
+  fcs <- data_dir %>%
+    compile_fcs(meta_filename = meta_filename,
+                sample_col = sample_col,
+                batch_col = batch_col,
+                filename_col = filename_col,
+                pattern = pattern)
   # Convert flowset to dataframe
-  fcs_data <- raw_flowset$fcs_raw %>%
-    convert_flowset(batch_ids = raw_flowset$batch_ids,
-                    sample_ids = raw_flowset$sample_ids,
+  fcs_data <- fcs$fcs_raw %>%
+    convert_flowset(batch_ids = fcs$batch_ids,
+                    sample_ids = fcs$sample_ids,
                     down_sample = down_sample,
                     sample_size = sample_size,
                     seed = seed) %>%
