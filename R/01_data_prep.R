@@ -95,23 +95,28 @@ compile_fcs <- function(data_dir,
 #'
 #' @export
 convert_flowset <- function(flowset,
-                            sample_ids,
-                            batch_ids,
+                            sample_ids = NULL,
+                            batch_ids = NULL,
                             down_sample = TRUE,
                             sample_size = 100000,
                             seed = 473){
   # Down sampling setup
   if(down_sample){
+    # To down sample within fsApply
+    nrows <- flowCore::fsApply(flowset, nrow)
+    tot_nrows <- sum(nrows)
     cat("Down sampling to", sample_size, "samples\n",
                          sep = " ")
     set.seed(seed)
-    sample <- sample(1:length(sample_ids), sample_size) %>%
+    sample <- sample(1:tot_nrows, sample_size) %>%
       # Sorting here enables major resource savings when down-sampling
       sort()
-    sample_ids <- sample_ids[sample]
-    batch_ids <- batch_ids[sample]
-    # To down sample within fsApply
-    nrows <- flowCore::fsApply(flowset, nrow)
+    if(!is.null(sample_ids) & !is.null(batch_ids)){
+      sample_ids <- sample_ids[sample]
+      batch_ids <- batch_ids[sample]
+    }
+
+
   }
 
   cat("Extracting expression data and adding sample and batch labels", "\n")
@@ -120,12 +125,7 @@ convert_flowset <- function(flowset,
                                                 sample = sample,
                                                 nrows = nrows),
                 ~ flowCore::fsApply(., Biobase::exprs)) %>%
-    tibble::as_tibble() %>%
-    dplyr::mutate(batch = batch_ids,
-                  sample = sample_ids,
-                  id = 1:nrow(.))
-  # {if(down_sample) {set.seed(seed); sample_n(., sample_size)} else .}
-
+    tibble::as_tibble()
 
   # Clean column names
   col_names <- flowset[[1]] %>%
@@ -135,7 +135,20 @@ convert_flowset <- function(flowset,
     stringr::str_remove_all("[ -]") %>%
     stringr::str_remove_all("\\d+[A-Za-z]+_")
 
-  colnames(fcs_data) <- c(col_names, "batch", "sample", "id")
+
+  if(!is.null(sample_ids) & !is.null(batch_ids)){
+    fcs_data <- fcs_data %>%
+      dplyr::mutate(batch = batch_ids,
+                    sample = sample_ids,
+                    id = 1:nrow(.))
+    colnames(fcs_data) <- c(col_names, "batch", "sample", "id")
+  } else{
+    fcs_data <- fcs_data %>%
+      dplyr::mutate(id = 1:nrow(.))
+    colnames(fcs_data) <- c(col_names, "id")
+  }
+  # {if(down_sample) {set.seed(seed); sample_n(., sample_size)} else .}
+
   cat("Your flowset is now converted into a dataframe.\n")
   return(fcs_data)
 }
