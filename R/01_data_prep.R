@@ -119,7 +119,7 @@ convert_flowset <- function(flowset,
 
   }
 
-  cat("Extracting expression data and adding sample and batch labels", "\n")
+  cat("Extracting expression data\n")
   fcs_data <- flowset %>%
     purrr::when(down_sample ~ flowCore::fsApply(., fcs_sample,
                                                 sample = sample,
@@ -128,10 +128,23 @@ convert_flowset <- function(flowset,
     tibble::as_tibble()
 
   # Clean column names
-  col_names <- flowset[[1]] %>%
+  pdat <- flowset[[1]] %>%
     flowCore::parameters() %>%
-    Biobase::pData() %>%
+    Biobase::pData()
+
+  # Remove nans
+  nas <- pdat$desc[1:10] %>%
+    is.na() %>%
+    which()
+  if(length(nas) > 0){
+    to_remove <- pdat$name[nas]
+    fcs_data <- fcs_data %>%
+      dplyr::select(-all_of(to_remove))
+  }
+
+  col_names <- pdat %>%
     dplyr::pull(desc) %>%
+    .[!is.na(.)] %>%
     stringr::str_remove_all("[ -]") %>%
     stringr::str_remove_all("\\d+[A-Za-z]+_")
 
