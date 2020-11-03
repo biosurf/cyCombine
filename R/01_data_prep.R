@@ -74,6 +74,10 @@ compile_fcs <- function(data_dir,
               "batch_ids" = batch_ids))
 }
 
+
+
+
+
 # Load data - the loaded contains objects "fcs_raw", "sample_ids",
 # "batch_ids", "all_markers", which are the raw flowSet, sample ids per row, batch
 # ids per row and all measured markers in the panel
@@ -99,7 +103,8 @@ convert_flowset <- function(flowset,
                             batch_ids = NULL,
                             down_sample = TRUE,
                             sample_size = 100000,
-                            seed = 473){
+                            seed = 473,
+                            panel = NULL){
   # Down sampling setup
   if(down_sample){
     # To down sample within fsApply
@@ -128,26 +133,23 @@ convert_flowset <- function(flowset,
     tibble::as_tibble()
 
   # Clean column names
-  pdat <- flowset[[1]] %>%
-    flowCore::parameters() %>%
-    Biobase::pData()
+  if (!is.null(panel)){
+    cols <- match(colnames(fcs_data), panel$fcs_colname) %>%
+      .[!is.na(.)]
+    col_names <- panel$antigen[cols] %>%
+      stringr::str_remove_all("[ -]") %>%
+      stringr::str_remove_all("\\d+[A-Za-z]+_")
 
-  # Remove nans
-  nas <- pdat$desc %>%
-    is.na() %>%
-    which()
-  if(length(nas) > 0){
-    to_remove <- pdat$name[nas]
     fcs_data <- fcs_data %>%
-      dplyr::select(-all_of(to_remove))
+      dplyr::select(dplyr::all_of(panel$fcs_colname))
+  }else{
+    col_names <- flowset[[1]] %>%
+      flowCore::parameters() %>%
+      Biobase::pData() %>%
+      dplyr::pull(desc) %>%
+      stringr::str_remove_all("[ -]") %>%
+      stringr::str_remove_all("\\d+[A-Za-z]+_")
   }
-
-  col_names <- pdat %>%
-    dplyr::pull(desc) %>%
-    .[!is.na(.)] %>%
-    stringr::str_remove_all("[ -]") %>%
-    stringr::str_remove_all("\\d+[A-Za-z]+_")
-
 
   if(!is.null(sample_ids) & !is.null(batch_ids)){
     fcs_data <- fcs_data %>%
@@ -160,11 +162,14 @@ convert_flowset <- function(flowset,
       dplyr::mutate(id = 1:nrow(.))
     colnames(fcs_data) <- c(col_names, "id")
   }
-  # {if(down_sample) {set.seed(seed); sample_n(., sample_size)} else .}
+
 
   cat("Your flowset is now converted into a dataframe.\n")
   return(fcs_data)
 }
+
+
+
 
 #' Extract from a flowset given a sample of indices
 #'
