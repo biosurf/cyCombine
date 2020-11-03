@@ -133,7 +133,7 @@ convert_flowset <- function(flowset,
     Biobase::pData()
 
   # Remove nans
-  nas <- pdat$desc[1:10] %>%
+  nas <- pdat$desc %>%
     is.na() %>%
     which()
   if(length(nas) > 0){
