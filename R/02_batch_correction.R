@@ -110,10 +110,14 @@ correct_data_prev <- function(df,
 #' @export
 correct_data <- function(df,
                          som_classes,
-                         covar = NULL){
-  # Get markers
-  markers <- df %>%
-    cyCombine::get_markers()
+                         covar = NULL,
+                         markers = NULL){
+  if (is.null(markers)){
+    # Get markers
+    markers <- df %>%
+      cyCombine::get_markers()
+  }
+
 
   if(is.null(covar)){
     df <- df %>%
