@@ -115,11 +115,11 @@ compute_emd <- function(df, binSize = 0.1, cell_col = "label", batch_col = "batc
           batch2 <- batches[j]
           A <- matrix(distr[[batch1]][[cellType]][,marker])
           B <- matrix(distr[[batch2]][[cellType]][,marker])
-          if(sum(A) < 300 | sum(B) < 300){
-            distances[[cellType]][[marker]][batch1, batch2] <- NA
-          } else{
-            distances[[cellType]][[marker]][batch1, batch2] <- emdist::emd2d(A, B)
-          }
+          # if(sum(A) < 300 | sum(B) < 300){
+          #   distances[[cellType]][[marker]][batch1, batch2] <- NA
+          # } else{
+          distances[[cellType]][[marker]][batch1, batch2] <- emdist::emd2d(A, B)
+          # }
 
         }
       }
