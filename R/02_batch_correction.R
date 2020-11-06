@@ -179,7 +179,8 @@ batch_correct <- function(preprocessed,
                           xdim = 10,
                           ydim = 10,
                           seed = 473,
-                          covar = NULL){
+                          covar = NULL,
+                          markers = NULL){
 
   # Create SOM on scaled data
   som <- preprocessed %>%
@@ -192,7 +193,8 @@ batch_correct <- function(preprocessed,
   cat("Batch correcting data\n")
   corrected <- preprocessed %>%
     correct_data(som_classes = som$unit.classif,
-                 covar = covar)
+                 covar = covar,
+                 markers = markers)
   cat("Done!\n")
   return(corrected)
 }
