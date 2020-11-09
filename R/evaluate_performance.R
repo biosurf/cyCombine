@@ -39,14 +39,20 @@ evaluate_lisi <- function(df, batch_col = "batch", cell_col = "label", perplexit
 
 #' Compute EMD
 #' @export
-compute_emd <- function(df, binSize = 0.1, cell_col = "label", batch_col = "batch"){
+compute_emd <- function(df,
+                        binSize = 0.1,
+                        cell_col = "label",
+                        batch_col = "batch",
+                        markers = NULL){
 
   # Check for package
   missing_package("emdist", "CRAN")
 
+  if(is.null(markers)){
+    markers <- df %>%
+      get_markers()
+  }
 
-  markers <- df %>%
-    get_markers()
   batches <- df %>%
     dplyr::pull(batch_col) %>%
     unique() %>%
@@ -113,8 +119,8 @@ compute_emd <- function(df, binSize = 0.1, cell_col = "label", batch_col = "batc
         batch1 <- batches[i]
         for (j in seq(i + 1, length(batches))) {
           batch2 <- batches[j]
-          A <- matrix(distr[[batch1]][[cellType]][,marker])
-          B <- matrix(distr[[batch2]][[cellType]][,marker])
+          A <- matrix(distr[[batch1]][[cellType]][, marker])
+          B <- matrix(distr[[batch2]][[cellType]][, marker])
           # if(sum(A) < 300 | sum(B) < 300){
           #   distances[[cellType]][[marker]][batch1, batch2] <- NA
           # } else{
@@ -140,7 +146,11 @@ compute_emd <- function(df, binSize = 0.1, cell_col = "label", batch_col = "batc
 #' Evaluate EMD
 #' @importFrom tidyr pivot_longer
 #' @export
-evaluate_emd <- function(preprocessed, corrected, cell_col = "label", batch_col = "batch"){
+evaluate_emd <- function(preprocessed,
+                         corrected,
+                         cell_col = "label",
+                         batch_col = "batch",
+                         markers = NULL){
 
   # Check for package
   missing_package("emdist", "CRAN")
@@ -167,8 +177,10 @@ evaluate_emd <- function(preprocessed, corrected, cell_col = "label", batch_col 
     unique() %>%
     sort()
 
-  markers <- corrected %>%
-    get_markers()
+  if(is.null(markesr)){
+    markers <- corrected %>%
+      get_markers()
+  }
   cat("Computing reduction in emd\n")
   reduction <- matrix(NA, nrow = length(cellTypes), ncol = length(markers),
                       dimnames = list(cellTypes, markers))

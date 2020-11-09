@@ -139,7 +139,7 @@ correct_data <- function(df,
     dplyr::group_modify(function(df, ...){
 
       ComBat_output <- df %>%
-        dplyr::select_if(colnames(.) %!in% non_markers) %>%
+        dplyr::select(all_of(markers)) %>%
         t() %>%
         # The as.character is to remove factor levels not present in the SOM node
         sva::ComBat(batch = as.character(df$batch), mod = stats::model.matrix(~df$covar)) %>%
