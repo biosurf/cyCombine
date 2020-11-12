@@ -10,7 +10,7 @@
 #' @family batch
 #' @export
 scale_expr <- function(df){
-  cat("Scaling expression data\n")
+  message("Scaling expression data")
   # Get markers
   markers <- df %>%
     cyCombine::get_markers()
@@ -38,10 +38,10 @@ scale_expr <- function(df){
 #' @export
 create_som <- function(df,
                        seed = 473,
-                       xdim = 10,
-                       ydim = 10){
+                       xdim = 8,
+                       ydim = 8){
   # 10x10 SOM grid on overlapping markers, extract clustering per cell
-  cat("Creating SOM grid\n")
+  message("Creating SOM grid...")
   set.seed(seed)
   som <- df %>%
     dplyr::select_if(colnames(.) %!in% non_markers) %>%
@@ -112,6 +112,7 @@ correct_data <- function(df,
                          som_classes,
                          covar = NULL,
                          markers = NULL){
+  message("Batch correcting data...")
   if (is.null(markers)){
     # Get markers
     markers <- df %>%
@@ -132,17 +133,27 @@ correct_data <- function(df,
       dplyr::mutate(som = som_classes,
                     covar = as.factor(covar))
   }
-
+  msg = c()
   corrected_data <- df %>%
     dplyr::group_by(som) %>%
     # Run ComBat on each SOM class
-    dplyr::group_modify(function(df, ...){
+    dplyr::group_modify(keep = TRUE, function(df, ...){
+      num_batches <- df$batch %>%
+        unique() %>%
+        length()
+      if(num_batches == 1){
+        som <- df$som[1]
+        batch <- df$batch[1]
+        message(paste("SOM node", som, "only contains cells from batch", batch))
+        return(df)
+      }
+
 
       ComBat_output <- df %>%
         dplyr::select(all_of(markers)) %>%
         t() %>%
         # The as.character is to remove factor levels not present in the SOM node
-        sva::ComBat(batch = as.character(df$batch), mod = stats::model.matrix(~df$covar)) %>%
+        suppressMessages(sva::ComBat(batch = as.character(df$batch), mod = stats::model.matrix(~df$covar))) %>%
         t() %>%
         tibble::as_tibble() %>%
         dplyr::mutate(batch = df$batch,
@@ -176,8 +187,8 @@ correct_data <- function(df,
 #' @family batch
 #' @export
 batch_correct <- function(preprocessed,
-                          xdim = 10,
-                          ydim = 10,
+                          xdim = 8,
+                          ydim = 8,
                           seed = 473,
                           covar = NULL,
                           markers = NULL){
@@ -190,12 +201,12 @@ batch_correct <- function(preprocessed,
                ydim = ydim)
 
   # Run batch correction
-  cat("Batch correcting data\n")
+
   corrected <- preprocessed %>%
     correct_data(som_classes = som$unit.classif,
                  covar = covar,
                  markers = markers)
-  cat("Done!\n")
+  message("Done!")
   return(corrected)
 }
 

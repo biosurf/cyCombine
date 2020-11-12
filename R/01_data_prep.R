@@ -28,8 +28,7 @@ compile_fcs <- function(data_dir,
                       pattern = pattern,
                       recursive = FALSE,
                       full.names = TRUE)
-  cat("Read", length(files), "file names to process", "\n",
-              sep = " ")
+  message(paste("Read", length(files), "file names to process"))
 
     # Read all the data files
   fcs_raw <- files %>%
@@ -110,8 +109,7 @@ convert_flowset <- function(flowset,
     # To down sample within fsApply
     nrows <- flowCore::fsApply(flowset, nrow)
     tot_nrows <- sum(nrows)
-    cat("Down sampling to", sample_size, "samples\n",
-                         sep = " ")
+    message(paste("Down sampling to", sample_size, "samples"))
     set.seed(seed)
     sample <- sample(1:tot_nrows, sample_size) %>%
       # Sorting here enables major resource savings when down-sampling
@@ -124,7 +122,7 @@ convert_flowset <- function(flowset,
 
   }
 
-  cat("Extracting expression data\n")
+  message("Extracting expression data")
   fcs_data <- flowset %>%
     purrr::when(down_sample ~ flowCore::fsApply(., fcs_sample,
                                                 sample = sample,
@@ -164,7 +162,7 @@ convert_flowset <- function(flowset,
   }
 
 
-  cat("Your flowset is now converted into a dataframe.\n")
+  message("Your flowset is now converted into a dataframe.")
   return(fcs_data)
 }
 
@@ -204,7 +202,7 @@ fcs_sample <- function(flowframe, sample, nrows, seed = 473){
 #' @family preprocess
 #' @export
 transform_asinh <- function(df, markers, cofactor = 5){
-  cat("Transforming data using asinh with a cofactor of", cofactor, "\n")
+  message(paste("Transforming data using asinh with a cofactor of", cofactor))
   transformed <- df %>%
     # Select markers of interest
     dplyr::select(dplyr::all_of(c(markers, "batch", "sample", "id"))) %>%
@@ -261,7 +259,7 @@ preprocess <- function(data_dir,
     # Transform dataset with asinh
     transform_asinh(markers = markers,
                     cofactor = cofactor)
-  cat("Done!\n")
+  message("Done!")
   return(fcs_data)
 }
 
