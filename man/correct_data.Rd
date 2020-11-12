@@ -4,7 +4,7 @@
 \alias{correct_data}
 \title{Correct data using ComBat}
 \usage{
-correct_data(df, som_classes, covar = NULL)
+correct_data(df, som_classes, covar = NULL, markers = NULL)
 }
 \arguments{
 \item{df}{Dataframe with expression values}

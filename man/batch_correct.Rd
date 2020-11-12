@@ -4,7 +4,14 @@
 \alias{batch_correct}
 \title{Run batch correction on preprocessed data}
 \usage{
-batch_correct(preprocessed, xdim = 10, ydim = 10, seed = 473, covar = NULL)
+batch_correct(
+  preprocessed,
+  xdim = 8,
+  ydim = 8,
+  seed = 473,
+  covar = NULL,
+  markers = NULL
+)
 }
 \arguments{
 \item{preprocessed}{The preprocessed dataframe to run batch correction on}

@@ -4,7 +4,13 @@
 \alias{compute_emd}
 \title{Compute EMD}
 \usage{
-compute_emd(df, binSize = 0.1, cell_col = "label", batch_col = "batch")
+compute_emd(
+  df,
+  binSize = 0.1,
+  cell_col = "label",
+  batch_col = "batch",
+  markers = NULL
+)
 }
 \description{
 Compute EMD

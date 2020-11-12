@@ -6,11 +6,12 @@
 \usage{
 convert_flowset(
   flowset,
-  sample_ids,
-  batch_ids,
+  sample_ids = NULL,
+  batch_ids = NULL,
   down_sample = TRUE,
   sample_size = 1e+05,
-  seed = 473
+  seed = 473,
+  panel = NULL
 )
 }
 \arguments{

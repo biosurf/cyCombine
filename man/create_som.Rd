@@ -4,7 +4,7 @@
 \alias{create_som}
 \title{Create Self-Organizing Map}
 \usage{
-create_som(df, seed = 473, xdim = 10, ydim = 10)
+create_som(df, seed = 473, xdim = 8, ydim = 8)
 }
 \arguments{
 \item{df}{Dataframe with expression values}
