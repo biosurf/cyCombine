@@ -133,11 +133,13 @@ correct_data <- function(df,
       dplyr::mutate(som = som_classes,
                     covar = as.factor(covar))
   }
-  msg = c()
+
   corrected_data <- df %>%
     dplyr::group_by(som) %>%
     # Run ComBat on each SOM class
     dplyr::group_modify(.keep = TRUE, function(df, ...){
+
+      # Detect if only one batch is present in the node
       num_batches <- df$batch %>%
         unique() %>%
         length()
@@ -153,7 +155,7 @@ correct_data <- function(df,
         dplyr::select(all_of(markers)) %>%
         t() %>%
         # The as.character is to remove factor levels not present in the SOM node
-        suppressMessages(sva::ComBat(batch = as.character(df$batch), mod = stats::model.matrix(~df$covar))) %>%
+        sva::ComBat(batch = as.character(df$batch), mod = stats::model.matrix(~df$covar)) %>%
         t() %>%
         tibble::as_tibble() %>%
         dplyr::mutate(batch = df$batch,
