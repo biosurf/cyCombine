@@ -75,7 +75,7 @@ plot_dimred <- function(df, name, type = "pca", plot = "batch", marker = NULL, s
   Batch <- df$batch %>%
     as.factor()
   df <- df %>%
-    dplyr::select_if(names(.) %!in% non_markers)
+    dplyr::select_if(colnames(.) %!in% non_markers)
 
   if (type == "pca") {
     # Run PCA

@@ -177,7 +177,7 @@ evaluate_emd <- function(preprocessed,
     unique() %>%
     sort()
 
-  if(is.null(markesr)){
+  if(is.null(markers)){
     markers <- corrected %>%
       get_markers()
   }

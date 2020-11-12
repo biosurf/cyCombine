@@ -137,7 +137,7 @@ correct_data <- function(df,
   corrected_data <- df %>%
     dplyr::group_by(som) %>%
     # Run ComBat on each SOM class
-    dplyr::group_modify(keep = TRUE, function(df, ...){
+    dplyr::group_modify(.keep = TRUE, function(df, ...){
       num_batches <- df$batch %>%
         unique() %>%
         length()
