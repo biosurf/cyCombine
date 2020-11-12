@@ -9,11 +9,12 @@ run_analysis(
   data,
   data_dir,
   variant = NULL,
+  restart = FALSE,
   md = NULL,
   panel = NULL,
   markers = NULL,
   celltype_col = NULL,
-  segment = NULL,
+  segment = "",
   gridsize = 8,
   seed = 473
 )
@@ -26,6 +27,8 @@ run_analysis(
 \item{data_dir}{The location of the preprocessed and corrected data}
 
 \item{variant}{Optional: A parameter to set a variant name of an experiment}
+
+\item{restart}{If TRUE, the SOM grid will be calculated even if it has been computed and stored previously}
 
 \item{md}{Optional: Metadata filename. Currently not useful}
 

@@ -5,6 +5,7 @@
 #' @param data The name of the data used
 #' @param data_dir The location of the preprocessed and corrected data
 #' @param variant Optional: A parameter to set a variant name of an experiment
+#' @param restart If TRUE, the SOM grid will be calculated even if it has been computed and stored previously
 #' @param md Optional: Metadata filename. Currently not useful
 #' @param panel Optional: If given, it will be used to define markers. Otherwise the function \code{\link{get_markers}} will be used
 #' @param markers Optional: Manually define markers to use in plots and performance metrics
@@ -27,11 +28,12 @@ run_analysis <- function(tool,
                          data,
                          data_dir,
                          variant = NULL,
+                         restart = FALSE,
                          md = NULL,
                          panel = NULL,
                          markers = NULL,
                          celltype_col = NULL,
-                         segment = NULL,
+                         segment = "",
                          gridsize = 8,
                          seed = 473){
 
@@ -80,11 +82,11 @@ run_analysis <- function(tool,
   }
 
 
-  if(!is.null(segment) & segment == "emd"){
+  if(segment %in% c("", "emd")){
 
     if(is.null(celltype_col)){
       # Cluster and add labels
-      if (file.exists(paste0(projdir, "_som.Rdata"))){
+      if (file.exists(paste0(projdir, "_som.Rdata")) & !restart){
         message("Loading SOMgrid..")
         load(paste0(projdir, "_som.Rdata"))
       }else{
@@ -111,13 +113,12 @@ run_analysis <- function(tool,
 
 
 
+  # Plotting ----
+  if (!dir.exists("figs")){
+    dir.create("figs")
+  }
+  if(segment %in% c("", "density")){
 
-  if(!is.null(segment) & segment == "density"){
-
-    # Plotting ----
-    if (!dir.exists("figs")){
-      dir.create("figs")
-    }
     message("Creating density plots..")
     # Density plots
     suppressMessages(
@@ -135,7 +136,7 @@ run_analysis <- function(tool,
   #              y = "label")
   # )
   # UMAP
-  if(!is.null(segment) & segment == "umap"){
+  if(segment %in% c("", "umap")){
     message("Creating UMAPs..")
     # Down-sample
     set.seed(seed)
@@ -157,7 +158,7 @@ run_analysis <- function(tool,
   }
 
   # Evaluate ----
-  if(!is.null(segment) & segment == "emd"){
+  if(segment %in% c("", "emd")){
     message("Evaluating Earth Movers Distance..")
     emd_val <- preprocessed %>%
       cyCombine::evaluate_emd(corrected)
