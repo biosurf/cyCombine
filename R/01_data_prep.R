@@ -59,13 +59,15 @@ compile_fcs <- function(data_dir,
       stringr::str_remove(".fcs") %>%
       rep(flowCore::fsApply(fcs_raw, nrow))
     batch_ids <- meta_data[[batch_col]][match(sample_ids, stringr::str_remove(meta_data[[filename_col]], ".fcs"))] %>%
-      as.factor()
+      as.factor() %>%
+      rep(flowCore::fsApply(fcs_raw, nrow))
   } else{
     sample_ids <- meta_data[[sample_col]][match(basename(files), meta_data[[filename_col]])] %>%
       rep(flowCore::fsApply(fcs_raw, nrow)) %>%
       stringr::str_remove(".fcs")
     batch_ids <- meta_data[[batch_col]][match(basename(files), meta_data[[filename_col]])] %>%
-      as.factor()
+      as.factor() %>%
+      rep(flowCore::fsApply(fcs_raw, nrow))
   }
 
   return(list("fcs_raw" = fcs_raw,
