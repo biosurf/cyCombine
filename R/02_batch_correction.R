@@ -141,17 +141,19 @@ correct_data <- function(df,
 
 
   if(is.null(covar)){
+
+  }else if(class(covar) == "character" & length(covar) == 1){
+    df <- df %>%
+      dplyr::mutate(som = som_classes,
+                    covar = df[[covar]] %>%
+                      as.factor())
+  } else if(covar == "sample"){
     df <- df %>%
       dplyr::mutate(som = som_classes,
                     # Determine covariate
                     covar = case_when(stringr::str_starts(string = sample,
                                                           pattern = "HD") ~ "HD",
                                       TRUE ~ "CLL") %>%
-                      as.factor())
-  }else if(class(covar) == "character" & length(covar) == 1){
-    df <- df %>%
-      dplyr::mutate(som = som_classes,
-                    covar = df[[covar]] %>%
                       as.factor())
   } else{
     df <- df %>%
@@ -174,19 +176,28 @@ correct_data <- function(df,
         message(paste("SOM node", som, "only contains cells from batch", batch))
         return(df)
       }
+      if(!is.null(covar)){
+        num_covar <- df$covar %>%
+          unique() %>%
+          length()
+      }else{
+        num_covar == 0
+      }
 
 
       ComBat_output <- df %>%
         dplyr::select(all_of(markers)) %>%
         t() %>%
         # The as.character is to remove factor levels not present in the SOM node
-        sva::ComBat(batch = as.character(df$batch), mod = stats::model.matrix(~df$covar)) %>%
+        purrr::when(num_covar == 1 ~ sva::ComBat(., batch = as.character(df$batch)),
+                    num_covar > 1 ~ sva::ComBat(., batch = as.character(df$batch), mod = stats::model.matrix(~df$covar))
+                    ) %>%
         t() %>%
         tibble::as_tibble() %>%
         dplyr::mutate(batch = df$batch,
                       sample = df$sample,
-                      covar = df$covar,
-                      id = df$id)
+                      id = df$id) %>%
+        purrr::when(!is.null(covar) ~ dplyr::mutate(., covar = df$covar))
       return(ComBat_output)
     }) %>%
     dplyr::ungroup() %>%
