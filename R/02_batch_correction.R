@@ -141,13 +141,14 @@ correct_data <- function(df,
 
 
   if(is.null(covar)){
-
+    df <- df %>%
+      dplyr::mutate(som = som_classes)
   }else if(class(covar) == "character" & length(covar) == 1){
     df <- df %>%
       dplyr::mutate(som = som_classes,
                     covar = df[[covar]] %>%
                       as.factor())
-  } else if(covar == "sample"){
+  } else if(covar[1] == "sample"){
     df <- df %>%
       dplyr::mutate(som = som_classes,
                     # Determine covariate
