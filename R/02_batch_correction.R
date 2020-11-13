@@ -143,6 +143,7 @@ correct_data <- function(df,
   if(is.null(covar)){
     df <- df %>%
       dplyr::mutate(som = som_classes)
+    num_covar <- 0
   }else if(class(covar) == "character" & length(covar) == 1){
     df <- df %>%
       dplyr::mutate(som = som_classes,
@@ -181,8 +182,6 @@ correct_data <- function(df,
         num_covar <- df$covar %>%
           unique() %>%
           length()
-      }else{
-        num_covar <- 0
       }
 
 
