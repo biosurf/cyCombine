@@ -71,8 +71,8 @@ run_analysis <- function(tool,
 
   message("Loading data..")
   # Load data
-  preprocessed <- loadRDS(paste0(data_dir, "/cycombine_", data, "_preprocessed.RDS"))
-  corrected <- loadRDS(paste0(projdir, "_corrected.RDS"))
+  preprocessed <- readRDS(paste0(data_dir, "/cycombine_", data, "_preprocessed.RDS"))
+  corrected <- readRDS(paste0(projdir, "_corrected.RDS"))
 
 
   # Get markers
@@ -94,7 +94,7 @@ run_analysis <- function(tool,
       # Cluster and add labels
       if (file.exists(paste0(projdir, "_som.RDS")) & !restart){
         message("Loading SOMgrid..")
-        som_ <- loadRDS(paste0(projdir, "_som.RDS"))
+        som_ <- readRDS(paste0(projdir, "_som.RDS"))
       }else{
         som_ <- corrected %>%
           create_som(seed = seed,

@@ -220,17 +220,22 @@ batch_correct <- function(preprocessed,
                           covar = NULL,
                           markers = NULL){
 
+  if(is.null(markers)){
+    # Get markers
+    markers <- df %>%
+      cyCombine::get_markers()
+  }
+
   # Create SOM on scaled data
-  som <- preprocessed %>%
+  som_ <- preprocessed %>%
     scale_expr() %>%
     create_som(seed = seed,
                xdim = xdim,
                ydim = ydim)
 
   # Run batch correction
-
   corrected <- preprocessed %>%
-    correct_data(som_classes = som$unit.classif,
+    correct_data(som_classes = som_$unit.classif,
                  covar = covar,
                  markers = markers)
   message("Done!")
