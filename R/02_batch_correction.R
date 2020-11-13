@@ -182,7 +182,7 @@ correct_data <- function(df,
           unique() %>%
           length()
       }else{
-        num_covar == 0
+        num_covar <- 0
       }
 
 
