@@ -7,13 +7,20 @@
 #'   The purpose is to minimize the impact of batch correction when clustering the data prior to batch correction.
 #'
 #' @param df Dataframe with expression values
+#' @param markers Markers to scale. If NULL, markers will be found using the \code{\link{get_markers}} function.
 #' @family batch
+#' @examples
+#' df_scaled <- preprocessed %>%
+#'   scale_expr()
 #' @export
-scale_expr <- function(df){
+scale_expr <- function(df, markers = NULL){
   message("Scaling expression data")
-  # Get markers
-  markers <- df %>%
-    cyCombine::get_markers()
+  if(is.null(markers)){
+    # Get markers
+    markers <- df %>%
+      cyCombine::get_markers()
+  }
+
   # Scale at marker positions
   scaled_expr <- df %>%
     dplyr::group_by(.data$batch) %>%
@@ -35,16 +42,25 @@ scale_expr <- function(df){
 #' @param xdim The x-dimension size of the SOM
 #' @param ydim The y-dimension size of the SOM
 #' @family batch
+#' @examples
+#' som_ <- preprocessed %>%
+#'   create_som()
 #' @export
 create_som <- function(df,
+                       markers = NULL,
                        seed = 473,
                        xdim = 8,
                        ydim = 8){
+  if(is.null(markers)){
+    # Get markers
+    markers <- df %>%
+      cyCombine::get_markers()
+  }
   # 10x10 SOM grid on overlapping markers, extract clustering per cell
   message("Creating SOM grid...")
   set.seed(seed)
   som <- df %>%
-    dplyr::select_if(colnames(.) %!in% non_markers) %>%
+    dplyr::select(markers) %>%
     as.matrix() %>%
     kohonen::som(grid = kohonen::somgrid(xdim = xdim,
                                          ydim = ydim),
@@ -104,9 +120,13 @@ correct_data_prev <- function(df,
 #' @importFrom sva ComBat
 #' @importFrom stats model.matrix
 #' @param som_classes The classes as returned by the \code{\link{create_som}} function
-#' @param covar The covariate ComBat uses. If NULL, MAKE MORE FLEXIBLE!
+#' @param covar The covariate ComBat uses. Can be a vector or a column name in the input datafrome.
+#'   If NULL, it is predicted based on the sample same (whether the sample id starts with HD or not)
 #' @inheritParams scale_expr
 #' @family batch
+#' @examples
+#' corrected <- preprocesed %>%
+#'   correct_data(som_classes = som_$unit.classif, covar = covar)
 #' @export
 correct_data <- function(df,
                          som_classes,
@@ -128,7 +148,12 @@ correct_data <- function(df,
                                                           pattern = "HD") ~ "HD",
                                       TRUE ~ "CLL") %>%
                       as.factor())
-  }else{
+  }else if(class(covar) == "character"){
+    df <- df %>%
+      dplyr::mutate(som = som_classes,
+                    covar = df[[covar]] %>%
+                      as.factor())
+  } else{
     df <- df %>%
       dplyr::mutate(som = som_classes,
                     covar = as.factor(covar))

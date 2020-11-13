@@ -12,13 +12,16 @@
 #' @importFrom stringr str_remove
 #' @importFrom flowCore read.flowSet fsApply
 #' @param data_dir Directory containing the .fcs files
-#' @param meta_filename Filename of the metadata file. If NULL, sample and batch ids are not predicted nor returned
+#' @param metadata Can be either a filename or data.frame of the metadata file If NULL, sample and batch ids are not predicted nor returned
 #' @param sample_col The column in the metadata filename containing the sample ids. If NULL, sample ids will be the file names
 #' @param batch_col The column in the metadata filename containing the sample ids
-#' @param pattern The pattern to use to find the files in the folder.
+#' @param pattern The pattern to use to find the files in the folder
+#'
+#' @examples
+#' fcs <- compile_fcs(data_dir = "_data/raw", metadata = "meta/metadata.csv", sample_col = "sample", batch_col = "batch", filename_col = "fcs_filenames")
 #' @export
 compile_fcs <- function(data_dir,
-                        meta_filename = NULL,
+                        metadata = NULL,
                         sample_col = NULL,
                         batch_col = "Batch",
                         filename_col = "FCS_name",
@@ -35,22 +38,25 @@ compile_fcs <- function(data_dir,
     flowCore::read.flowSet(transformation = FALSE,
                            truncate_max_range = FALSE,
                            emptyValue = FALSE)
-  if(is.null(meta_filename)) return(fcs_raw)
+  if(is.null(metadata)) return(fcs_raw)
 
   # Get metadata
-  if(endsWith(meta_filename, suffix = ".xlsx")){
-    meta_data <- file.path(data_dir, meta_filename) %>%
-      readxl::read_xlsx()
-  } else if(endsWith(meta_filename, suffix = ".csv")){
-    meta_data <- file.path(data_dir, meta_filename) %>%
-      readr::read_csv()
-  } else {
-    stop(stringr::str_c("Sorry, file", meta_filename, "is not in a supported format. Please use a .xlsx or .csv file.",
-                        sep = " "))
+  if(class(metadata) == "character"){
+    if(endsWith(metadata, suffix = ".xlsx")){
+      metadata <- file.path(data_dir, metadata) %>%
+        readxl::read_xlsx()
+    } else if(endsWith(meta_filename, suffix = ".csv")){
+      metadata <- file.path(data_dir, metadata) %>%
+        readr::read_csv()
+    } else {
+      stop(stringr::str_c("Sorry, file", metadata, "is not in a supported format. Please use a .xlsx or .csv file.",
+                          sep = " "))
+    }
   }
 
-  if(!endsWith(meta_data[[filename_col]][1], ".fcs")){
-    meta_data[[filename_col]] <- paste0(meta_data[[filename_col]], ".fcs")
+
+  if(!endsWith(metadata[[filename_col]][1], ".fcs")){
+    metadata[[filename_col]] <- paste0(metadata[[filename_col]], ".fcs")
   }
 
   # Get sample and batch ids
@@ -58,14 +64,14 @@ compile_fcs <- function(data_dir,
     sample_ids <- basename(files) %>%
       stringr::str_remove(".fcs") %>%
       rep(flowCore::fsApply(fcs_raw, nrow))
-    batch_ids <- meta_data[[batch_col]][match(sample_ids, stringr::str_remove(meta_data[[filename_col]], ".fcs"))] %>%
+    batch_ids <- metadata[[batch_col]][match(sample_ids, stringr::str_remove(metadata[[filename_col]], ".fcs"))] %>%
       as.factor() %>%
       rep(flowCore::fsApply(fcs_raw, nrow))
   } else{
-    sample_ids <- meta_data[[sample_col]][match(basename(files), meta_data[[filename_col]])] %>%
+    sample_ids <- metadata[[sample_col]][match(basename(files), metadata[[filename_col]])] %>%
       rep(flowCore::fsApply(fcs_raw, nrow)) %>%
       stringr::str_remove(".fcs")
-    batch_ids <- meta_data[[batch_col]][match(basename(files), meta_data[[filename_col]])] %>%
+    batch_ids <- metadata[[batch_col]][match(basename(files), metadata[[filename_col]])] %>%
       as.factor() %>%
       rep(flowCore::fsApply(fcs_raw, nrow))
   }
@@ -97,7 +103,12 @@ compile_fcs <- function(data_dir,
 #' @param down_sample If TRUE, the output will be down-sampled to size sample_size
 #' @param sample_size The size to down-sample to
 #' @param seed The seed to use for down-sampling
+#' @param panel Panel as a data.frame. Is used to predict colnames
+#' @param panel_channel Only used if panel is given. It is the column name in the panel data.frame that contains the channel names
+#' @param panel_antigen Only used if panel is given. It is the column name in the panel data.frame that contains the antigen names
 #'
+#' @examples
+#' df <- convert_flowset(flowset = fcs$fcs_raw, sample_ids = fcs$sample_ids, batch_ids = fcs$batch_ids, down_sample = FALSE)
 #' @export
 convert_flowset <- function(flowset,
                             sample_ids = NULL,
@@ -105,7 +116,9 @@ convert_flowset <- function(flowset,
                             down_sample = TRUE,
                             sample_size = 100000,
                             seed = 473,
-                            panel = NULL){
+                            panel = NULL,
+                            panel_channel = "fcs_colname",
+                            panel_antigen = "antigen"){
   # Down sampling setup
   if(down_sample){
     # To down sample within fsApply
@@ -174,7 +187,6 @@ convert_flowset <- function(flowset,
 #' Extract from a flowset given a sample of indices
 #'
 #' @importFrom purrr accumulate
-#' @export
 fcs_sample <- function(flowframe, sample, nrows, seed = 473){
   nrows_acc <- c(0, nrows %>%
     purrr::accumulate(`+`))
@@ -202,6 +214,9 @@ fcs_sample <- function(flowframe, sample, nrows, seed = 473){
 #' @param markers The markers to transform on
 #' @param cofactor The cofactor to use when transforming
 #' @family preprocess
+#' @examples
+#' preprocessed <- df %>%
+#'   transform_asinh(markers = markers)
 #' @export
 transform_asinh <- function(df, markers, cofactor = 5){
   message(paste("Transforming data using asinh with a cofactor of", cofactor))
@@ -229,12 +244,12 @@ transform_asinh <- function(df, markers, cofactor = 5){
 #' @inheritParams transform_asinh
 #' @export
 preprocess <- function(data_dir,
+                       markers,
                        meta_filename = NULL,
                        sample_col = NULL,
                        batch_col = "Batch",
                        filename_col = "FCS_name",
                        pattern = "\\.fcs",
-                       markers,
                        down_sample = TRUE,
                        sample_size = 500000,
                        seed = 473,
