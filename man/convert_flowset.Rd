@@ -11,7 +11,9 @@ convert_flowset(
   down_sample = TRUE,
   sample_size = 1e+05,
   seed = 473,
-  panel = NULL
+  panel = NULL,
+  panel_channel = "fcs_colname",
+  panel_antigen = "antigen"
 )
 }
 \arguments{
@@ -26,7 +28,16 @@ convert_flowset(
 \item{sample_size}{The size to down-sample to}
 
 \item{seed}{The seed to use for down-sampling}
+
+\item{panel}{Panel as a data.frame. Is used to predict colnames}
+
+\item{panel_channel}{Only used if panel is given. It is the column name in the panel data.frame that contains the channel names}
+
+\item{panel_antigen}{Only used if panel is given. It is the column name in the panel data.frame that contains the antigen names}
 }
 \description{
 Convert a flowset into a workable dataframe
+}
+\examples{
+df <- convert_flowset(flowset = fcs$fcs_raw, sample_ids = fcs$sample_ids, batch_ids = fcs$batch_ids, down_sample = FALSE)
 }

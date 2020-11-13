@@ -16,4 +16,8 @@ transform_asinh(df, markers, cofactor = 5)
 \description{
 Transform data using asinh
 }
+\examples{
+preprocessed <- df \%>\%
+  transform_asinh(markers = markers)
+}
 \concept{preprocess}

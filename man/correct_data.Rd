@@ -11,10 +11,17 @@ correct_data(df, som_classes, covar = NULL, markers = NULL)
 
 \item{som_classes}{The classes as returned by the \code{\link{create_som}} function}
 
-\item{covar}{The covariate ComBat uses. If NULL, MAKE MORE FLEXIBLE!}
+\item{covar}{The covariate ComBat uses. Can be a vector or a column name in the input datafrome.
+If NULL, it is predicted based on the sample same (whether the sample id starts with HD or not)}
+
+\item{markers}{Markers to scale. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 }
 \description{
 This function computes the batch correction on the preprocessed data using the ComBat algorithm.
+}
+\examples{
+corrected <- preprocesed \%>\%
+  correct_data(som_classes = som_$unit.classif, covar = covar)
 }
 \seealso{
 Other batch: 

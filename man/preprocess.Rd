@@ -6,12 +6,12 @@
 \usage{
 preprocess(
   data_dir,
+  markers,
   meta_filename = NULL,
   sample_col = NULL,
   batch_col = "Batch",
   filename_col = "FCS_name",
   pattern = "\\\\.fcs",
-  markers,
   down_sample = TRUE,
   sample_size = 5e+05,
   seed = 473,
@@ -21,15 +21,13 @@ preprocess(
 \arguments{
 \item{data_dir}{Directory containing the .fcs files}
 
-\item{meta_filename}{Filename of the metadata file. If NULL, sample and batch ids are not predicted nor returned}
+\item{markers}{The markers to transform on}
 
 \item{sample_col}{The column in the metadata filename containing the sample ids. If NULL, sample ids will be the file names}
 
 \item{batch_col}{The column in the metadata filename containing the sample ids}
 
-\item{pattern}{The pattern to use to find the files in the folder.}
-
-\item{markers}{The markers to transform on}
+\item{pattern}{The pattern to use to find the files in the folder}
 
 \item{down_sample}{If TRUE, the output will be down-sampled to size sample_size}
 

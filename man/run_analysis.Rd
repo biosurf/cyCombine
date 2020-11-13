@@ -45,7 +45,11 @@ run_analysis(
 \item{seed}{The seed to use when creating the UMAP}
 }
 \description{
-Run analysis of a batch correction
+This function only runs under the assumption that the batch correction has been run with the cyCombine workflow in mind.
+Some result preparation can be necessary, if cyCombine was not used during batch correction.
+This function assumes that the uncorrected data us stored under the name "{data_dir}/{tool}_{data}\emph{preprocessed.RDS" and
+the corrected data is stored with the name "{data_dir}/{tool}}{data}_corrected.RDS".
+The analysis currently encompass marker-wise density plots, UMAP of corrected vs uncorrected, and Earth Movers Distance.
 }
 \examples{
 run_analysis(tool = "cycombine",

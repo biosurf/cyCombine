@@ -4,10 +4,12 @@
 \alias{create_som}
 \title{Create Self-Organizing Map}
 \usage{
-create_som(df, seed = 473, xdim = 8, ydim = 8)
+create_som(df, markers = NULL, seed = 473, xdim = 8, ydim = 8)
 }
 \arguments{
 \item{df}{Dataframe with expression values}
+
+\item{markers}{Markers to scale. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 
 \item{seed}{The seed to use when creating the SOM}
 
@@ -19,6 +21,10 @@ create_som(df, seed = 473, xdim = 8, ydim = 8)
 The function uses the kohonen package to create a Self-Organizing Map.
 It is used to segregate the cells for the batch correction to make the correction less affected
 by samples with high abundances of a particular cell type.
+}
+\examples{
+som_ <- preprocessed \%>\%
+  create_som()
 }
 \seealso{
 Other batch: 

@@ -1,6 +1,12 @@
 
 #' Run analysis of a batch correction
 #'
+#' This function only runs under the assumption that the batch correction has been run with the cyCombine workflow in mind.
+#'   Some result preparation can be necessary, if cyCombine was not used during batch correction.
+#'   This function assumes that the uncorrected data us stored under the name "{data_dir}/{tool}_{data}_preprocessed.RDS" and
+#'   the corrected data is stored with the name "{data_dir}/{tool}_{data}_corrected.RDS".
+#'   The analysis currently encompass marker-wise density plots, UMAP of corrected vs uncorrected, and Earth Movers Distance.
+#'
 #' @param tool The name of the tool used to batch correct
 #' @param data The name of the data used
 #' @param data_dir The location of the preprocessed and corrected data
@@ -65,8 +71,8 @@ run_analysis <- function(tool,
 
   message("Loading data..")
   # Load data
-  load(paste0(data_dir, "/cycombine_", data, "_preprocessed.Rdata"))
-  load(paste0(projdir, "_corrected.Rdata"))
+  preprocessed <- loadRDS(paste0(data_dir, "/cycombine_", data, "_preprocessed.RDS"))
+  corrected <- loadRDS(paste0(projdir, "_corrected.RDS"))
 
 
   # Get markers
@@ -86,15 +92,15 @@ run_analysis <- function(tool,
 
     if(is.null(celltype_col)){
       # Cluster and add labels
-      if (file.exists(paste0(projdir, "_som.Rdata")) & !restart){
+      if (file.exists(paste0(projdir, "_som.RDS")) & !restart){
         message("Loading SOMgrid..")
-        load(paste0(projdir, "_som.Rdata"))
+        som_ <- loadRDS(paste0(projdir, "_som.RDS"))
       }else{
         som_ <- corrected %>%
           create_som(seed = seed,
                      xdim = gridsize,
                      ydim = gridsize)
-        save(som_, file = paste0(projdir, "_som.Rdata"))
+        saveRDS(som_, file = paste0(projdir, "_som.RDS"))
       }
       # Add labels
       corrected <- corrected %>%
@@ -166,7 +172,7 @@ run_analysis <- function(tool,
     message("Saving results..")
     ggsave(filename = paste0("figs/", project, "_emd.png"),
            plot = emd_val$plot, device = "png")
-    save(emd_val, file = paste0(projdir, "_emd.Rdata"))
+    saveRDS(emd_val, file = paste0(projdir, "_emd.RDS"))
   }
 
   message("Done!")

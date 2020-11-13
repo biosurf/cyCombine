@@ -6,7 +6,7 @@
 \usage{
 compile_fcs(
   data_dir,
-  meta_filename = NULL,
+  metadata = NULL,
   sample_col = NULL,
   batch_col = "Batch",
   filename_col = "FCS_name",
@@ -16,14 +16,17 @@ compile_fcs(
 \arguments{
 \item{data_dir}{Directory containing the .fcs files}
 
-\item{meta_filename}{Filename of the metadata file. If NULL, sample and batch ids are not predicted nor returned}
+\item{metadata}{Can be either a filename or data.frame of the metadata file If NULL, sample and batch ids are not predicted nor returned}
 
 \item{sample_col}{The column in the metadata filename containing the sample ids. If NULL, sample ids will be the file names}
 
 \item{batch_col}{The column in the metadata filename containing the sample ids}
 
-\item{pattern}{The pattern to use to find the files in the folder.}
+\item{pattern}{The pattern to use to find the files in the folder}
 }
 \description{
 Compile all .fcs files in a directory to a flowset
+}
+\examples{
+fcs <- compile_fcs(data_dir = "_data/raw", metadata = "meta/metadata.csv", sample_col = "sample", batch_col = "batch", filename_col = "fcs_filenames")
 }

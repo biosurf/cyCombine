@@ -4,14 +4,20 @@
 \alias{scale_expr}
 \title{Batch-wise scaling of data}
 \usage{
-scale_expr(df)
+scale_expr(df, markers = NULL)
 }
 \arguments{
 \item{df}{Dataframe with expression values}
+
+\item{markers}{Markers to scale. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 }
 \description{
 This function scales the data in a batch-wise manner.
 The purpose is to minimize the impact of batch correction when clustering the data prior to batch correction.
+}
+\examples{
+df_scaled <- preprocessed \%>\%
+  scale_expr()
 }
 \seealso{
 Other batch: 
