@@ -7,7 +7,7 @@
 preprocess(
   data_dir,
   markers,
-  meta_filename = NULL,
+  metadata = NULL,
   sample_col = NULL,
   batch_col = "Batch",
   filename_col = "FCS_name",
@@ -22,6 +22,8 @@ preprocess(
 \item{data_dir}{Directory containing the .fcs files}
 
 \item{markers}{The markers to transform on}
+
+\item{metadata}{Can be either a filename or data.frame of the metadata file If NULL, sample and batch ids are not predicted nor returned}
 
 \item{sample_col}{The column in the metadata filename containing the sample ids. If NULL, sample ids will be the file names}
 

@@ -22,8 +22,9 @@ batch_correct(
 
 \item{seed}{The seed to use when creating the SOM}
 
-\item{covar}{The covariate ComBat uses. Can be a vector or a column name in the input datafrome.
-If NULL, it is predicted based on the sample same (whether the sample id starts with HD or not)}
+\item{covar}{The covariate ComBat should use. Can be a vector or a column name in the input datafrome.
+if covar == sample: it is predicted based on the sample same (whether the sample id starts with HD or not).
+If NULL, no covar will be used}
 
 \item{markers}{Markers to scale. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 }

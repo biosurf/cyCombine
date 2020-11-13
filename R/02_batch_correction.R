@@ -120,8 +120,9 @@ correct_data_prev <- function(df,
 #' @importFrom sva ComBat
 #' @importFrom stats model.matrix
 #' @param som_classes The classes as returned by the \code{\link{create_som}} function
-#' @param covar The covariate ComBat uses. Can be a vector or a column name in the input datafrome.
-#'   If NULL, it is predicted based on the sample same (whether the sample id starts with HD or not)
+#' @param covar The covariate ComBat should use. Can be a vector or a column name in the input datafrome.
+#'   if covar == sample: it is predicted based on the sample same (whether the sample id starts with HD or not).
+#'   If NULL, no covar will be used
 #' @inheritParams scale_expr
 #' @family batch
 #' @examples

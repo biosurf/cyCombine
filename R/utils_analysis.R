@@ -43,7 +43,6 @@ run_analysis <- function(tool,
                          gridsize = 8,
                          seed = 473){
 
-
   # Load metadata
   if(!is.null(md)){
     if(endsWith(md, "csv")){
@@ -71,7 +70,7 @@ run_analysis <- function(tool,
 
   message("Loading data..")
   # Load data
-  preprocessed <- readRDS(paste0(data_dir, "/cycombine_", data, "_preprocessed.RDS"))
+  preprocessed <- readRDS(paste0(data_dir, "/cycombine_", data, variant, "_preprocessed.RDS"))
   corrected <- readRDS(paste0(projdir, "_corrected.RDS"))
 
 
