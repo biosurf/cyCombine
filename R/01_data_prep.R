@@ -245,7 +245,7 @@ transform_asinh <- function(df, markers, cofactor = 5){
 #' @export
 preprocess <- function(data_dir,
                        markers,
-                       meta_filename = NULL,
+                       metadata = NULL,
                        sample_col = NULL,
                        batch_col = "Batch",
                        filename_col = "FCS_name",
@@ -261,7 +261,7 @@ preprocess <- function(data_dir,
   }
   # Compile directory to flowset
   fcs <- data_dir %>%
-    compile_fcs(meta_filename = meta_filename,
+    compile_fcs(metadata = metadata,
                 sample_col = sample_col,
                 batch_col = batch_col,
                 filename_col = filename_col,
