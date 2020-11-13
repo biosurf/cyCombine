@@ -45,7 +45,7 @@ compile_fcs <- function(data_dir,
     if(endsWith(metadata, suffix = ".xlsx")){
       metadata <- file.path(data_dir, metadata) %>%
         readxl::read_xlsx()
-    } else if(endsWith(meta_filename, suffix = ".csv")){
+    } else if(endsWith(metadata, suffix = ".csv")){
       metadata <- file.path(data_dir, metadata) %>%
         readr::read_csv()
     } else {
