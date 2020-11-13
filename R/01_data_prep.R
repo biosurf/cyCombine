@@ -146,21 +146,22 @@ convert_flowset <- function(flowset,
 
   # Clean column names
   if (!is.null(panel)){
-    cols <- match(colnames(fcs_data), panel$fcs_colname) %>%
+    cols <- match(colnames(fcs_data), panel[[panel_channel]]) %>%
       .[!is.na(.)]
-    col_names <- panel$antigen[cols] %>%
-      stringr::str_remove_all("[ -]") %>%
-      stringr::str_remove_all("\\d+[A-Za-z]+_")
+    col_names <- panel[[panel_antigen]][cols] %>%
+      stringr::str_remove_all("\\d+[A-Za-z]+_") %>%
+      stringr::str_remove_all("[ \\-\\_]")
+
 
     fcs_data <- fcs_data %>%
-      dplyr::select(dplyr::all_of(panel$fcs_colname))
+      dplyr::select(dplyr::all_of(panel[[panel_channel]]))
   }else{
     col_names <- flowset[[1]] %>%
       flowCore::parameters() %>%
       Biobase::pData() %>%
       dplyr::pull(desc) %>%
-      stringr::str_remove_all("[ -]") %>%
-      stringr::str_remove_all("\\d+[A-Za-z]+_")
+      stringr::str_remove_all("\\d+[A-Za-z]+_") %>%
+      stringr::str_remove_all("[ \\-\\_]")
   }
 
   if(!is.null(sample_ids) & !is.null(batch_ids)){
