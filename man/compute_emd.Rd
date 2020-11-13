@@ -12,6 +12,18 @@ compute_emd(
   markers = NULL
 )
 }
+\arguments{
+\item{df}{Dataframe to compute the EMD of}
+
+\item{binSize}{The size of bins to use when binning data}
+
+\item{cell_col}{Column name of df that contains cell population labels (or clusters)}
+
+\item{batch_col}{Column name of df that contains batch numbers}
+
+\item{markers}{Vector of the markers to calculate EMD for. If NULL, \code{\link{get_markers}} will be used to find markers}
+}
 \description{
-Compute EMD
+Given a dataframe, the Earth Movers Distance is computed, using the emdist package.
+A comparison matrix is returned containing the maximum distance for each marker for each group of cells.
 }

@@ -3,13 +3,15 @@
 #'
 #' This function only runs under the assumption that the batch correction has been run with the cyCombine workflow in mind.
 #'   Some result preparation can be necessary, if cyCombine was not used during batch correction.
-#'   This function assumes that the uncorrected data us stored under the name "{data_dir}/{tool}_{data}_preprocessed.RDS" and
-#'   the corrected data is stored with the name "{data_dir}/{tool}_{data}_corrected.RDS".
+#'   This function assumes that the uncorrected data us stored under the name "{data_dir}/{tool}_{data}{variant}{uncorrected_extension}.RDS" and
+#'   the corrected data is stored with the name "{data_dir}/{tool}_{data}{variant}{corrected_extension}.RDS".
 #'   The analysis currently encompass marker-wise density plots, UMAP of corrected vs uncorrected, and Earth Movers Distance.
 #'
 #' @param tool The name of the tool used to batch correct
 #' @param data The name of the data used
 #' @param data_dir The location of the preprocessed and corrected data
+#' @param uncorrected_extension The extension used to name the uncorrected data. Default: "_preprocessed"
+#' @param corrected_extension The extension used to name the corrected data. Default: "_corrected"
 #' @param variant Optional: A parameter to set a variant name of an experiment
 #' @param restart If TRUE, the SOM grid will be calculated even if it has been computed and stored previously
 #' @param md Optional: Metadata filename. Currently not useful
@@ -33,6 +35,8 @@
 run_analysis <- function(tool,
                          data,
                          data_dir,
+                         uncorrected_extension = "_preprocessed",
+                         corrected_extension = "_corrected",
                          variant = NULL,
                          restart = FALSE,
                          md = NULL,
@@ -42,24 +46,23 @@ run_analysis <- function(tool,
                          segment = "",
                          gridsize = 8,
                          seed = 473){
-
   # Load metadata
   if(!is.null(md)){
     if(endsWith(md, "csv")){
-      md <- str_c(data_dir, "/", md) %>%
-        read_csv()
+      md <- stringr::str_c(data_dir, "/", md) %>%
+        readr::read_csv()
     } else{
-      md <- str_c(data_dir, "/", md) %>%
+      md <- stringr::str_c(data_dir, "/", md) %>%
         readxl::read_xlsx()
     }
   }
   # Load panel
   if(!is.null(panel)){
     if(endsWith(panel, "csv")){
-      panel <- str_c(data_dir, "/", panel) %>%
-        read_csv()
+      panel <- stringr::str_c(data_dir, "/", panel) %>%
+        readr::read_csv()
     } else{
-      panel <- str_c(data_dir, "/", panel) %>%
+      panel <- stringr::str_c(data_dir, "/", panel) %>%
         readxl::read_xlsx()
     }
   }
@@ -70,19 +73,19 @@ run_analysis <- function(tool,
 
   message("Loading data..")
   # Load data
-  preprocessed <- readRDS(paste0(data_dir, "/cycombine_", data, variant, "_preprocessed.RDS"))
-  corrected <- readRDS(paste0(projdir, "_corrected.RDS"))
+  preprocessed <- readRDS(paste0(data_dir, "/cycombine_", data, variant, uncorrected_extension, ".RDS"))
+  corrected <- readRDS(paste0(projdir, corrected_extension, ".RDS"))
 
 
   # Get markers
   if(is.null(markers)){
     if(is.null(panel)){
-      markers <- get_markers(corrected)
+      markers <- cyCombine::get_markers(corrected)
     } else{
       markers <- panel %>%
-        filter(marker_class %!in% c("none", "state")) %>%
-        pull(antigen) %>%
-        str_remove("[ _-]")
+        dplyr::filter(marker_class %!in% c("none", "state")) %>%
+        dplyr::pull(antigen) %>%
+        stringr::str_remove_all("[ \\_\\-]")
     }
   }
 
@@ -96,9 +99,9 @@ run_analysis <- function(tool,
         som_ <- readRDS(paste0(projdir, "_som.RDS"))
       }else{
         som_ <- corrected %>%
-          create_som(seed = seed,
-                     xdim = gridsize,
-                     ydim = gridsize)
+          cyCombine::create_som(seed = seed,
+                                xdim = gridsize,
+                                ydim = gridsize)
         saveRDS(som_, file = paste0(projdir, "_som.RDS"))
       }
       # Add labels
@@ -127,10 +130,10 @@ run_analysis <- function(tool,
     message("Creating density plots..")
     # Density plots
     suppressMessages(
-      plot_density(uncorrected = preprocessed,
-                   corrected = corrected,
-                   markers = markers,
-                   filename = paste0("figs/", project, "_densities_withcovar.png"))
+      cyCombine::plot_density(uncorrected = preprocessed,
+                              corrected = corrected,
+                              markers = markers,
+                              filename = paste0("figs/", project, "_densities_withcovar.png"))
     )
   }
   # suppressMessages(
@@ -146,20 +149,20 @@ run_analysis <- function(tool,
     # Down-sample
     set.seed(seed)
     preprocessed_sliced <- preprocessed %>%
-      slice_sample(n = 20000)
+      dplyr::slice_sample(n = 20000)
 
     corrected_sliced <- corrected %>%
-      semi_join(preprocessed_sliced, by = "id")
+      dplyr::semi_join(preprocessed_sliced, by = "id")
 
     # UMAP plot uncorrected
     umap1 <- preprocessed_sliced %>%
-      plot_dimred(name = "uncorrected", type = "umap")
+      cyCombine::plot_dimred(name = "uncorrected", type = "umap")
 
     # UMAP plot corrected
     umap2 <- corrected_sliced %>%
-      plot_dimred(name = "corrected", type = "umap")
+      cyCombine::plot_dimred(name = "corrected", type = "umap")
 
-    plot_save_two(umap1, umap2, filename = paste0("figs/", project, "_umap.png"))
+    cyCombine::plot_save_two(umap1, umap2, filename = paste0("figs/", project, "_umap.png"))
   }
 
   # Evaluate ----

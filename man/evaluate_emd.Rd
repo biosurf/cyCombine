@@ -12,6 +12,18 @@ evaluate_emd(
   markers = NULL
 )
 }
+\arguments{
+\item{preprocessed}{Dataframe of uncorrected data}
+
+\item{corrected}{Dataframe of corrected data}
+
+\item{cell_col}{Column name of df that contains cell population labels (or clusters)}
+
+\item{batch_col}{Column name of df that contains batch numbers}
+
+\item{markers}{Vector of the markers to calculate EMD for. If NULL, \code{\link{get_markers}} will be used to find markers}
+}
 \description{
-Evaluate EMD
+The function computes the Eartch Movers Distance of the two given datasets.
+Then the reduction is calculated for every celltype
 }

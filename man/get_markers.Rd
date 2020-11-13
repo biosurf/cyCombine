@@ -2,10 +2,15 @@
 % Please edit documentation in R/utils_helper.R
 \name{get_markers}
 \alias{get_markers}
-\title{Get markers from dataframe}
+\title{Get markers from a dataframe}
 \usage{
 get_markers(df)
 }
+\arguments{
+\item{df}{dataframe to get the markers from}
+}
 \description{
-Get markers from dataframe
+This function uses the global variable "non_markers".
+If the output contains markers you did not expect, you can add to non_markers like this:
+\code{non_markers <- c(non_markers, "remove1", "remove2")} and rerun get_markers()
 }

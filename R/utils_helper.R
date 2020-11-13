@@ -10,6 +10,7 @@
 
 #' Wrapper for missing packages
 #'
+#' @noRd
 missing_package <- function(package, repo = "CRAN", git_repo = ""){
 
   if (repo == "CRAN"){
@@ -29,8 +30,12 @@ missing_package <- function(package, repo = "CRAN", git_repo = ""){
 
 
 
-#' Get markers from dataframe
+#' Get markers from a dataframe
 #'
+#' This function uses the global variable "non_markers".
+#'   If the output contains markers you did not expect, you can add to non_markers like this:
+#'   \code{non_markers <- c(non_markers, "remove1", "remove2")} and rerun get_markers()
+#' @param df dataframe to get the markers from
 #' @export
 get_markers <- function(df){
   marker_pos <- colnames(df) %!in% non_markers
@@ -40,10 +45,8 @@ get_markers <- function(df){
 
 #' Run PCA analysis
 #' @importFrom stats prcomp
-#' @export
 run_pca <- function(df, pcs = 20){
-
-
+  missing_package("stats", "CRAN")
   pca <- df %>%
     dplyr::select_if(names(.) %!in% non_markers) %>%
     # Run PCA
@@ -57,7 +60,6 @@ run_pca <- function(df, pcs = 20){
 
 #' Cumpute flowsom clustering
 #' @importFrom flowCore flowFrame colnames
-#' @export
 run_flowsom <- function(dataset, k = 7, seed = 473){
 
   # Check for package
