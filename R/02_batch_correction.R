@@ -148,7 +148,7 @@ correct_data <- function(df,
                                                           pattern = "HD") ~ "HD",
                                       TRUE ~ "CLL") %>%
                       as.factor())
-  }else if(class(covar) == "character"){
+  }else if(class(covar) == "character" & length(covar) == 1){
     df <- df %>%
       dplyr::mutate(som = som_classes,
                     covar = df[[covar]] %>%
