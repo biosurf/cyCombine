@@ -141,15 +141,18 @@ correct_data <- function(df,
 
 
   if(is.null(covar)){
+    # No covar is given
     df <- df %>%
       dplyr::mutate(som = som_classes)
     num_covar <- 0
   }else if(class(covar) == "character" & length(covar) == 1){
+    # Covar is in the data.frame
     df <- df %>%
       dplyr::mutate(som = som_classes,
                     covar = df[[covar]] %>%
                       as.factor())
   } else if(covar[1] == "sample"){
+    # Covar should be determined from the sample column
     df <- df %>%
       dplyr::mutate(som = som_classes,
                     # Determine covariate
@@ -158,6 +161,7 @@ correct_data <- function(df,
                                       TRUE ~ "CLL") %>%
                       as.factor())
   } else{
+    # Covar was given as a vector
     df <- df %>%
       dplyr::mutate(som = som_classes,
                     covar = as.factor(covar))
@@ -178,32 +182,35 @@ correct_data <- function(df,
         message(paste("SOM node", som, "only contains cells from batch", batch))
         return(df)
       }
+      # Calculate number of covars in the node
       if(!is.null(covar)){
         num_covar <- df$covar %>%
           unique() %>%
           length()
       }
 
-
+      # Compute ComBat correction
       ComBat_output <- df %>%
         dplyr::select(all_of(markers)) %>%
         t() %>%
         # The as.character is to remove factor levels not present in the SOM node
-        purrr::when(num_covar == 1 ~ sva::ComBat(., batch = as.character(df$batch)),
-                    num_covar > 1 ~ sva::ComBat(., batch = as.character(df$batch), mod = stats::model.matrix(~df$covar))
+        purrr::when(num_covar > 1 ~ sva::ComBat(., batch = as.character(df$batch), mod = stats::model.matrix(~df$covar)),
+                    ~ sva::ComBat(., batch = as.character(df$batch))
                     ) %>%
         t() %>%
         tibble::as_tibble() %>%
         dplyr::mutate(batch = df$batch,
                       sample = df$sample,
                       id = df$id) %>%
-        purrr::when(!is.null(covar) ~ dplyr::mutate(., covar = df$covar))
+        # Only add covar column, if it is not null
+        purrr::when(!is.null(covar) ~ dplyr::mutate(., covar = df$covar),
+                    ~ .)
       return(ComBat_output)
     }) %>%
     dplyr::ungroup() %>%
     # dplyr::select(-som) %>%
     # Reduce all negative values to zero
-    dplyr::mutate_at(dplyr::vars(markers),
+    dplyr::mutate_at(dplyr::vars(all_of(markers)),
                      function(x) {
                        x[x < 0] <- 0
                        return(x)
