@@ -99,17 +99,58 @@ data_dir <- "data/raw"
 markers <- c("CD20", "CD3", "CD27", "CD45RA", "CD279", "CD5", "CD19", "CD14", "CD45RO", "GranzymeA", "GranzymeK", "FCRL6", "CD355", "CD152", "CD69", "CD33", "CD4", "CD337", "CD8", "CD197", "LAG3", "CD56", "CD137", "CD161", "FoxP3", "CD80", "CD270", "CD275", "CD134", "CD278", "CD127", "KLRG1", "CD25", "HLADR", "TBet", "XCL1")
 
 # Compile fcs files, down-sample, and preprocess
-fcs_preprocessed <- preprocess(data_dir = data_dir,
-                         meta_filename = "CyTOF samples cohort.xlsx",
-                         markers = markers,
-                         down_sample = TRUE,
-                         sample_size = 300000,
-                         seed = 473,
-                         cofactor = 5) 
-  
+preprocessed <- preprocess(data_dir = data_dir,
+                           metadata = "CyTOF samples cohort.xlsx",
+                           markers = markers,
+                           down_sample = TRUE,
+                           sample_size = 300000,
+                           seed = 473,
+                           cofactor = 5) 
+saveRDS(preprocessed, file = "_data/cycombine_dfci1_preprocessed.RDS")
+
 # Run batch correction
-fcs_corrected <- fcs_preprocessed %>%
+corrected <- preprocessed %>%
   batch_correct(seed = 473)
+saveRDS(corrected, file = "_data/cycombine_dfci1_corrected.RDS")
+```
+
+### The modular alternative
+
+``` r
+library(cyCombine)
+library(magrittr)
+# Direcory containing .fcs files
+data_dir <- "data/raw"
+# Markers of interest
+markers <- c("CD20", "CD3", "CD27", "CD45RA", "CD279", "CD5", "CD19", "CD14", "CD45RO", "GranzymeA", "GranzymeK", "FCRL6", "CD355", "CD152", "CD69", "CD33", "CD4", "CD337", "CD8", "CD197", "LAG3", "CD56", "CD137", "CD161", "FoxP3", "CD80", "CD270", "CD275", "CD134", "CD278", "CD127", "KLRG1", "CD25", "HLADR", "TBet", "XCL1")
+
+# Compile fcs files, down-sample, and preprocess
+fcs <- compile_fcs(data_dir = data_dir,
+                   metadata = "CyTOF samples cohort.xlsx",
+                   sample_col = NULL,
+                   batch_col = "Batch",
+                   filename_col = "FCS_name")
+
+df <- convert_flowset(flowset = fcs$fcs_raw,
+                                sample_ids = fcs$sample_ids,
+                                batch_ids = fcs$batch_ids,
+                                down_sample = FALSE)
+
+preprocessed <- df %>% 
+  transform_asinh(markers = markers)
+
+saveRDS(preprocessed, file = "_data/cycombine_dfci1_preprocessed.RDS")
+
+# Run batch correction
+som_ <- preprocessed %>%
+  scale_expr() %>%
+  create_som()
+
+corrected <- preprocessed %>%
+  correct_data(som_classes = som_$unit.classif,
+               covar = "sample",
+               markers = markers)
+saveRDS(corrected, file = "_data/cycombine_dfci1_corrected.RDS")
 ```
 
 ### From a flowset
@@ -131,15 +172,19 @@ fcs_preprocessed <- flowset %>%
   transform_asinh(markers = markers)
   
 # Run batch correction
-fcs_corrected <- fcs_preprocessed %>%
+corrected <- preprocessed %>%
   batch_correct(seed = 473)
 ```
 
 ## Plotting
 
 ``` r
-density_plots(uncorrected = fcs_preprocessed,
-                corrected = fcs_corrected,
+# Full analysis can be run with
+run_analysis(tool = "cycombine", data = "dfci1", data_dir = "_data")
+
+# Otherwise, plots can be made like so:
+density_plots(uncorrected = preprocessed,
+                corrected = corrected,
                 markers = markers,
                 filename = 'figs/densities_withcovar.png')
 
