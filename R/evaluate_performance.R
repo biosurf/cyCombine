@@ -49,7 +49,7 @@ compute_emd <- function(df,
         dplyr::select(all_of(markers)) %>%
         apply(2, function(x) {
           # Bin data
-          bins <- seq(-5, 30, by = binSize)
+          bins <- seq(-10, 30, by = binSize)
           if (length(x) == 0) {
             rep(0, times = length(bins) - 1)
           }else{
