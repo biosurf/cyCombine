@@ -13,8 +13,10 @@
 #' @importFrom flowCore read.flowSet fsApply
 #' @param data_dir Directory containing the .fcs files
 #' @param metadata Can be either a filename or data.frame of the metadata file If NULL, sample and batch ids are not predicted nor returned
-#' @param sample_col The column in the metadata filename containing the sample ids. If NULL, sample ids will be the file names
-#' @param batch_col The column in the metadata filename containing the sample ids
+#' @param sample_col The column in the metadata containing the sample ids. If NULL, sample ids will be the file names
+#' @param batch_col The column in the metadata containing the batch ids
+#' @param filename_col The column in the metadata containing the fcs filenames
+#' @param condition_col Optional: The column in the metadata containing the condition. Will be used as the covariate in ComBat, but can be specified later.
 #' @param pattern The pattern to use to find the files in the folder
 #'
 #' @examples
@@ -25,19 +27,31 @@ compile_fcs <- function(data_dir,
                         sample_col = NULL,
                         batch_col = "Batch",
                         filename_col = "FCS_name",
+                        condition_col = NULL,
                         pattern = "\\.fcs"){
+
+  # Error checking
+  if(data_dir %>% endsWith("/")) data_dir <- data_dir %>% stringr::str_sub(end = -2)
+  if(class(metadata) == "character" & !file.exists(file.path(data_dir, metadata))){
+    stop("File \"", file.path(data_dir, metadata), "\" was not found")
+  }
+
+
   # Specifying files to use
   files <- list.files(data_dir,
                       pattern = pattern,
                       recursive = FALSE,
                       full.names = TRUE)
-  message(paste("Read", length(files), "file names to process"))
+  if(length(files) == 0) stop("No files found in folder \"", data_dir, "\"")
 
-    # Read all the data files
+  # Read the data files
+  message(paste("Reading", length(files), "files to process"))
   fcs_raw <- files %>%
     flowCore::read.flowSet(transformation = FALSE,
                            truncate_max_range = FALSE,
                            emptyValue = FALSE)
+
+  # Return fcs_raw if no metadata is given
   if(is.null(metadata)) return(fcs_raw)
 
   # Get metadata
@@ -54,7 +68,32 @@ compile_fcs <- function(data_dir,
     }
   }
 
+  # Check for errors in metadata columns
+  md_cols <- colnames(metadata)
+  check_colname(md_cols, sample_col)
+  check_colname(md_cols, batch_col)
+  check_colname(md_cols, filename_col)
+  check_colname(md_cols, condition_col)
+  # if(!is.null(sample_col)){
+  #   if(sample_col %!in% md_cols){
+  #   stop("Column", sample_col, "was not found in the metadata.")
+  #   }}
+  # if(!is.null(batch_col)){
+  #   if(batch_col %!in% md_cols){
+  #   stop("Column", batch_col, "was not found in the metadata.")
+  #   }}
+  # if(!is.null(filename_col)){
+  #   if(filename_col %!in% md_cols){
+  #   stop("Column", filename_col, "was not found in the metadata.")
+  # }}
+  # if(!is.null(condition_col)){
+  #   if(condition_col %!in% md_cols){
+  #   stop("Column", filename_col, "was not found in the metadata.")
+  # }}
 
+
+
+  # Extract info from metadata
   if(!endsWith(metadata[[filename_col]][1], ".fcs")){
     metadata[[filename_col]] <- paste0(metadata[[filename_col]], ".fcs")
   }
@@ -113,7 +152,7 @@ convert_flowset <- function(flowset,
                             sample_ids = NULL,
                             batch_ids = NULL,
                             down_sample = TRUE,
-                            sample_size = 100000,
+                            sample_size = 500000,
                             seed = 473,
                             panel = NULL,
                             panel_channel = "fcs_colname",
