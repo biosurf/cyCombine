@@ -154,7 +154,7 @@ evaluate_emd <- function(preprocessed,
     for (marker in markers){
       emd_ori <- emd_uncorrected[cellType, ][marker]
       emd_cor <- emd_corrected[cellType, ][marker]
-      if(emd_ori > 2){
+      if(emd_ori > 2 & emd_cor > 2){
         # Only compute reduction if there is a significant distance to be reduced (This avoids deviding by 0)
         reduction[cellType, marker] <- (emd_ori - emd_cor) / emd_ori
       }else{
@@ -190,7 +190,7 @@ evaluate_emd <- function(preprocessed,
   # Define the plotting limit
   limit <- scat_ori$scat_ori %>%
     max() %>%
-    plyr::round_any(5, f = ceiling) +1
+    plyr::round_any(5, f = ceiling) + 1
     # ceiling() * 10
 
   plt <- scat %>%
