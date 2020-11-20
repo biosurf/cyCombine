@@ -154,7 +154,7 @@ evaluate_emd <- function(preprocessed,
     for (marker in markers){
       emd_ori <- emd_uncorrected[cellType, ][marker]
       emd_cor <- emd_corrected[cellType, ][marker]
-      if(emd_ori > 2 & emd_cor > 2){
+      if(emd_ori > 2){
         # Only compute reduction if there is a significant distance to be reduced (This avoids deviding by 0)
         reduction[cellType, marker] <- (emd_ori - emd_cor) / emd_ori
       }else{
@@ -164,7 +164,7 @@ evaluate_emd <- function(preprocessed,
     }
   }
   # Mean reducion (Perhaps a better aggregate function can be used)
-  red <- psych::harmonic.mean(reduction, na.rm = TRUE) %>%
+  red <- psych::harmonic.mean(reduction, na.rm = TRUE, zero = FALSE) %>%
     round(2)
 
   message("Creating plots..")
@@ -214,7 +214,7 @@ evaluate_emd <- function(preprocessed,
 
 
 
-
+#' @noRd
 reduction <- function(uncor, cor){
   red <- (uncor - cor) / uncor
   return(red)
