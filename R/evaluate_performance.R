@@ -118,6 +118,7 @@ evaluate_emd <- function(preprocessed,
   missing_package("emdist", "CRAN")
   missing_package("viridis", "CRAN")
   missing_package("plyr", "CRAN")
+  missing_package("psych", "CRAN")
 
   # Define cell columns as characters to avoid problems with factors
   corrected[[cell_col]] <- corrected[[cell_col]] %>%
@@ -125,12 +126,12 @@ evaluate_emd <- function(preprocessed,
   preprocessed[[cell_col]] <- preprocessed[[cell_col]] %>%
     as.character()
 
-  message("Computing emd for corrected data")
+  message("Computing emd for corrected data..")
   emd_corrected <- corrected %>%
     dplyr::arrange(id) %>%
     cyCombine::compute_emd()
 
-  message("Computing emd for uncorrected data")
+  message("Computing emd for uncorrected data..")
   emd_uncorrected <- preprocessed %>%
     dplyr::arrange(id) %>%
     cyCombine::compute_emd()
@@ -146,7 +147,7 @@ evaluate_emd <- function(preprocessed,
     markers <- corrected %>%
       get_markers()
   }
-  message("Computing reduction in emd")
+  message("Computing reduction in emd..")
   reduction <- matrix(NA, nrow = length(cellTypes), ncol = length(markers),
                       dimnames = list(cellTypes, markers))
   for (cellType in cellTypes){
@@ -163,10 +164,10 @@ evaluate_emd <- function(preprocessed,
     }
   }
   # Mean reducion (Perhaps a better aggregate function can be used)
-  red <- mean(reduction, na.rm = TRUE) %>%
+  red <- psych::harmonic.mean(reduction, na.rm = TRUE) %>%
     round(2)
 
-  message("Creating plots")
+  message("Creating plots..")
   # Dataframes containing the comparisons returned by compute_emd()
   scat_ori <- emd_uncorrected %>%
     tibble::as_tibble() %>%
