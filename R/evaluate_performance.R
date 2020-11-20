@@ -199,7 +199,7 @@ evaluate_emd <- function(preprocessed,
          y = "EMD - Uncorrected",
          title = "With cell population",
          subtitle = paste("Reduction:", red)) +
-    coord_cartesian(xlim = c(0, limit), ylim = c(0, limit)) +
+    coord_cartesian(xlim = c(-5, limit), ylim = c(-5, limit)) +
     viridis::scale_color_viridis(discrete = TRUE) +
     geom_abline(slope = 1, intercept = 0)
 
@@ -211,3 +211,10 @@ evaluate_emd <- function(preprocessed,
               "emd_uncor" = emd_uncorrected))
 }
 
+
+
+
+reduction <- function(uncor, cor){
+  red <- (uncor - cor) / uncor
+  return(red)
+}
