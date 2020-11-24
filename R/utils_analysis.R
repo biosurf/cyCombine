@@ -73,15 +73,20 @@ run_analysis <- function(tool,
   projdir <- paste0(data_dir, "/", project)
 
   message("Loading data..")
+
   # Load data
-  preprocessed <- readRDS(paste0(data_dir, "/cycombine_", data, variant, uncorrected_extension, ".RDS"))
+  if(tool = "imubac"){
+    preprocessed <- readRDS(paste0(projdir, uncorrected_extension, ".RDS"))
+  } else{
+    preprocessed <- readRDS(paste0(data_dir, "/cycombine_", data, variant, uncorrected_extension, ".RDS"))
+  }
   corrected <- readRDS(paste0(projdir, corrected_extension, ".RDS"))
 
 
   # Get markers
   if(is.null(markers)){
     if(is.null(panel)){
-      markers <- cyCombine::get_markers(corrected)
+      markers <- cyCombine::get_markers(preprocessed)
     } else{
       markers <- panel %>%
         dplyr::filter(marker_class %!in% c("none", "state")) %>%
