@@ -75,7 +75,7 @@ run_analysis <- function(tool,
   message("Loading data..")
 
   # Load data
-  if(tool = "imubac"){
+  if(tool == "imubac"){
     preprocessed <- readRDS(paste0(projdir, uncorrected_extension, ".RDS"))
   } else{
     preprocessed <- readRDS(paste0(data_dir, "/cycombine_", data, variant, uncorrected_extension, ".RDS"))
