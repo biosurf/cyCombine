@@ -132,7 +132,8 @@ correct_data_prev <- function(df,
 correct_data <- function(df,
                          som_classes,
                          covar = NULL,
-                         markers = NULL){
+                         markers = NULL,
+                         parametric = TRUE){
   message("Batch correcting data...")
   if (is.null(markers)){
     # Get markers
@@ -195,8 +196,11 @@ correct_data <- function(df,
         dplyr::select(all_of(markers)) %>%
         t() %>%
         # The as.character is to remove factor levels not present in the SOM node
-        purrr::when(num_covar > 1 ~ sva::ComBat(., batch = as.character(df$batch), mod = stats::model.matrix(~df$covar)),
-                    ~ sva::ComBat(., batch = as.character(df$batch))
+        purrr::when(num_covar > 1 ~ sva::ComBat(., batch = as.character(df$batch),
+                                                mod = stats::model.matrix(~df$covar),
+                                                prior.plots = parametric),
+                    ~ sva::ComBat(., batch = as.character(df$batch),
+                                  par.prior = parametric)
                     ) %>%
         t() %>%
         tibble::as_tibble() %>%
@@ -235,6 +239,7 @@ correct_data <- function(df,
 batch_correct <- function(preprocessed,
                           xdim = 8,
                           ydim = 8,
+                          parametric = TRUE,
                           seed = 473,
                           covar = NULL,
                           markers = NULL){
