@@ -44,6 +44,7 @@ run_analysis <- function(tool,
                          markers = NULL,
                          celltype_col = NULL,
                          segment = "",
+                         binSize = 0.1,
                          gridsize = 8,
                          seed = 473){
   # Load metadata
@@ -169,7 +170,7 @@ run_analysis <- function(tool,
   if(segment %in% c("", "emd")){
     message("Evaluating Earth Movers Distance..")
     emd_val <- preprocessed %>%
-      cyCombine::evaluate_emd(corrected)
+      cyCombine::evaluate_emd(corrected, binSize = binSize)
 
     message("Saving results..")
     ggsave(filename = paste0("figs/", project, "_emd.png"),
