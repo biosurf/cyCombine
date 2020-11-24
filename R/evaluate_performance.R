@@ -165,7 +165,7 @@ evaluate_emd <- function(preprocessed,
     }
   }
   # Mean reducion (Perhaps a better aggregate function can be used)
-  red <- psych::harmonic.mean(reduction, na.rm = TRUE, zero = FALSE) %>%
+  red <- mean(reduction, na.rm = TRUE) %>%
     round(2)
 
   message("Creating plots..")
@@ -208,7 +208,8 @@ evaluate_emd <- function(preprocessed,
 
   message("Evaluation complete")
   return(list("plot" = plt,
-              "reduction" = red,
+              "mean_reduction" = red,
+              "reduction" = reduction,
               "emd_cor" = emd_corrected,
               "emd_uncor" = emd_uncorrected))
 }
