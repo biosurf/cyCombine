@@ -110,6 +110,7 @@ compute_emd <- function(df,
 #' @export
 evaluate_emd <- function(preprocessed,
                          corrected,
+                         binSize = 0.1,
                          cell_col = "label",
                          batch_col = "batch",
                          markers = NULL){
@@ -129,12 +130,12 @@ evaluate_emd <- function(preprocessed,
   message("Computing emd for corrected data..")
   emd_corrected <- corrected %>%
     dplyr::arrange(id) %>%
-    cyCombine::compute_emd()
+    cyCombine::compute_emd(binSize = binSize)
 
   message("Computing emd for uncorrected data..")
   emd_uncorrected <- preprocessed %>%
     dplyr::arrange(id) %>%
-    cyCombine::compute_emd()
+    cyCombine::compute_emd(binSize = binSize)
 
   # Extract cell types
   cellTypes <- corrected %>%
