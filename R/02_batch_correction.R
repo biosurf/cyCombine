@@ -182,6 +182,7 @@ correct_data <- function(df,
         som <- df$som[1]
         batch <- df$batch[1]
         message(paste("SOM node", som, "only contains cells from batch", batch))
+        df <- df %>% select(-som)
         return(df)
       }
       # Calculate number of covars in the node
