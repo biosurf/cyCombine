@@ -46,7 +46,8 @@ run_analysis <- function(tool,
                          segment = "",
                          binSize = 0.1,
                          gridsize = 8,
-                         seed = 473){
+                         seed = 473,
+                         umap_size = 20000){
   # Load metadata
   if(!is.null(md)){
     if(endsWith(md, "csv")){
@@ -152,10 +153,11 @@ run_analysis <- function(tool,
   # UMAP
   if(segment %in% c("", "umap")){
     message("Creating UMAPs..")
+
     # Down-sample
     set.seed(seed)
     preprocessed_sliced <- preprocessed %>%
-      dplyr::slice_sample(n = 20000)
+      dplyr::slice_sample(n = umap_size)
 
     corrected_sliced <- corrected %>%
       dplyr::semi_join(preprocessed_sliced, by = "id")
