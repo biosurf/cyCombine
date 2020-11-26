@@ -129,12 +129,14 @@ evaluate_emd_dev <- function(preprocessed,
   message("Computing emd for corrected data..")
   emd_corrected <- corrected %>%
     dplyr::arrange(id) %>%
-    compute_emd(binSize = binSize)
+    compute_emd(binSize = binSize,
+                cell_col = cell_col)
 
   message("Computing emd for uncorrected data..")
   emd_uncorrected <- preprocessed %>%
     dplyr::arrange(id) %>%
-    compute_emd(binSize = binSize)
+    compute_emd(binSize = binSize,
+                cell_col = cell_col)
 
   # Compute reduction
   tot_emd_uncor <- emd_uncorrected %>%
@@ -363,12 +365,14 @@ evaluate_emd <- function(preprocessed,
   message("Computing emd for corrected data..")
   emd_corrected <- corrected %>%
     dplyr::arrange(id) %>%
-    cyCombine::compute_emd(binSize = binSize)
+    cyCombine::compute_emd(binSize = binSize,
+                           cell_col = cell_col)
 
   message("Computing emd for uncorrected data..")
   emd_uncorrected <- preprocessed %>%
     dplyr::arrange(id) %>%
-    cyCombine::compute_emd(binSize = binSize)
+    cyCombine::compute_emd(binSize = binSize,
+                           cell_col = cell_col)
 
   # Extract cell types
   cellTypes <- corrected %>%
