@@ -173,7 +173,7 @@ correct_data <- function(df,
     dplyr::group_by(som) %>%
     # Run ComBat on each SOM class
     dplyr::group_modify(.keep = TRUE, function(df, ...){
-
+      print(df$som[1])
       # Detect if only one batch is present in the node
       num_batches <- df$batch %>%
         unique() %>%
@@ -199,7 +199,7 @@ correct_data <- function(df,
         # The as.character is to remove factor levels not present in the SOM node
         purrr::when(num_covar > 1 ~ sva::ComBat(., batch = as.character(df$batch),
                                                 mod = stats::model.matrix(~df$covar),
-                                                prior.plots = parametric),
+                                                par.prior = parametric),
                     ~ sva::ComBat(., batch = as.character(df$batch),
                                   par.prior = parametric)
                     ) %>%
