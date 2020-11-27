@@ -8,6 +8,7 @@ batch_correct(
   preprocessed,
   xdim = 8,
   ydim = 8,
+  parametric = TRUE,
   seed = 473,
   covar = NULL,
   markers = NULL

@@ -17,8 +17,10 @@ run_analysis(
   markers = NULL,
   celltype_col = NULL,
   segment = "",
+  binSize = 0.1,
   gridsize = 8,
-  seed = 473
+  seed = 473,
+  umap_size = 20000
 )
 }
 \arguments{

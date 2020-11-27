@@ -9,7 +9,7 @@ convert_flowset(
   sample_ids = NULL,
   batch_ids = NULL,
   down_sample = TRUE,
-  sample_size = 1e+05,
+  sample_size = 5e+05,
   seed = 473,
   panel = NULL,
   panel_channel = "fcs_colname",

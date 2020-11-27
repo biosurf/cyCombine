@@ -10,6 +10,7 @@ compile_fcs(
   sample_col = NULL,
   batch_col = "Batch",
   filename_col = "FCS_name",
+  condition_col = NULL,
   pattern = "\\\\.fcs"
 )
 }
@@ -18,9 +19,13 @@ compile_fcs(
 
 \item{metadata}{Can be either a filename or data.frame of the metadata file If NULL, sample and batch ids are not predicted nor returned}
 
-\item{sample_col}{The column in the metadata filename containing the sample ids. If NULL, sample ids will be the file names}
+\item{sample_col}{The column in the metadata containing the sample ids. If NULL, sample ids will be the file names}
 
-\item{batch_col}{The column in the metadata filename containing the sample ids}
+\item{batch_col}{The column in the metadata containing the batch ids}
+
+\item{filename_col}{The column in the metadata containing the fcs filenames}
+
+\item{condition_col}{Optional: The column in the metadata containing the condition. Will be used as the covariate in ComBat, but can be specified later.}
 
 \item{pattern}{The pattern to use to find the files in the folder}
 }

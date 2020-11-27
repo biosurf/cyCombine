@@ -173,7 +173,7 @@ correct_data <- function(df,
     dplyr::group_by(som) %>%
     # Run ComBat on each SOM class
     dplyr::group_modify(.keep = TRUE, function(df, ...){
-      print(df$som[1])
+
       # Detect if only one batch is present in the node
       num_batches <- df$batch %>%
         unique() %>%
@@ -185,6 +185,7 @@ correct_data <- function(df,
         df <- df %>% select(-som)
         return(df)
       }
+      message(paste("Correcting SOM node", df$som[1]))
       # Calculate number of covars in the node
       if(!is.null(covar)){
         num_covar <- df$covar %>%

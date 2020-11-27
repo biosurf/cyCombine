@@ -7,9 +7,11 @@
 evaluate_emd(
   preprocessed,
   corrected,
+  binSize = 0.1,
   cell_col = "label",
   batch_col = "batch",
-  markers = NULL
+  markers = NULL,
+  plots = TRUE
 )
 }
 \arguments{
@@ -17,13 +19,17 @@ evaluate_emd(
 
 \item{corrected}{Dataframe of corrected data}
 
+\item{binSize}{The size of bins to use when binning data}
+
 \item{cell_col}{Column name of df that contains cell population labels (or clusters)}
 
 \item{batch_col}{Column name of df that contains batch numbers}
 
 \item{markers}{Vector of the markers to calculate EMD for. If NULL, \code{\link{get_markers}} will be used to find markers}
+
+\item{plots}{If TRUE, a boxplot and scatterplot of the emds will be returned}
 }
 \description{
-The function computes the Eartch Movers Distance of the two given datasets.
-Then the reduction is calculated for every celltype
+The function computes the Earth Mover's Distance of the two given datasets.
+Then the reduction is calculated as the relative change in total EMD.
 }

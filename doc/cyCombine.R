@@ -41,24 +41,24 @@ if(FALSE){
   # 700k: 9.2 min
 
   ### Panel1 ----
-  load("_data/raw/DFCI_panel2_data.Rdata")
+  load("_data/raw/DFCI_panel1_data.Rdata")
 
-  markers <- panel2_data$all_markers
-  preprocessed <- panel2_data$fcs_raw %>%
-    convert_flowset(sample_ids = panel2_data$sample_ids,
-                    batch_ids = panel2_data$batch_ids,
+  markers <- panel1_data$all_markers
+  preprocessed <- panel1_data$fcs_raw %>%
+    convert_flowset(sample_ids = panel1_data$sample_ids,
+                    batch_ids = panel1_data$batch_ids,
                     down_sample = TRUE,
-                    sample_size = 700000,
+                    sample_size = 30000,
                     seed = 473) %>%
-    transform_asinh(panel2_data$all_markers)
+    transform_asinh(panel1_data$all_markers)
 
   save(preprocessed, file = "_data/01_dfci2_preprocessed_700k.Rdata")
-  som2 <- preprocessed %>%
+  som <- preprocessed %>%
     scale_expr() %>%
     create_som(seed = 473)
   # #
-  # corrected <- preprocessed %>%
-  #   correct_data(som_classes = som3$unit.classif)
+  corrected <- preprocessed %>%
+    correct_data(som_classes = som$unit.classif)
   #
 
 
@@ -75,7 +75,7 @@ if(FALSE){
   plot_density(uncorrected = preprocessed,
                 corrected = corrected,
                 markers = markers,
-                filename = "figs/03_dfci2_densities_withcovar_700k.png")
+                filename = "figs/test2.png",y="label")#03_dfci2_densities_withcovar_700k.png")
 
   # Down-sample
   preprocessed_sliced <- preprocessed %>%
@@ -113,40 +113,28 @@ if(FALSE){
 
   ### Evaluate performance ----
   # load("_data/02_corrected_700k.Rdata")
-  # load("_data/02_preprocessed_700k.Rdata")
-  load("_data/01_dfci2_preprocessed_700k.Rdata")
-  load("_data/02_dfci2_corrected_700k.Rdata")
+  load("_data/01_panel1_100k_preprocessed.Rdata")
+  load("_data/02_panel1_100k_corrected.Rdata")
+  load("_data/02_dfci2_corrected_100k.Rdata")
 
-  som3 <- corrected %>%
+  som_ <- corrected %>%
     # scale_expr() %>%
-    create_som(seed = 473, xdim = 5)
+    create_som(seed = 473)
 
   # Run clustering
   corrected <- corrected %>%
-    dplyr::mutate(label = som$unit.classif)
+    dplyr::mutate(label = som_$unit.classif)
 
-  threshold <- corrected %>%
-    count(label) %>%
-    filter(n < 3000)
-  corrected_t <- corrected %>%
-    anti_join(threshold, by = "label")
-
-  preprocessed <- preprocessed %>% select(-label)
+  # preprocessed <- preprocessed %>% select(-label)
   #run_flowsom(., k = 10))
   preprocessed <- corrected %>%
     dplyr::select(id, label) %>%
-    dplyr::left_join(preprocessed, by = "id")# %>%
-    # anti_join(threshold, by = "label")
-  preprocessed_t <- preprocessed %>%
-    anti_join(threshold, by = "label")
-
-    # dplyr::mutate(label = run_flowsom(., k = 100))
+    dplyr::left_join(preprocessed, by = "id")
 
   # Compute EMD reduction
   emd_val <- preprocessed %>%
-    cyCombine::evaluate_emd(corrected)
-  emd_val2 <- preprocessed %>%
-    cyCombine::evaluate_emd2(corrected)
+    cyCombine::evaluate_emd(corrected, filter_limit = 5)
+
   save(emd_val, emd_val2, file = "_data/04_dfci2_emd_700k.Rdata")
   # Compute LISI score
 
