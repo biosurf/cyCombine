@@ -94,6 +94,7 @@ compute_emd <- function(df,
 #' @param preprocessed Dataframe of uncorrected data
 #' @param corrected Dataframe of corrected data
 #' @param plots If TRUE, a boxplot and scatterplot of the emds will be returned
+#' @export
 evaluate_emd <- function(preprocessed,
                          corrected,
                          binSize = 0.1,

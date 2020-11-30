@@ -11,7 +11,8 @@ evaluate_emd(
   cell_col = "label",
   batch_col = "batch",
   markers = NULL,
-  plots = TRUE
+  plots = TRUE,
+  filter_limit = 2
 )
 }
 \arguments{

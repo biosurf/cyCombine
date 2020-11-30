@@ -135,7 +135,7 @@ if(FALSE){
   emd_val <- preprocessed %>%
     cyCombine::evaluate_emd(corrected, filter_limit = 5)
 
-  save(emd_val, emd_val2, file = "_data/04_dfci2_emd_700k.Rdata")
+  save(emd_val, file = "_data/04_dfci2_emd_700k.Rdata")
   # Compute LISI score
 
   # Down-sample
