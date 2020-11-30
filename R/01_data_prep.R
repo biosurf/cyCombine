@@ -32,9 +32,10 @@ compile_fcs <- function(data_dir,
 
   # Error checking
   if(data_dir %>% endsWith("/")) data_dir <- data_dir %>% stringr::str_sub(end = -2)
-  if(class(metadata) == "character" & !file.exists(file.path(data_dir, metadata))){
-    stop("File \"", file.path(data_dir, metadata), "\" was not found")
-  }
+  if(!is.null(metadata)){
+    if(class(metadata) == "character" & !file.exists(file.path(data_dir, metadata))){
+      stop("File \"", file.path(data_dir, metadata), "\" was not found")
+  }}
 
 
   # Specifying files to use
