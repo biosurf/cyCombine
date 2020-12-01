@@ -185,7 +185,7 @@ evaluate_emd <- function(preprocessed,
     labs(x = "",
          y = "Earth Mover's Distance",
          title = "Comparison of EMD before and after correction",
-         subtitle = paste("Reduction:", reduction))
+         subtitle = paste("Reduction: ", reduction))
 
 
   scatterplot <- emds_filtered %>%
@@ -201,7 +201,7 @@ evaluate_emd <- function(preprocessed,
          subtitle = paste("Reduction:", reduction))
 
 
-  message("Evaluation complete")
+  message("Evaluation complete.")
   return(list("boxplot" = boxplot,
               "scatterplot" = scatterplot,
               "reduction" = reduction,

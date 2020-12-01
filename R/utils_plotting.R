@@ -71,11 +71,13 @@ plot_dimred <- function(df, name, type = "pca", plot = "batch", marker = NULL, s
   missing_package("ggplot2", "CRAN")
   missing_package("ggridges", "CRAN")
 
-
+  if(is.null(markers)){
+    markers <- cyCombine::get_markers(df)
+  }
   Batch <- df$batch %>%
     as.factor()
   df <- df %>%
-    dplyr::select_if(colnames(.) %!in% non_markers)
+    dplyr::select(dplyr::all_of(markers))
 
   if (type == "pca") {
     # Run PCA

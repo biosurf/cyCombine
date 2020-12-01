@@ -90,9 +90,9 @@ run_analysis <- function(tool,
       markers <- cyCombine::get_markers(preprocessed)
     } else{
       markers <- panel %>%
-        dplyr::filter(marker_class %!in% c("none", "state")) %>%
+        dplyr::filter(marker_class %!in% c("none")) %>%
         dplyr::pull(antigen) %>%
-        stringr::str_remove_all("[ \\_\\-]")
+        stringr::str_remove_all("[ _-]")
     }
   }
 
@@ -164,11 +164,11 @@ run_analysis <- function(tool,
 
     # UMAP plot uncorrected
     umap1 <- preprocessed_sliced %>%
-      cyCombine::plot_dimred(name = "uncorrected", type = "umap")
+      cyCombine::plot_dimred(name = "uncorrected", type = "umap", markers = markers)
 
     # UMAP plot corrected
     umap2 <- corrected_sliced %>%
-      cyCombine::plot_dimred(name = "corrected", type = "umap")
+      cyCombine::plot_dimred(name = "corrected", type = "umap", markers = markers)
 
     cyCombine::plot_save_two(umap1, umap2, filename = paste0("figs/", project, "_umap.png"))
   }
@@ -177,7 +177,7 @@ run_analysis <- function(tool,
   if(segment %in% c("", "emd")){
     message("Evaluating Earth Movers Distance..")
     emd_val <- preprocessed %>%
-      cyCombine::evaluate_emd(corrected, binSize = binSize)
+      cyCombine::evaluate_emd(corrected, binSize = binSize, markers = markers)
 
     message("Saving results..")
     ggsave(filename = paste0("figs/", project, "_emd.png"),
