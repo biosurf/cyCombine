@@ -97,7 +97,54 @@ run_analysis <- function(tool,
   }
 
 
-  if(segment %in% c("", "emd")){
+  # Plotting ----
+  if (!dir.exists("figs")){
+    dir.create("figs")
+  }
+  if(any(segment %in% c("", "density"))){
+
+    message("Creating density plots..")
+    # Density plots
+    suppressMessages(
+      cyCombine::plot_density(uncorrected = preprocessed,
+                              corrected = corrected,
+                              markers = markers,
+                              filename = paste0("figs/", project, "_densities_withcovar.png"))
+    )
+  }
+  # suppressMessages(
+  # plot_density(uncorrected = preprocessed,
+  #              corrected = corrected,
+  #              markers = markers,
+  #              filename = paste0("figs/", project, "_densities_withcovar_label.png"),
+  #              y = "label")
+  # )
+  # UMAP
+  if(any(segment %in% c("", "umap"))){
+    message("Creating UMAPs..")
+
+    # Down-sample
+    set.seed(seed)
+    preprocessed_sliced <- preprocessed %>%
+      dplyr::slice_sample(n = umap_size)
+
+    corrected_sliced <- corrected %>%
+      dplyr::semi_join(preprocessed_sliced, by = "id")
+
+    # UMAP plot uncorrected
+    umap1 <- preprocessed_sliced %>%
+      cyCombine::plot_dimred(name = "uncorrected", type = "umap", markers = markers)
+
+    # UMAP plot corrected
+    umap2 <- corrected_sliced %>%
+      cyCombine::plot_dimred(name = "corrected", type = "umap", markers = markers)
+
+    cyCombine::plot_save_two(umap1, umap2, filename = paste0("figs/", project, "_umap.png"))
+  }
+
+  # Evaluate ----
+  if(any(segment %in% c("", "emd"))){
+
 
     if(is.null(celltype_col)){
       # Cluster and add labels
@@ -124,57 +171,8 @@ run_analysis <- function(tool,
     preprocessed <- corrected %>%
       dplyr::select(id, label) %>%
       dplyr::left_join(preprocessed, by = "id")
-  }
 
 
-
-  # Plotting ----
-  if (!dir.exists("figs")){
-    dir.create("figs")
-  }
-  if(segment %in% c("", "density")){
-
-    message("Creating density plots..")
-    # Density plots
-    suppressMessages(
-      cyCombine::plot_density(uncorrected = preprocessed,
-                              corrected = corrected,
-                              markers = markers,
-                              filename = paste0("figs/", project, "_densities_withcovar.png"))
-    )
-  }
-  # suppressMessages(
-  # plot_density(uncorrected = preprocessed,
-  #              corrected = corrected,
-  #              markers = markers,
-  #              filename = paste0("figs/", project, "_densities_withcovar_label.png"),
-  #              y = "label")
-  # )
-  # UMAP
-  if(segment %in% c("", "umap")){
-    message("Creating UMAPs..")
-
-    # Down-sample
-    set.seed(seed)
-    preprocessed_sliced <- preprocessed %>%
-      dplyr::slice_sample(n = umap_size)
-
-    corrected_sliced <- corrected %>%
-      dplyr::semi_join(preprocessed_sliced, by = "id")
-
-    # UMAP plot uncorrected
-    umap1 <- preprocessed_sliced %>%
-      cyCombine::plot_dimred(name = "uncorrected", type = "umap", markers = markers)
-
-    # UMAP plot corrected
-    umap2 <- corrected_sliced %>%
-      cyCombine::plot_dimred(name = "corrected", type = "umap", markers = markers)
-
-    cyCombine::plot_save_two(umap1, umap2, filename = paste0("figs/", project, "_umap.png"))
-  }
-
-  # Evaluate ----
-  if(segment %in% c("", "emd")){
     message("Evaluating Earth Movers Distance..")
     emd_val <- preprocessed %>%
       cyCombine::evaluate_emd(corrected, binSize = binSize, markers = markers)

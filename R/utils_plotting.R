@@ -65,7 +65,7 @@ plot_density <- function(uncorrected, corrected, markers = NULL, filename, y = "
 # @importFrom uwot umap
 #' Dimensionality reduction plot
 #' @export
-plot_dimred <- function(df, name, type = "pca", plot = "batch", marker = NULL, seed = 473) {
+plot_dimred <- function(df, name, type = "pca", plot = "batch", markers = NULL, seed = 473) {
 
   missing_package("uwot", "CRAN")
   missing_package("ggplot2", "CRAN")
