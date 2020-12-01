@@ -33,9 +33,10 @@ compile_fcs <- function(data_dir,
   # Error checking
   if(data_dir %>% endsWith("/")) data_dir <- data_dir %>% stringr::str_sub(end = -2)
   if(!is.null(metadata)){
-    if(class(metadata) == "character" & !file.exists(file.path(data_dir, metadata))){
-      stop("File \"", file.path(data_dir, metadata), "\" was not found")
-  }}
+    if(class(metadata) == "character"){
+      if(!file.exists(file.path(data_dir, metadata))){
+        stop("File \"", file.path(data_dir, metadata), "\" was not found")
+      }}}
 
 
   # Specifying files to use
@@ -58,11 +59,11 @@ compile_fcs <- function(data_dir,
   # Get metadata
   if(class(metadata) == "character"){
     if(endsWith(metadata, suffix = ".xlsx")){
-      metadata <- file.path(data_dir, metadata) %>%
-        readxl::read_xlsx()
+      metadata <- suppressMessages(file.path(data_dir, metadata) %>%
+        readxl::read_xlsx())
     } else if(endsWith(metadata, suffix = ".csv")){
-      metadata <- file.path(data_dir, metadata) %>%
-        readr::read_csv()
+      metadata <- suppressMessages(file.path(data_dir, metadata) %>%
+        readr::read_csv())
     } else {
       stop(stringr::str_c("Sorry, file", metadata, "is not in a supported format. Please use a .xlsx or .csv file.",
                           sep = " "))
