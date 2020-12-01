@@ -119,13 +119,15 @@ evaluate_emd <- function(preprocessed,
   emd_corrected <- corrected %>%
     dplyr::arrange(id) %>%
     cyCombine::compute_emd(binSize = binSize,
-                cell_col = cell_col)
+                cell_col = cell_col,
+                markers = markers)
 
   message("Computing EMD for uncorrected data..")
   emd_uncorrected <- preprocessed %>%
     dplyr::arrange(id) %>%
     cyCombine::compute_emd(binSize = binSize,
-                cell_col = cell_col)
+                cell_col = cell_col,
+                markers = markers)
 
 
   # Extractin EMD values

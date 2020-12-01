@@ -155,7 +155,8 @@ run_analysis <- function(tool,
         som_ <- corrected %>%
           cyCombine::create_som(seed = seed,
                                 xdim = gridsize,
-                                ydim = gridsize)
+                                ydim = gridsize,
+                                markers = markers)
         saveRDS(som_, file = paste0(projdir, "_som.RDS"))
       }
       # Add labels
