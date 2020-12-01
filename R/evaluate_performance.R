@@ -115,13 +115,13 @@ evaluate_emd <- function(preprocessed,
   preprocessed[[cell_col]] <- preprocessed[[cell_col]] %>%
     as.character()
 
-  message("Computing emd for corrected data..")
+  message("Computing EMD for corrected data..")
   emd_corrected <- corrected %>%
     dplyr::arrange(id) %>%
     cyCombine::compute_emd(binSize = binSize,
                 cell_col = cell_col)
 
-  message("Computing emd for uncorrected data..")
+  message("Computing EMD for uncorrected data..")
   emd_uncorrected <- preprocessed %>%
     dplyr::arrange(id) %>%
     cyCombine::compute_emd(binSize = binSize,
@@ -147,7 +147,7 @@ evaluate_emd <- function(preprocessed,
   emds_filtered <- emds %>%
     dplyr::filter(!(Corrected < filter_limit & Uncorrected < filter_limit))
 
-  message(paste("Removing EMDs below", filter_limit, "both before and after reduction."))
+  message(paste("Removing EMDs below", filter_limit, "both before and after correction"))
   reduction <- (sum(emds_filtered$Reduction) / sum(emds_filtered$Uncorrected)) %>%
     round(2)
   message("The reduction is:", reduction)
