@@ -75,7 +75,7 @@ compute_emd <- function(df,
           # Get matrix for the two batches to be compared
           A <- matrix(distr[[batch1]][[cellType]][, marker])
           B <- matrix(distr[[batch2]][[cellType]][, marker])
-          distances[[cellType]][[marker]][batch1, batch2] <- emdist::emd2d(A, B)
+          distances[[cellType]][[marker]][batch1, batch2] <- emdist::emd2d(A/um(A), B/sum(B))
 
         }
       }
@@ -184,7 +184,7 @@ evaluate_emd <- function(preprocessed,
     tidyr::pivot_longer(cols = ends_with("orrected"), names_to = "corrected") %>%
     ggplot(aes(x = corrected, y = value)) +
     geom_violin() +
-    geom_boxplot(width=0.1) +
+    geom_boxplot(width = 0.1) +
     labs(x = "",
          y = "Earth Mover's Distance",
          title = "Comparison of EMD before and after correction",
