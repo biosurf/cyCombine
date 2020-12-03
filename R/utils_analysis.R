@@ -179,7 +179,7 @@ run_analysis <- function(tool,
       cyCombine::evaluate_emd(corrected, binSize = binSize, markers = markers)
 
     message("Saving results..")
-    ggsave(filename = paste0("figs/", project, "_boxplot.png"),
+    ggsave(filename = paste0("figs/", project, "_violin.png"),
            plot = emd_val$boxplot, device = "png")
     ggsave(filename = paste0("figs/", project, "_scatterplot.png"),
            plot = emd_val$scatterplot, device = "png")
