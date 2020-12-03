@@ -76,7 +76,6 @@ compute_emd <- function(df,
           A <- matrix(distr[[batch1]][[cellType]][, marker])
           B <- matrix(distr[[batch2]][[cellType]][, marker])
           distances[[cellType]][[marker]][batch1, batch2] <- emdist::emd2d(A/sum(A), B/sum(B))
-
         }
       }
     }
