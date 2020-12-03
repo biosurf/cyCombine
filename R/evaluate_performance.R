@@ -54,7 +54,7 @@ compute_emd <- function(df,
             rep(0, times = length(bins) - 1)
           }else{
             graphics::hist(x, breaks = bins,
-                           plot = FALSE)$counts
+                           plot = FALSE)$density
           }
         })
     }
@@ -75,7 +75,7 @@ compute_emd <- function(df,
           # Get matrix for the two batches to be compared
           A <- matrix(distr[[batch1]][[cellType]][, marker])
           B <- matrix(distr[[batch2]][[cellType]][, marker])
-          distances[[cellType]][[marker]][batch1, batch2] <- emdist::emd2d(A/sum(A), B/sum(B))
+          distances[[cellType]][[marker]][batch1, batch2] <- emdist::emd2d(A, B)
         }
       }
     }
