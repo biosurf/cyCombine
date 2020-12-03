@@ -180,10 +180,11 @@ evaluate_emd <- function(preprocessed,
     plyr::round_any(5, f = ceiling) + 1
 
   # Create boxplot
-  boxplot <- emds_filtered %>%
+  violin <- emds_filtered %>%
     tidyr::pivot_longer(cols = ends_with("orrected"), names_to = "corrected") %>%
     ggplot(aes(x = corrected, y = value)) +
-    geom_boxplot() +
+    geom_violin() +
+    geom_boxplot(width=0.1) +
     labs(x = "",
          y = "Earth Mover's Distance",
          title = "Comparison of EMD before and after correction",
@@ -204,7 +205,7 @@ evaluate_emd <- function(preprocessed,
 
 
   message("Evaluation complete.")
-  return(list("boxplot" = boxplot,
+  return(list("violin" = violin,
               "scatterplot" = scatterplot,
               "reduction" = reduction,
               "emd" = emds))
