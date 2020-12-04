@@ -15,14 +15,32 @@ if(FALSE){
   data_dir <- "~/Documents/thesis/raw/fcs"
   markers <- c("CD20", "CD3", "CD27", "CD45RA", "CD279", "CD5", "CD19", "CD14", "CD45RO", "GranzymeA", "GranzymeK", "FCRL6", "CD355", "CD152", "CD69", "CD33", "CD4", "CD337", "CD8", "CD197", "LAG3", "CD56", "CD137", "CD161", "FoxP3", "CD80", "CD270", "CD275", "CD134", "CD278", "CD127", "KLRG1", "CD25", "HLADR", "TBet", "XCL1")
 
-  # test <- data_dir %>%
-  #   compile_fcs(meta_filename = "CyTOF samples cohort.xlsx",sample_col = "FCS_name")
+  flowset <- data_dir %>%
+    compile_fcs()
+
+
+  df <- flowset %>%
+    convert_flowset(metadata = paste0(data_dir, "/CyTOF samples cohort.xlsx"),
+                    sample_ids = NULL,
+                    batch_ids = "Batch",
+                    filename_col = "FCS_name",
+                    condition = NULL,
+                    down_sample = TRUE,
+                    sample_size = 100000)
+
+
+
+
+
   preprocessed <- preprocess(data_dir = data_dir,
-                             meta_filename = "CyTOF samples cohort.xlsx",
+                             metadata = paste0(data_dir, "/CyTOF samples cohort.xlsx"),
                              markers = markers,
+                             sample_ids = NULL,
+                             batch_ids = "Batch",
+                             filename_col = "FCS_name",
+                             condition = "Set",
                              down_sample = TRUE,
                              sample_size = 100000,
-                             seed = 474,
                              cofactor = 5)
 
   save(preprocessed, file = "_data/01_preprocessed_100k.Rdata")

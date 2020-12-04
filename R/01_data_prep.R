@@ -9,34 +9,18 @@
 #' @importFrom readr read_csv
 #' @import dplyr
 #' @importFrom magrittr %>%
-#' @importFrom stringr str_remove
 #' @importFrom flowCore read.flowSet fsApply
 #' @param data_dir Directory containing the .fcs files
-#' @param metadata Can be either a filename or data.frame of the metadata file If NULL, sample and batch ids are not predicted nor returned
-#' @param sample_col The column in the metadata containing the sample ids. If NULL, sample ids will be the file names
-#' @param batch_col The column in the metadata containing the batch ids
-#' @param filename_col The column in the metadata containing the fcs filenames
-#' @param condition_col Optional: The column in the metadata containing the condition. Will be used as the covariate in ComBat, but can be specified later.
 #' @param pattern The pattern to use to find the files in the folder
 #'
 #' @examples
-#' fcs <- compile_fcs(data_dir = "_data/raw", metadata = "meta/metadata.csv", sample_col = "sample", batch_col = "batch", filename_col = "fcs_filenames")
+#' fcs <- compile_fcs(data_dir = "_data/raw", metadata = "meta/metadata.csv", sample_ids = "sample", batch_ids = "batch", filename_col = "fcs_filenames")
 #' @export
 compile_fcs <- function(data_dir,
-                        metadata = NULL,
-                        sample_col = NULL,
-                        batch_col = "Batch",
-                        filename_col = "FCS_name",
-                        condition_col = NULL,
                         pattern = "\\.fcs"){
 
   # Error checking
   if(data_dir %>% endsWith("/")) data_dir <- data_dir %>% stringr::str_sub(end = -2)
-  if(!is.null(metadata)){
-    if(class(metadata) == "character"){
-      if(!file.exists(file.path(data_dir, metadata))){
-        stop("File \"", file.path(data_dir, metadata), "\" was not found")
-      }}}
 
 
   # Specifying files to use
@@ -47,78 +31,14 @@ compile_fcs <- function(data_dir,
   if(length(files) == 0) stop("No files found in folder \"", data_dir, "\"")
 
   # Read the data files
-  message(paste("Reading", length(files), "files to process"))
+  message(paste("Reading", length(files), "files to a flowSet"))
   fcs_raw <- files %>%
     flowCore::read.flowSet(transformation = FALSE,
                            truncate_max_range = FALSE,
                            emptyValue = FALSE)
 
-  # Return fcs_raw if no metadata is given
-  if(is.null(metadata)) return(fcs_raw)
-
-  # Get metadata
-  if(class(metadata) == "character"){
-    if(endsWith(metadata, suffix = ".xlsx")){
-      metadata <- suppressMessages(file.path(data_dir, metadata) %>%
-        readxl::read_xlsx())
-    } else if(endsWith(metadata, suffix = ".csv")){
-      metadata <- suppressMessages(file.path(data_dir, metadata) %>%
-        readr::read_csv())
-    } else {
-      stop(stringr::str_c("Sorry, file", metadata, "is not in a supported format. Please use a .xlsx or .csv file.",
-                          sep = " "))
-    }
-  }
-
-  # Check for errors in metadata columns
-  md_cols <- colnames(metadata)
-  check_colname(md_cols, sample_col)
-  check_colname(md_cols, batch_col)
-  check_colname(md_cols, filename_col)
-  check_colname(md_cols, condition_col)
-  # if(!is.null(sample_col)){
-  #   if(sample_col %!in% md_cols){
-  #   stop("Column", sample_col, "was not found in the metadata.")
-  #   }}
-  # if(!is.null(batch_col)){
-  #   if(batch_col %!in% md_cols){
-  #   stop("Column", batch_col, "was not found in the metadata.")
-  #   }}
-  # if(!is.null(filename_col)){
-  #   if(filename_col %!in% md_cols){
-  #   stop("Column", filename_col, "was not found in the metadata.")
-  # }}
-  # if(!is.null(condition_col)){
-  #   if(condition_col %!in% md_cols){
-  #   stop("Column", filename_col, "was not found in the metadata.")
-  # }}
-
-
-
-  # Extract info from metadata
-  if(!endsWith(metadata[[filename_col]][1], ".fcs")){
-    metadata[[filename_col]] <- paste0(metadata[[filename_col]], ".fcs")
-  }
-
-  # Get sample and batch ids
-  if (is.null(sample_col)){
-    sample_ids <- basename(files) %>%
-      stringr::str_remove(".fcs") %>%
-      rep(flowCore::fsApply(fcs_raw, nrow))
-    batch_ids <- metadata[[batch_col]][match(sample_ids, stringr::str_remove(metadata[[filename_col]], ".fcs"))] %>%
-      as.factor()
-  } else{
-    sample_ids <- metadata[[sample_col]][match(basename(files), metadata[[filename_col]])] %>%
-      rep(flowCore::fsApply(fcs_raw, nrow)) %>%
-      stringr::str_remove(".fcs")
-    batch_ids <- metadata[[batch_col]][match(basename(files), metadata[[filename_col]])] %>%
-      as.factor() %>%
-      rep(flowCore::fsApply(fcs_raw, nrow))
-  }
-
-  return(list("fcs_raw" = fcs_raw,
-              "sample_ids" = sample_ids,
-              "batch_ids" = batch_ids))
+  # Return fcs_raw
+  return(fcs_raw)
 }
 
 
@@ -132,33 +52,132 @@ compile_fcs <- function(data_dir,
 #' Convert a flowset into a workable dataframe
 #'
 #' @importFrom tibble as_tibble
+#' @importFrom stringr str_remove
 #' @importFrom purrr when
 #' @importFrom stringr str_remove_all
 #' @importFrom Biobase exprs pData
 #' @importFrom flowCore parameters
 #'
 #' @param flowset The flowset to convert
-#' @param sample_ids Vector containing the sample ids
-#' @param batch_ids Vector containing the batch ids
+#' @param metadata Optional: Can be either a filename or data.frame of the metadata file.
+#' @param sample_ids Optional: If a character, it should be the sample column in the metadata. If its a vector, it should have the same length as the total flowset. If NULL, sample ids will be the file names
+#' @param batch_ids Optional: If a character, it should be the column in the metadata containing the batch ids. If its a vector, it should have the same length as the total flowset.
+#' @param filename_col Optional: The column in the metadata containing the fcs filenames. Needed if metadata is given, but sample_ids is not
+#' @param condition Optional: The column in the metadata containing the condition. Will be used as the covariate in ComBat, but can be specified later.
 #' @param down_sample If TRUE, the output will be down-sampled to size sample_size
 #' @param sample_size The size to down-sample to
 #' @param seed The seed to use for down-sampling
-#' @param panel Panel as a data.frame. Is used to predict colnames
-#' @param panel_channel Only used if panel is given. It is the column name in the panel data.frame that contains the channel names
-#' @param panel_antigen Only used if panel is given. It is the column name in the panel data.frame that contains the antigen names
+#' @param panel Optional: Panel as a data.frame. Is used to define colnames from the panel_antigen column
+#' @param panel_channel Optional: Only used if panel is given. It is the column name in the panel data.frame that contains the channel names
+#' @param panel_antigen Optional: Only used if panel is given. It is the column name in the panel data.frame that contains the antigen names
 #'
 #' @examples
 #' df <- convert_flowset(flowset = fcs$fcs_raw, sample_ids = fcs$sample_ids, batch_ids = fcs$batch_ids, down_sample = FALSE)
 #' @export
 convert_flowset <- function(flowset,
+                            metadata = NULL,
+                            filename_col = "filename",
                             sample_ids = NULL,
                             batch_ids = NULL,
+                            condition = NULL,
                             down_sample = TRUE,
                             sample_size = 500000,
                             seed = 473,
                             panel = NULL,
                             panel_channel = "fcs_colname",
                             panel_antigen = "antigen"){
+  # Error handling
+  if(!is.null(metadata)){
+    if(is.null(filename_col)){
+      stop("Please specify a filename_col.")
+    }
+    if("character" %in% class(metadata)){
+      if(!file.exists(file.path(metadata))){
+        stop("File \"", file.path(metadata), "\" was not found")
+      }
+
+    # Get metadata
+      if(endsWith(metadata, suffix = ".xlsx")){
+        metadata <- suppressMessages(file.path(metadata) %>%
+                                       readxl::read_xlsx())
+      } else if(endsWith(metadata, suffix = ".csv")){
+        metadata <- suppressMessages(file.path(metadata) %>%
+                                       readr::read_csv())
+      } else {
+        stop(stringr::str_c("Sorry, file", metadata, "is not in a supported format. Please use a .xlsx or .csv file.",
+                            sep = " "))
+      }
+    }
+
+    # Check for errors in metadata columns
+    md_cols <- colnames(metadata)
+    check_colname(md_cols, filename_col)
+
+    # Get file names from flowset
+    files <- flowset@phenoData %>%
+      rownames() %>%
+      basename()
+
+    # Extract info from metadata
+    if(!endsWith(metadata[[filename_col]][1], ".fcs")){
+      metadata[[filename_col]] <- paste0(metadata[[filename_col]], ".fcs")
+    }
+    # Remove files from metadata
+    metadata <- metadata[metadata[[filename_col]] %in% files, ]
+    # Get sample ids
+    if (is.null(sample_ids)){
+      sample_ids <- metadata[[filename_col]] %>%
+        stringr::str_remove(".fcs") %>%
+        rep(flowCore::fsApply(flowset, nrow))
+    } else if (length(sample_ids) == 1){
+      check_colname(md_cols, sample_ids)
+      sample_ids <- metadata[[sample_ids]][match(files, metadata[[filename_col]])] %>%
+        stringr::str_remove(".fcs") %>%
+        rep(flowCore::fsApply(flowset, nrow))
+    }
+
+    # Get batch ids
+    if (!is.null(batch_ids)){
+      if(length(batch_ids) == 1){
+        check_colname(md_cols, batch_ids)
+        batch_ids <- metadata[[batch_ids]][match(files, metadata[[filename_col]])] %>%
+          as.factor() %>%
+          rep(flowCore::fsApply(flowset, nrow))
+      }
+    }
+    # Get condition
+    if(!is.null(condition)){
+      if(length(condition == 1)){
+        check_colname(md_cols, condition)
+        condition <- metadata[[condition]][match(basename(files), metadata[[filename_col]])] %>%
+          as.factor() %>%
+          rep(flowCore::fsApply(flowset, nrow))
+      }
+
+    }
+
+  }
+
+  # Clean column names
+  if (!is.null(panel)){
+    cols <- match(colnames(fcs_data), panel[[panel_channel]]) %>%
+      .[!is.na(.)]
+    col_names <- panel[[panel_antigen]][cols] %>%
+      stringr::str_remove_all("\\d+[A-Za-z]+_") %>%
+      stringr::str_remove_all("[ _-]")
+
+    fcs_data <- fcs_data %>%
+      dplyr::select(dplyr::all_of(panel[[panel_channel]]))
+  }else{
+    col_names <- flowset[[1]] %>%
+      flowCore::parameters() %>%
+      Biobase::pData() %>%
+      dplyr::pull(desc) %>%
+      stringr::str_remove_all("\\d+[A-Za-z]+_") %>%
+      stringr::str_remove_all("[ _-]")
+  }
+
+
   # Down sampling setup
   if(down_sample){
     # To down sample within fsApply
@@ -169,12 +188,6 @@ convert_flowset <- function(flowset,
     sample <- sample(1:tot_nrows, sample_size) %>%
       # Sorting here enables major resource savings when down-sampling
       sort()
-    if(!is.null(sample_ids) & !is.null(batch_ids)){
-      sample_ids <- sample_ids[sample]
-      batch_ids <- batch_ids[sample]
-    }
-
-
   }
 
   message("Extracting expression data")
@@ -183,40 +196,15 @@ convert_flowset <- function(flowset,
                                                 sample = sample,
                                                 nrows = nrows),
                 ~ flowCore::fsApply(., Biobase::exprs)) %>%
-    tibble::as_tibble()
+    tibble::as_tibble() %>%
+    dplyr::mutate(id = 1:nrow(.)) %>%
+    select(id, everything())
+  colnames(fcs_data) <- c("id", col_names)
 
-  # Clean column names
-  if (!is.null(panel)){
-    cols <- match(colnames(fcs_data), panel[[panel_channel]]) %>%
-      .[!is.na(.)]
-    col_names <- panel[[panel_antigen]][cols] %>%
-      stringr::str_remove_all("\\d+[A-Za-z]+_") %>%
-      stringr::str_remove_all("[ \\-\\_]")
-
-
-    fcs_data <- fcs_data %>%
-      dplyr::select(dplyr::all_of(panel[[panel_channel]]))
-  }else{
-    col_names <- flowset[[1]] %>%
-      flowCore::parameters() %>%
-      Biobase::pData() %>%
-      dplyr::pull(desc) %>%
-      stringr::str_remove_all("\\d+[A-Za-z]+_") %>%
-      stringr::str_remove_all("[ \\-\\_]")
-  }
-
-  if(!is.null(sample_ids) & !is.null(batch_ids)){
-    fcs_data <- fcs_data %>%
-      dplyr::mutate(batch = batch_ids,
-                    sample = sample_ids,
-                    id = 1:nrow(.))
-    colnames(fcs_data) <- c(col_names, "batch", "sample", "id")
-  } else{
-    fcs_data <- fcs_data %>%
-      dplyr::mutate(id = 1:nrow(.))
-    colnames(fcs_data) <- c(col_names, "id")
-  }
-
+  # Add optional columns
+  if(!is.null(sample_ids)) fcs_data$sample <- sample_ids[sample]
+  if(!is.null(batch_ids)) fcs_data$batch <- batch_ids[sample]
+  if(!is.null(condition)) fcs_data$condition <- condition[sample]
 
   message("Your flowset is now converted into a dataframe.")
   return(fcs_data)
@@ -285,15 +273,19 @@ transform_asinh <- function(df, markers, cofactor = 5){
 #' @inheritParams transform_asinh
 #' @export
 preprocess <- function(data_dir,
-                       markers,
-                       metadata = NULL,
-                       sample_col = NULL,
-                       batch_col = "Batch",
-                       filename_col = "FCS_name",
+                       markers = NULL,
                        pattern = "\\.fcs",
+                       metadata = NULL,
+                       filename_col = "filename",
+                       sample_ids = NULL,
+                       batch_ids = NULL,
+                       condition = NULL,
                        down_sample = TRUE,
                        sample_size = 500000,
                        seed = 473,
+                       panel = NULL,
+                       panel_channel = "fcs_colname",
+                       panel_antigen = "antigen",
                        cofactor = 5){
   if(class(data_dir) != "character"){
     stop(paste("This function only works with a directory of .fcs files.",
@@ -301,19 +293,20 @@ preprocess <- function(data_dir,
                sep = "\n"))
   }
   # Compile directory to flowset
-  fcs <- data_dir %>%
-    compile_fcs(metadata = metadata,
-                sample_col = sample_col,
-                batch_col = batch_col,
-                filename_col = filename_col,
-                pattern = pattern)
+  fcs_data <- data_dir %>%
+    compile_fcs(pattern = pattern) %>%
   # Convert flowset to dataframe
-  fcs_data <- fcs$fcs_raw %>%
-    convert_flowset(batch_ids = fcs$batch_ids,
-                    sample_ids = fcs$sample_ids,
+    convert_flowset(metadata = metadata,
+                    filename_col = filename_col,
+                    sample_ids = sample_ids,
+                    batch_ids = batch_ids,
+                    condition = condition,
                     down_sample = down_sample,
                     sample_size = sample_size,
-                    seed = seed) %>%
+                    seed = seed,
+                    panel = panel,
+                    panel_channel = panel_channel,
+                    panel_antigen = panel_antigen) %>%
     # Transform dataset with asinh
     transform_asinh(markers = markers,
                     cofactor = cofactor)

@@ -100,8 +100,12 @@ markers <- c("CD20", "CD3", "CD27", "CD45RA", "CD279", "CD5", "CD19", "CD14", "C
 
 # Compile fcs files, down-sample, and preprocess
 preprocessed <- preprocess(data_dir = data_dir,
-                           metadata = "CyTOF samples cohort.xlsx",
                            markers = markers,
+                           metadata = paste0(data_dir, "/CyTOF samples cohort.xlsx"),
+                           sample_ids = NULL,
+                           batch_ids = "Batch",
+                           filename_col = "FCS_name",
+                           condition = "Set",
                            down_sample = TRUE,
                            sample_size = 300000,
                            seed = 473,
@@ -125,16 +129,17 @@ data_dir <- "data/raw"
 markers <- c("CD20", "CD3", "CD27", "CD45RA", "CD279", "CD5", "CD19", "CD14", "CD45RO", "GranzymeA", "GranzymeK", "FCRL6", "CD355", "CD152", "CD69", "CD33", "CD4", "CD337", "CD8", "CD197", "LAG3", "CD56", "CD137", "CD161", "FoxP3", "CD80", "CD270", "CD275", "CD134", "CD278", "CD127", "KLRG1", "CD25", "HLADR", "TBet", "XCL1")
 
 # Compile fcs files, down-sample, and preprocess
-fcs <- compile_fcs(data_dir = data_dir,
-                   metadata = "CyTOF samples cohort.xlsx",
-                   sample_col = NULL,
-                   batch_col = "Batch",
-                   filename_col = "FCS_name")
+flowset <- compile_fcs(data_dir = data_dir,
+                   pattern = "\\.fcs")
 
-df <- convert_flowset(flowset = fcs$fcs_raw,
-                                sample_ids = fcs$sample_ids,
-                                batch_ids = fcs$batch_ids,
-                                down_sample = FALSE)
+df <- convert_flowset(metadata = paste0(data_dir, "/CyTOF samples cohort.xlsx"),
+                      sample_ids = NULL,
+                      batch_ids = "Batch",
+                      filename_col = "FCS_name",
+                      condition = "Set",
+                      down_sample = TRUE,
+                      sample_size = 300000,
+                      seed = 473)
 
 preprocessed <- df %>% 
   transform_asinh(markers = markers)
@@ -144,11 +149,11 @@ saveRDS(preprocessed, file = "_data/cycombine_dfci1_preprocessed.RDS")
 # Run batch correction
 som_ <- preprocessed %>%
   scale_expr() %>%
-  create_som()
+  create_som(markers = markers)
 
 corrected <- preprocessed %>%
   correct_data(som_classes = som_$unit.classif,
-               covar = "sample",
+               covar = "condition",
                markers = markers)
 saveRDS(corrected, file = "_data/cycombine_dfci1_corrected.RDS")
 ```
