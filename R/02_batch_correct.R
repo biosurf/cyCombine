@@ -121,13 +121,13 @@ correct_data_prev <- function(df,
 #' @importFrom stats model.matrix
 #' @param som_classes The classes as returned by the \code{\link{create_som}} function
 #' @param covar The covariate ComBat should use. Can be a vector or a column name in the input datafrome.
-#'   if covar == sample: it is predicted based on the sample same (whether the sample id starts with HD or not).
 #'   If NULL, no covar will be used
+#' @param parametric Default: TRUE. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used.
 #' @inheritParams scale_expr
 #' @family batch
 #' @examples
 #' corrected <- preprocesed %>%
-#'   correct_data(som_classes = som_$unit.classif, covar = covar)
+#'   correct_data(som_classes = som_$unit.classif, covar = "condition")
 #' @export
 correct_data <- function(df,
                          som_classes,
@@ -144,23 +144,14 @@ correct_data <- function(df,
 
   if(is.null(covar)){
     # No covar is given
-    df <- df %>%
-      dplyr::mutate(som = som_classes)
-    num_covar <- 0
+    df$som <- som_classes
+    num_covar <- 1
   }else if(class(covar) == "character" & length(covar) == 1){
+    check_colname(colnames(df), covar)
     # Covar is in the data.frame
     df <- df %>%
       dplyr::mutate(som = som_classes,
                     covar = df[[covar]] %>%
-                      as.factor())
-  } else if(covar[1] == "sample"){
-    # Covar should be determined from the sample column
-    df <- df %>%
-      dplyr::mutate(som = som_classes,
-                    # Determine covariate
-                    covar = case_when(stringr::str_starts(string = sample,
-                                                          pattern = "HD") ~ "HD",
-                                      TRUE ~ "CLL") %>%
                       as.factor())
   } else{
     # Covar was given as a vector
@@ -215,7 +206,6 @@ correct_data <- function(df,
       return(ComBat_output)
     }) %>%
     dplyr::ungroup() %>%
-    # dplyr::select(-som) %>%
     # Reduce all negative values to zero
     dplyr::mutate_at(dplyr::vars(all_of(markers)),
                      function(x) {
@@ -238,32 +228,31 @@ correct_data <- function(df,
 #' @param preprocessed The preprocessed dataframe to run batch correction on
 #' @family batch
 #' @export
-batch_correct <- function(preprocessed,
+batch_correct <- function(df,
                           xdim = 8,
                           ydim = 8,
                           parametric = TRUE,
                           seed = 473,
                           covar = NULL,
-                          markers = NULL){
+                          markers = NULL,
+                          batch_col = "batch"){
 
-  if(is.null(markers)){
-    # Get markers
-    markers <- df %>%
-      cyCombine::get_markers()
-  }
+  check_colname(colnames(df), batch_col)
 
   # Create SOM on scaled data
-  som_ <- preprocessed %>%
-    scale_expr() %>%
-    create_som(seed = seed,
+  som_ <- df %>%
+    scale_expr(markers = markers) %>%
+    create_som(markers = markers,
+               seed = seed,
                xdim = xdim,
                ydim = ydim)
 
   # Run batch correction
-  corrected <- preprocessed %>%
+  corrected <- df %>%
     correct_data(som_classes = som_$unit.classif,
                  covar = covar,
-                 markers = markers)
+                 markers = markers,
+                 parametric = parametric)
   message("Done!")
   return(corrected)
 }

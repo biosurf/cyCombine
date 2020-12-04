@@ -163,7 +163,7 @@ convert_flowset <- function(flowset,
     cols <- match(colnames(fcs_data), panel[[panel_channel]]) %>%
       .[!is.na(.)]
     col_names <- panel[[panel_antigen]][cols] %>%
-      stringr::str_remove_all("\\d+[A-Za-z]+_") %>%
+      stringr::str_remove_all("^\\d+[A-Za-z]+_") %>%
       stringr::str_remove_all("[ _-]")
 
     fcs_data <- fcs_data %>%
@@ -173,7 +173,7 @@ convert_flowset <- function(flowset,
       flowCore::parameters() %>%
       Biobase::pData() %>%
       dplyr::pull(desc) %>%
-      stringr::str_remove_all("\\d+[A-Za-z]+_") %>%
+      stringr::str_remove_all("^\\d+[A-Za-z]+_") %>%
       stringr::str_remove_all("[ _-]")
   }
 
@@ -242,20 +242,29 @@ fcs_sample <- function(flowframe, sample, nrows, seed = 473){
 #' @param df The dataframe to transform
 #' @param markers The markers to transform on
 #' @param cofactor The cofactor to use when transforming
+#' @param .keep Keep all channels
 #' @family preprocess
 #' @examples
 #' preprocessed <- df %>%
 #'   transform_asinh(markers = markers)
 #' @export
-transform_asinh <- function(df, markers, cofactor = 5){
+transform_asinh <- function(df, markers = NULL, cofactor = 5, .keep = FALSE){
+  if(is.null(markers)){
+    markers <- df %>%
+      cyCombine::get_markers()
+  }
+  if(any(markers %!in% colnames(df))){
+    stop("Not all given markers are in the data.")
+  }
   message(paste("Transforming data using asinh with a cofactor of", cofactor))
   transformed <- df %>%
-    # Select markers of interest
-    dplyr::select(dplyr::all_of(c(markers, "batch", "sample", "id"))) %>%
+    purrr::when(.keep ~ .,
+                ~ dplyr::select_if(., colnames(.) %in% c(markers, non_markers))) %>%
+                # ~ .) %>%
+    # {if(.keep) . else select_if(., colnames(.) %in% c(markers, non_markers))} %>%
     # Transform all data on those markers
-    dplyr::mutate_at(.vars = all_of(markers),
-              .funs = function(x) asinh(ceiling(x)/cofactor)) %>%
-    arrange(id)
+    dplyr::mutate_at(.vars = dplyr::all_of(markers),
+                     .funs = function(x) asinh(ceiling(x)/cofactor))
   return(transformed)
 }
 
@@ -263,53 +272,58 @@ transform_asinh <- function(df, markers, cofactor = 5){
 
 
 
-#' Preprocess a directory of .fcs files
+#' Prepare a directory of .fcs files
 #'
-#' This is a wrapper function that takes you from a directory of .fcs files to a transformed dataframe.
+#' This is a wrapper function that takes you from a directory of .fcs files or a flowset to a transformed dataframe.
 #'
-#'
+#' @param flowset Optional: Prepare a flowset instead of a directory of fcs files
 #' @inheritParams compile_fcs
 #' @inheritParams convert_flowset
 #' @inheritParams transform_asinh
 #' @export
-preprocess <- function(data_dir,
-                       markers = NULL,
-                       pattern = "\\.fcs",
-                       metadata = NULL,
-                       filename_col = "filename",
-                       sample_ids = NULL,
-                       batch_ids = NULL,
-                       condition = NULL,
-                       down_sample = TRUE,
-                       sample_size = 500000,
-                       seed = 473,
-                       panel = NULL,
-                       panel_channel = "fcs_colname",
-                       panel_antigen = "antigen",
-                       cofactor = 5){
-  if(class(data_dir) != "character"){
-    stop(paste("This function only works with a directory of .fcs files.",
-               "If you have already loaded a flowset, please see the convert_flowset() function.",
-               sep = "\n"))
+prepare_data <- function(data_dir = NULL,
+                         flowset = NULL,
+                         markers = NULL,
+                         pattern = "\\.fcs",
+                         metadata = NULL,
+                         filename_col = "filename",
+                         sample_ids = NULL,
+                         batch_ids = NULL,
+                         condition = NULL,
+                         down_sample = TRUE,
+                         sample_size = 500000,
+                         seed = 473,
+                         panel = NULL,
+                         panel_channel = "fcs_colname",
+                         panel_antigen = "antigen",
+                         cofactor = 5,
+                         .keep = FALSE){
+
+  if(is.null(data_dir) & is.null(flowset)) stop("No data given.")
+
+  if(!is.null(data_dir)){
+    # Compile directory to flowset
+    flowset <- data_dir %>%
+      cyCombine::compile_fcs(pattern = pattern)
   }
-  # Compile directory to flowset
-  fcs_data <- data_dir %>%
-    compile_fcs(pattern = pattern) %>%
+
+  fcs_data <- flowset %>%
   # Convert flowset to dataframe
-    convert_flowset(metadata = metadata,
-                    filename_col = filename_col,
-                    sample_ids = sample_ids,
-                    batch_ids = batch_ids,
-                    condition = condition,
-                    down_sample = down_sample,
-                    sample_size = sample_size,
-                    seed = seed,
-                    panel = panel,
-                    panel_channel = panel_channel,
-                    panel_antigen = panel_antigen) %>%
+    cyCombine::convert_flowset(metadata = metadata,
+                               filename_col = filename_col,
+                               sample_ids = sample_ids,
+                               batch_ids = batch_ids,
+                               condition = condition,
+                               down_sample = down_sample,
+                               sample_size = sample_size,
+                               seed = seed,
+                               panel = panel,
+                               panel_channel = panel_channel,
+                               panel_antigen = panel_antigen) %>%
     # Transform dataset with asinh
-    transform_asinh(markers = markers,
-                    cofactor = cofactor)
+    cyCombine::transform_asinh(markers = markers,
+                               cofactor = cofactor,
+                               .keep = .keep)
   message("Done!")
   return(fcs_data)
 }

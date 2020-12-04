@@ -26,13 +26,26 @@ if(FALSE){
                     filename_col = "FCS_name",
                     condition = NULL,
                     down_sample = TRUE,
-                    sample_size = 100000)
+                    sample_size = 100000) %>%
+    transform_asinh(markers)
 
+  df <- data_dir %>%
+    compile_fcs() %>%
+    convert_flowset(metadata = md,
+                    batch_ids = "Batch",
+                    filename_col = "FCS_name",
+                    down_sample = TRUE,
+                    sample_size = 100000) %>%
+    transform_asinh()
 
+  df <- data_dir %>%
+    prepare_data(down_sample = TRUE,
+                 sample_size = 100000)
 
+  df_cor <- df %>%
+    batch_correct()
 
-
-  preprocessed <- preprocess(data_dir = data_dir,
+  preprocessed <- prepare_data(data_dir = data_dir,
                              metadata = paste0(data_dir, "/CyTOF samples cohort.xlsx"),
                              markers = markers,
                              sample_ids = NULL,
@@ -47,7 +60,7 @@ if(FALSE){
   # Batch correct
 
   corrected <- preprocessed %>%
-    batch_correct()
+    batch_correct(markers = markers)
 
   # Save result
   save(corrected, file = "_data/02_corrected_100k.Rdata")
