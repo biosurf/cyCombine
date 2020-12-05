@@ -59,7 +59,7 @@ compile_fcs <- function(data_dir,
 #' @importFrom flowCore parameters
 #'
 #' @param flowset The flowset to convert
-#' @param metadata Optional: Can be either a filename or data.frame of the metadata file.
+#' @param metadata Optional: Can be either a filename or data.frame of the metadata file. Please give the full path from working directory to metadata file
 #' @param sample_ids Optional: If a character, it should be the sample column in the metadata. If its a vector, it should have the same length as the total flowset. If NULL, sample ids will be the file names
 #' @param batch_ids Optional: If a character, it should be the column in the metadata containing the batch ids. If its a vector, it should have the same length as the total flowset.
 #' @param filename_col Optional: The column in the metadata containing the fcs filenames. Needed if metadata is given, but sample_ids is not
@@ -67,7 +67,7 @@ compile_fcs <- function(data_dir,
 #' @param down_sample If TRUE, the output will be down-sampled to size sample_size
 #' @param sample_size The size to down-sample to
 #' @param seed The seed to use for down-sampling
-#' @param panel Optional: Panel as a data.frame. Is used to define colnames from the panel_antigen column
+#' @param panel Optional: Panel as a fileanme or data.frame. Is used to define colnames from the panel_antigen column
 #' @param panel_channel Optional: Only used if panel is given. It is the column name in the panel data.frame that contains the channel names
 #' @param panel_antigen Optional: Only used if panel is given. It is the column name in the panel data.frame that contains the antigen names
 #'
@@ -158,26 +158,6 @@ convert_flowset <- function(flowset,
 
   }
 
-  # Clean column names
-  if (!is.null(panel)){
-    cols <- match(colnames(fcs_data), panel[[panel_channel]]) %>%
-      .[!is.na(.)]
-    col_names <- panel[[panel_antigen]][cols] %>%
-      stringr::str_remove_all("^\\d+[A-Za-z]+_") %>%
-      stringr::str_remove_all("[ _-]")
-
-    fcs_data <- fcs_data %>%
-      dplyr::select(dplyr::all_of(panel[[panel_channel]]))
-  }else{
-    col_names <- flowset[[1]] %>%
-      flowCore::parameters() %>%
-      Biobase::pData() %>%
-      dplyr::pull(desc) %>%
-      stringr::str_remove_all("^\\d+[A-Za-z]+_") %>%
-      stringr::str_remove_all("[ _-]")
-  }
-
-
   # Down sampling setup
   if(down_sample){
     # To down sample within fsApply
@@ -199,6 +179,36 @@ convert_flowset <- function(flowset,
     tibble::as_tibble() %>%
     dplyr::mutate(id = 1:nrow(.)) %>%
     select(id, everything())
+
+  # Clean column names
+  if (!is.null(panel)){
+    if("character" %in% class(panel)){
+      if(endsWith(panel, suffix = ".xlsx")){
+        metadata <- suppressMessages(file.path(panel) %>%
+                                       readxl::read_xlsx())
+      } else if(endsWith(panel, suffix = ".csv")){
+        metadata <- suppressMessages(file.path(panel) %>%
+                                       readr::read_csv())
+      } else {
+        stop(paste("Sorry, file", panel, "is not in a supported format. Please use a .xlsx or .csv file."))
+      }
+    }
+    cols <- match(colnames(fcs_data), panel[[panel_channel]]) %>%
+      .[!is.na(.)]
+    col_names <- panel[[panel_antigen]][cols] %>%
+      stringr::str_remove_all("^\\d+[A-Za-z]+_") %>%
+      stringr::str_remove_all("[ _-]")
+
+    fcs_data <- fcs_data %>%
+      dplyr::select(dplyr::all_of(panel[[panel_channel]]))
+  }else{
+    col_names <- flowset[[1]] %>%
+      flowCore::parameters() %>%
+      Biobase::pData() %>%
+      dplyr::pull(desc) %>%
+      stringr::str_remove_all("^\\d+[A-Za-z]+_") %>%
+      stringr::str_remove_all("[ _-]")
+  }
   colnames(fcs_data) <- c("id", col_names)
 
   # Add optional columns

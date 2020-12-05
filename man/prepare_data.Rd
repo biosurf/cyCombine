@@ -33,7 +33,7 @@ prepare_data(
 
 \item{pattern}{The pattern to use to find the files in the folder}
 
-\item{metadata}{Optional: Can be either a filename or data.frame of the metadata file.}
+\item{metadata}{Optional: Can be either a filename or data.frame of the metadata file. Please give the full path from working directory to metadata file}
 
 \item{filename_col}{Optional: The column in the metadata containing the fcs filenames. Needed if metadata is given, but sample_ids is not}
 
@@ -49,7 +49,7 @@ prepare_data(
 
 \item{seed}{The seed to use for down-sampling}
 
-\item{panel}{Optional: Panel as a data.frame. Is used to define colnames from the panel_antigen column}
+\item{panel}{Optional: Panel as a fileanme or data.frame. Is used to define colnames from the panel_antigen column}
 
 \item{panel_channel}{Optional: Only used if panel is given. It is the column name in the panel data.frame that contains the channel names}
 
