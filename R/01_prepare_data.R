@@ -31,7 +31,7 @@ compile_fcs <- function(data_dir,
   if(length(files) == 0) stop("No files found in folder \"", data_dir, "\"")
 
   # Read the data files
-  message(paste("Reading", length(files), "files to a flowSet.."))
+  message(paste("Reading", length(files), "files to a flowSet..."))
   fcs_raw <- files %>%
     flowCore::read.flowSet(transformation = FALSE,
                            truncate_max_range = FALSE,
@@ -104,7 +104,8 @@ convert_flowset <- function(flowset,
         metadata <- suppressMessages(file.path(metadata) %>%
                                        readr::read_csv())
       } else {
-        stop(stringr::str_c("Sorry, file", metadata, "is not in a supported format. Please use a .xlsx or .csv file.",
+        stop(stringr::str_c("Sorry, file", metadata, "is not in a supported format. Please use a .xlsx or .csv file.\n",
+                            "Alternatively, a data.frame of the metadata can be used.",
                             sep = " "))
       }
     }
@@ -173,7 +174,7 @@ convert_flowset <- function(flowset,
     if(!is.null(condition)) condition <- condition[sample]
   }
 
-  message("Extracting expression data")
+  message("Extracting expression data...")
   fcs_data <- flowset %>%
     purrr::when(down_sample ~ flowCore::fsApply(., fcs_sample,
                                                 sample = sample,
@@ -203,7 +204,7 @@ convert_flowset <- function(flowset,
       stringr::str_remove_all("[ _-]")
 
     fcs_data <- fcs_data %>%
-      dplyr::select(dplyr::all_of(panel[[panel_channel]]))
+      dplyr::select(id, dplyr::all_of(panel[[panel_channel]]))
   }else{
     col_names <- flowset[[1]] %>%
       flowCore::parameters() %>%
@@ -227,7 +228,7 @@ convert_flowset <- function(flowset,
 
 
 #' Extract from a flowset given a sample of indices
-#'
+#' @noRd
 #' @importFrom purrr accumulate
 fcs_sample <- function(flowframe, sample, nrows, seed = 473){
   nrows_acc <- c(0, nrows %>%
@@ -252,10 +253,13 @@ fcs_sample <- function(flowframe, sample, nrows, seed = 473){
 #### Data transformation ----
 
 #' Transform data using asinh
+#'
+#' Inverse sine transformation of a dataframe.
+#'
 #' @param df The dataframe to transform
 #' @param markers The markers to transform on
 #' @param cofactor The cofactor to use when transforming
-#' @param .keep Keep all channels
+#' @param .keep Keep all channels. If FALSE, channels that are not transformed are removed
 #' @family preprocess
 #' @examples
 #' preprocessed <- df %>%
@@ -269,19 +273,17 @@ transform_asinh <- function(df, markers = NULL, cofactor = 5, .keep = FALSE){
   if(any(markers %!in% colnames(df))){
     stop("Not all given markers are in the data.")
   }
-  message(paste("Transforming data using asinh with a cofactor of", cofactor))
+  message(paste0("Transforming data using asinh with a cofactor of ", cofactor, "..."))
   transformed <- df %>%
     purrr::when(.keep ~ .,
                 ~ dplyr::select_if(., colnames(.) %in% c(markers, non_markers))) %>%
-                # ~ .) %>%
-    # {if(.keep) . else select_if(., colnames(.) %in% c(markers, non_markers))} %>%
     # Transform all data on those markers
     dplyr::mutate_at(.vars = dplyr::all_of(markers),
                      .funs = function(x) asinh(ceiling(x)/cofactor))
   return(transformed)
 }
 
-#### Workflow function ----
+#### Wrapper function ----
 
 
 

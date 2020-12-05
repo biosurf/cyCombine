@@ -14,7 +14,7 @@
 #'   scale_expr()
 #' @export
 scale_expr <- function(df, markers = NULL){
-  message("Scaling expression data")
+  message("Scaling expression data...")
   if(is.null(markers)){
     # Get markers
     markers <- df %>%
@@ -57,7 +57,7 @@ create_som <- function(df,
       cyCombine::get_markers()
   }
   # 10x10 SOM grid on overlapping markers, extract clustering per cell
-  message("Creating SOM grid...")
+  message("Creating SOM grid... (Depending on the size of the data set, this may take a while)")
   set.seed(seed)
   som <- df %>%
     dplyr::select(markers) %>%
@@ -85,7 +85,7 @@ correct_data_prev <- function(df,
   for (s in sort(unique(som_classes))) {
     # Extract original (non-scaled+ranked) data for cluster
     data_subset <- df[which(som_classes==s), ]
-    cat("som class:", s, "\n", sep = " ")
+    message(paste("SOM class:", s))
 
 
     # ComBat batch correction using disease status as covariate
@@ -189,10 +189,12 @@ correct_data <- function(df,
         dplyr::select(all_of(markers)) %>%
         t() %>%
         # The as.character is to remove factor levels not present in the SOM node
-        purrr::when(num_covar > 1 ~ sva::ComBat(., batch = as.character(df$batch),
-                                                mod = stats::model.matrix(~df$covar),
+        purrr::when(num_covar > 1 ~ sva::ComBat(.,
+                                                batch = as.character(df$batch),
+                                                mod = stats::model.matrix(~as.character(df$covar)),
                                                 par.prior = parametric),
-                    ~ sva::ComBat(., batch = as.character(df$batch),
+                    ~ sva::ComBat(.,
+                                  batch = as.character(df$batch),
                                   par.prior = parametric)
                     ) %>%
         t() %>%

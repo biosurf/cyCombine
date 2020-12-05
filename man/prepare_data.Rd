@@ -57,7 +57,7 @@ prepare_data(
 
 \item{cofactor}{The cofactor to use when transforming}
 
-\item{.keep}{Keep all channels}
+\item{.keep}{Keep all channels. If FALSE, channels that are not transformed are removed}
 }
 \description{
 This is a wrapper function that takes you from a directory of .fcs files or a flowset to a transformed dataframe.

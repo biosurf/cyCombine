@@ -13,10 +13,10 @@ transform_asinh(df, markers = NULL, cofactor = 5, .keep = FALSE)
 
 \item{cofactor}{The cofactor to use when transforming}
 
-\item{.keep}{Keep all channels}
+\item{.keep}{Keep all channels. If FALSE, channels that are not transformed are removed}
 }
 \description{
-Transform data using asinh
+Inverse sine transformation of a dataframe.
 }
 \examples{
 preprocessed <- df \%>\%
