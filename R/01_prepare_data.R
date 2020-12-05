@@ -31,7 +31,7 @@ compile_fcs <- function(data_dir,
   if(length(files) == 0) stop("No files found in folder \"", data_dir, "\"")
 
   # Read the data files
-  message(paste("Reading", length(files), "files to a flowSet"))
+  message(paste("Reading", length(files), "files to a flowSet.."))
   fcs_raw <- files %>%
     flowCore::read.flowSet(transformation = FALSE,
                            truncate_max_range = FALSE,
@@ -168,6 +168,9 @@ convert_flowset <- function(flowset,
     sample <- sample(1:tot_nrows, sample_size) %>%
       # Sorting here enables major resource savings when down-sampling
       sort()
+    if(!is.null(sample_ids)) sample_ids <- sample_ids[sample]
+    if(!is.null(batch_ids)) batch_ids <- batch_ids[sample]
+    if(!is.null(condition)) condition <- condition[sample]
   }
 
   message("Extracting expression data")
@@ -212,9 +215,9 @@ convert_flowset <- function(flowset,
   colnames(fcs_data) <- c("id", col_names)
 
   # Add optional columns
-  if(!is.null(sample_ids)) fcs_data$sample <- sample_ids[sample]
-  if(!is.null(batch_ids)) fcs_data$batch <- batch_ids[sample]
-  if(!is.null(condition)) fcs_data$condition <- condition[sample]
+  if(!is.null(sample_ids)) fcs_data$sample <- sample_ids
+  if(!is.null(batch_ids)) fcs_data$batch <- batch_ids
+  if(!is.null(condition)) fcs_data$condition <- condition
 
   message("Your flowset is now converted into a dataframe.")
   return(fcs_data)
@@ -316,9 +319,8 @@ prepare_data <- function(data_dir = NULL,
     flowset <- data_dir %>%
       cyCombine::compile_fcs(pattern = pattern)
   }
-
-  fcs_data <- flowset %>%
   # Convert flowset to dataframe
+  fcs_data <- flowset %>%
     cyCombine::convert_flowset(metadata = metadata,
                                filename_col = filename_col,
                                sample_ids = sample_ids,
