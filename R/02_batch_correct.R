@@ -14,7 +14,7 @@
 #'   scale_expr()
 #' @export
 scale_expr <- function(df, markers = NULL){
-  message("Scaling expression data...")
+  message("Scaling expression data..")
   if(is.null(markers)){
     # Get markers
     markers <- df %>%
@@ -57,7 +57,7 @@ create_som <- function(df,
       cyCombine::get_markers()
   }
   # 10x10 SOM grid on overlapping markers, extract clustering per cell
-  message("Creating SOM grid... (Depending on the size of the data set, this may take a while)")
+  message("Creating SOM grid.. (Depending on the size of the data set, this may take a while)")
   set.seed(seed)
   som <- df %>%
     dplyr::select(markers) %>%
@@ -134,7 +134,7 @@ correct_data <- function(df,
                          covar = NULL,
                          markers = NULL,
                          parametric = TRUE){
-  message("Batch correcting data...")
+  message("Batch correcting data..")
   if (is.null(markers)){
     # Get markers
     markers <- df %>%
@@ -182,7 +182,17 @@ correct_data <- function(df,
         num_covar <- df$covar %>%
           unique() %>%
           length()
+
+        covar_counts <- df %>%
+          count(batch, covar) %>%
+          pull(n)
+
+        if(sum(covar_counts) < max(covar_counts) + num_covar*5){
+          num_covar = 1
+        }
       }
+
+
 
       # Compute ComBat correction
       ComBat_output <- df %>%
@@ -263,3 +273,95 @@ batch_correct <- function(df,
 
 
 
+# ALT ----
+#' Correct data using ComBat
+#'
+#' This function computes the batch correction on the preprocessed data using the ComBat algorithm.
+#'
+#' @importFrom sva ComBat
+#' @importFrom stats model.matrix
+#' @param som_classes The classes as returned by the \code{\link{create_som}} function
+#' @param covar The covariate ComBat should use. Can be a vector or a column name in the input datafrome.
+#'   If NULL, no covar will be used
+#' @param parametric Default: TRUE. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used.
+#' @inheritParams scale_expr
+#' @family batch
+#' @examples
+#' corrected <- preprocesed %>%
+#'   correct_data(som_classes = som_$unit.classif, covar = "condition")
+correct_data_alt <- function(df,
+                         som_classes,
+                         covar = NULL,
+                         markers = NULL,
+                         parametric = TRUE){
+  message("Batch correcting data..")
+  if (is.null(markers)){
+    # Get markers
+    markers <- df %>%
+      cyCombine::get_markers()
+  }
+
+
+  if(is.null(covar)){
+    # No covar is given
+    df$som <- som_classes
+    num_covar <- 1
+  }else if(class(covar) == "character" & length(covar) == 1){
+    # check_colname(colnames(df), covar)
+    # Covar is in the data.frame
+    df <- df %>%
+      dplyr::mutate(som = som_classes,
+                    covar = df[[covar]] %>%
+                      as.factor())
+  } else{
+    # Covar was given as a vector
+    df <- df %>%
+      dplyr::mutate(som = som_classes,
+                    covar = as.factor(covar))
+  }
+
+  # Detect if only one batch is present in the node
+  num_batches <- df$batch %>%
+    unique() %>%
+    length()
+  if(num_batches == 1){
+    stop("Only one batch in data.")
+  }
+  if(!is.null(covar)){
+    num_covar <- df$covar %>%
+      unique() %>%
+      length()
+  }
+
+
+    # Compute ComBat correction
+    ComBat_output <- df %>%
+      dplyr::select(all_of(markers)) %>%
+      t() %>%
+      # The as.character is to remove factor levels not present in the SOM node
+      purrr::when(num_covar > 1 ~ sva::ComBat(.,
+                                              batch = as.character(df$batch),
+                                              mod = stats::model.matrix(~df$covar + df$som),
+                                              par.prior = parametric),
+                  ~ sva::ComBat(.,
+                                batch = as.character(df$batch),
+                                mod = stats::model.matrix(~df$som),
+                                par.prior = parametric)
+      ) %>%
+      t() %>%
+      tibble::as_tibble() %>%
+      dplyr::mutate(batch = df$batch,
+                    sample = df$sample,
+                    id = df$id) %>%
+      # Only add covar column, if it is not null
+      purrr::when(!is.null(covar) ~ dplyr::mutate(., covar = df$covar),
+                  ~ .) %>%
+      # Reduce all negative values to zero
+      dplyr::mutate_at(dplyr::vars(all_of(markers)),
+                       function(x) {
+                         x[x < 0] <- 0
+                         return(x)
+                         }) %>%
+      dplyr::arrange(id)
+    return(ComBat_output)
+}

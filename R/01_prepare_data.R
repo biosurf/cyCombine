@@ -31,7 +31,7 @@ compile_fcs <- function(data_dir,
   if(length(files) == 0) stop("No files found in folder \"", data_dir, "\"")
 
   # Read the data files
-  message(paste("Reading", length(files), "files to a flowSet..."))
+  message(paste("Reading", length(files), "files to a flowSet.."))
   fcs_raw <- files %>%
     flowCore::read.flowSet(transformation = FALSE,
                            truncate_max_range = FALSE,
@@ -174,7 +174,7 @@ convert_flowset <- function(flowset,
     if(!is.null(condition)) condition <- condition[sample]
   }
 
-  message("Extracting expression data...")
+  message("Extracting expression data..")
   fcs_data <- flowset %>%
     purrr::when(down_sample ~ flowCore::fsApply(., fcs_sample,
                                                 sample = sample,
@@ -273,7 +273,7 @@ transform_asinh <- function(df, markers = NULL, cofactor = 5, .keep = FALSE){
   if(any(markers %!in% colnames(df))){
     stop("Not all given markers are in the data.")
   }
-  message(paste0("Transforming data using asinh with a cofactor of ", cofactor, "..."))
+  message(paste0("Transforming data using asinh with a cofactor of ", cofactor, ".."))
   transformed <- df %>%
     purrr::when(.keep ~ .,
                 ~ dplyr::select_if(., colnames(.) %in% c(markers, non_markers))) %>%
