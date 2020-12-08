@@ -181,7 +181,7 @@ evaluate_emd <- function(preprocessed,
     plyr::round_any(5, f = ceiling) + 1
 
   # Create violin plots
-  violin <- emds_filtered %>%
+  violin <- emds %>%
     tidyr::pivot_longer(cols = ends_with("orrected"), names_to = "corrected") %>%
     ggplot(aes(x = corrected, y = value)) +
     geom_violin() +
