@@ -271,7 +271,13 @@ transform_asinh <- function(df, markers = NULL, cofactor = 5, .keep = FALSE){
       cyCombine::get_markers()
   }
   if(any(markers %!in% colnames(df))){
-    stop("Not all given markers are in the data.")
+    mes <- str_c("Not all given markers are in the data.\nCheck if the markers contain a _ or -:",
+                 knitr::combine_words(markers),
+                 "Columns:",
+                 knitr::combine_words(colnames(df)),
+                 sep = "\n"
+    )
+    stop(mes)
   }
   message(paste0("Transforming data using asinh with a cofactor of ", cofactor, ".."))
   transformed <- df %>%

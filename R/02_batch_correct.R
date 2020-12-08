@@ -127,7 +127,7 @@ correct_data_prev <- function(df,
 #' @family batch
 #' @examples
 #' corrected <- preprocesed %>%
-#'   correct_data(som_classes = som_$unit.classif, covar = "condition")
+#'   correct_data(label = som_$unit.classif, covar = "condition")
 #' @export
 correct_data <- function(df,
                          label,
