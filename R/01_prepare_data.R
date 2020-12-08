@@ -314,12 +314,18 @@ prepare_data <- function(data_dir = NULL,
                          cofactor = 5,
                          .keep = FALSE){
 
+  # Stop if no data is given
   if(is.null(data_dir) & is.null(flowset)) stop("No data given.")
+  # Remove slash at end of data_dir
+  if(data_dir %>% endsWith("/")) data_dir <- data_dir %>% stringr::str_sub(end = -2)
 
   if(!is.null(data_dir)){
     # Compile directory to flowset
     flowset <- data_dir %>%
       cyCombine::compile_fcs(pattern = pattern)
+
+    # Check metadata in data_dir
+    if(!file.exists(file.path(metadata)) & file.exists(file.path(data_dir, metadata))) metadata <- file.path(data_dir, metadata)
   }
   # Convert flowset to dataframe
   fcs_data <- flowset %>%
