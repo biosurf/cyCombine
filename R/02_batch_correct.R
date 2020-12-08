@@ -149,7 +149,6 @@ correct_data <- function(df,
     label <- "label"
   }
 
-
   # Add covar to df, if given
   if(is.null(covar)){
     # No covar is given
