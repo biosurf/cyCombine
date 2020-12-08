@@ -119,7 +119,7 @@ correct_data_prev <- function(df,
 #'
 #' @importFrom sva ComBat
 #' @importFrom stats model.matrix
-#' @param som_classes The classes as returned by the \code{\link{create_som}} function
+#' @param label The cluster or cell type label. Either as a column name or vector.
 #' @param covar The covariate ComBat should use. Can be a vector or a column name in the input datafrome.
 #'   If NULL, no covar will be used
 #' @param parametric Default: TRUE. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used.
@@ -130,7 +130,7 @@ correct_data_prev <- function(df,
 #'   correct_data(som_classes = som_$unit.classif, covar = "condition")
 #' @export
 correct_data <- function(df,
-                         som_classes,
+                         label,
                          covar = NULL,
                          markers = NULL,
                          parametric = TRUE){
@@ -141,58 +141,57 @@ correct_data <- function(df,
       cyCombine::get_markers()
   }
 
+  # Add label to df
+  if(length(label) == 1){
+    check_colname(colnames(df), label)
+  }else{
+    df$label <- label
+    label <- "label"
+  }
 
+
+  # Add covar to df, if given
   if(is.null(covar)){
     # No covar is given
-    df$som <- som_classes
     num_covar <- 1
-  }else if(class(covar) == "character" & length(covar) == 1){
+  }else if(length(covar) == 1){
     check_colname(colnames(df), covar)
-    # Covar is in the data.frame
-    df <- df %>%
-      dplyr::mutate(som = som_classes,
-                    covar = df[[covar]] %>%
-                      as.factor())
   } else{
     # Covar was given as a vector
-    df <- df %>%
-      dplyr::mutate(som = som_classes,
-                    covar = as.factor(covar))
+    df$covar <- as.factor(covar)
+    covar <- "covar"
   }
 
   corrected_data <- df %>%
-    dplyr::group_by(som) %>%
-    # Run ComBat on each SOM class
+    dplyr::group_by(.data[[label]]) %>%
+    # Correct (modify) each label group with ComBat
     dplyr::group_modify(.keep = TRUE, function(df, ...){
-
       # Detect if only one batch is present in the node
       num_batches <- df$batch %>%
         unique() %>%
         length()
       if(num_batches == 1){
-        som <- df$som[1]
+        lab <- df[[label]][1]
         batch <- df$batch[1]
-        message(paste("SOM node", som, "only contains cells from batch", batch))
-        df <- df %>% select(-som)
+        message(paste("Label group", lab, "only contains cells from batch", batch))
+        df <- df %>% select(-c(label))
         return(df)
       }
-      message(paste("Correcting SOM node", df$som[1]))
+      message(paste("Correcting Label group", df[[label]][1]))
       # Calculate number of covars in the node
       if(!is.null(covar)){
-        num_covar <- df$covar %>%
+        num_covar <- df[[covar]] %>%
           unique() %>%
           length()
 
         covar_counts <- df %>%
-          count(batch, covar) %>%
-          pull(n)
+          count(.data$batch, .data[[covar]]) %>%
+          pull(.data$n)
 
         if(sum(covar_counts) < max(covar_counts) + num_covar*5){
-          num_covar = 1
+          num_covar <- 1
         }
       }
-
-
 
       # Compute ComBat correction
       ComBat_output <- df %>%
@@ -201,7 +200,7 @@ correct_data <- function(df,
         # The as.character is to remove factor levels not present in the SOM node
         purrr::when(num_covar > 1 ~ sva::ComBat(.,
                                                 batch = as.character(df$batch),
-                                                mod = stats::model.matrix(~as.character(df$covar)),
+                                                mod = stats::model.matrix(~as.character(df[[covar]])),
                                                 par.prior = parametric),
                     ~ sva::ComBat(.,
                                   batch = as.character(df$batch),
@@ -213,7 +212,7 @@ correct_data <- function(df,
                       sample = df$sample,
                       id = df$id) %>%
         # Only add covar column, if it is not null
-        purrr::when(!is.null(covar) ~ dplyr::mutate(., covar = df$covar),
+        purrr::when(!is.null(covar) ~ dplyr::mutate(., covar = df[[covar]]),
                     ~ .)
       return(ComBat_output)
     }) %>%
@@ -224,7 +223,8 @@ correct_data <- function(df,
                        x[x < 0] <- 0
                        return(x)
                        }) %>%
-    dplyr::arrange(id)
+    dplyr::arrange(id) %>%
+    select(id, everything())
   return(corrected_data)
 }
 
@@ -241,6 +241,7 @@ correct_data <- function(df,
 #' @family batch
 #' @export
 batch_correct <- function(df,
+                          label = NULL,
                           xdim = 8,
                           ydim = 8,
                           parametric = TRUE,
@@ -252,16 +253,20 @@ batch_correct <- function(df,
   check_colname(colnames(df), batch_col)
 
   # Create SOM on scaled data
-  som_ <- df %>%
-    scale_expr(markers = markers) %>%
-    create_som(markers = markers,
-               seed = seed,
-               xdim = xdim,
-               ydim = ydim)
+  if(is.null(label)){
+    som_ <- df %>%
+      scale_expr(markers = markers) %>%
+      create_som(markers = markers,
+                 seed = seed,
+                 xdim = xdim,
+                 ydim = ydim)
+    label <- som_$unit.classif
+  }
+
 
   # Run batch correction
   corrected <- df %>%
-    correct_data(som_classes = som_$unit.classif,
+    correct_data(label = label,
                  covar = covar,
                  markers = markers,
                  parametric = parametric)
