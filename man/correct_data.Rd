@@ -4,12 +4,12 @@
 \alias{correct_data}
 \title{Correct data using ComBat}
 \usage{
-correct_data(df, som_classes, covar = NULL, markers = NULL, parametric = TRUE)
+correct_data(df, label, covar = NULL, markers = NULL, parametric = TRUE)
 }
 \arguments{
 \item{df}{Dataframe with expression values}
 
-\item{som_classes}{The classes as returned by the \code{\link{create_som}} function}
+\item{label}{The cluster or cell type label. Either as a column name or vector.}
 
 \item{covar}{The covariate ComBat should use. Can be a vector or a column name in the input datafrome.
 If NULL, no covar will be used}
@@ -23,11 +23,12 @@ This function computes the batch correction on the preprocessed data using the C
 }
 \examples{
 corrected <- preprocesed \%>\%
-  correct_data(som_classes = som_$unit.classif, covar = "condition")
+  correct_data(label = som_$unit.classif, covar = "condition")
 }
 \seealso{
 Other batch: 
 \code{\link{batch_correct}()},
+\code{\link{correct_data_alt}()},
 \code{\link{create_som}()},
 \code{\link{scale_expr}()}
 }

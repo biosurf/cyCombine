@@ -6,6 +6,7 @@
 \usage{
 batch_correct(
   df,
+  label = NULL,
   xdim = 8,
   ydim = 8,
   parametric = TRUE,
@@ -17,6 +18,8 @@ batch_correct(
 }
 \arguments{
 \item{df}{Dataframe with expression values}
+
+\item{label}{The cluster or cell type label. Either as a column name or vector.}
 
 \item{xdim}{The x-dimension size of the SOM}
 
@@ -39,6 +42,7 @@ To run the workflow manually, type "batch_correct" to see the source code of thi
 }
 \seealso{
 Other batch: 
+\code{\link{correct_data_alt}()},
 \code{\link{correct_data}()},
 \code{\link{create_som}()},
 \code{\link{scale_expr}()}

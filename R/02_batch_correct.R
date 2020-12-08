@@ -246,10 +246,9 @@ batch_correct <- function(df,
                           parametric = TRUE,
                           seed = 473,
                           covar = NULL,
-                          markers = NULL,
-                          batch_col = "batch"){
-
-  check_colname(colnames(df), batch_col)
+                          markers = NULL){
+  # A batch column is required
+  check_colname(colnames(df), "batch")
 
   # Create SOM on scaled data
   if(is.null(label)){

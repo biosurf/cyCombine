@@ -162,21 +162,19 @@ run_analysis <- function(tool,
       # Add labels
       corrected <- corrected %>%
         dplyr::mutate(label = som_$unit.classif)
-    } else{
-      # Add labels
-      corrected$label <- corrected[[celltype_col]]
+      celltype_col <- "label"
     }
     message("Adding labels to data..")
 
 
     preprocessed <- corrected %>%
-      dplyr::select(id, label) %>%
+      dplyr::select(id, all_of(celltype_col)) %>%
       dplyr::left_join(preprocessed, by = "id")
 
 
     message("Evaluating Earth Movers Distance..")
     emd_val <- preprocessed %>%
-      cyCombine::evaluate_emd(corrected, binSize = binSize, markers = markers)
+      cyCombine::evaluate_emd(corrected, binSize = binSize, markers = markers, cell_col = celltype_col)
 
     message("Saving results..")
     ggsave(filename = paste0("figs/", project, "_violin.png"),

@@ -22,6 +22,7 @@ df_scaled <- preprocessed \%>\%
 \seealso{
 Other batch: 
 \code{\link{batch_correct}()},
+\code{\link{correct_data_alt}()},
 \code{\link{correct_data}()},
 \code{\link{create_som}()}
 }

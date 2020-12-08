@@ -260,6 +260,7 @@ fcs_sample <- function(flowframe, sample, nrows, seed = 473){
 #' @param markers The markers to transform on
 #' @param cofactor The cofactor to use when transforming
 #' @param .keep Keep all channels. If FALSE, channels that are not transformed are removed
+#' @importFrom knitr combine_words
 #' @family preprocess
 #' @examples
 #' preprocessed <- df %>%
@@ -330,7 +331,7 @@ prepare_data <- function(data_dir = NULL,
     flowset <- data_dir %>%
       cyCombine::compile_fcs(pattern = pattern)
 
-    # Check metadata in data_dir
+    # Look for metadata in data_dir
     if(!file.exists(file.path(metadata)) & file.exists(file.path(data_dir, metadata))) metadata <- file.path(data_dir, metadata)
   }
   # Convert flowset to dataframe
