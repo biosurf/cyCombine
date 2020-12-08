@@ -166,10 +166,12 @@ run_analysis <- function(tool,
     }
     message("Adding labels to data..")
 
+    if(celltype_col %!in% colnames(preprocessed)){
+      preprocessed <- corrected %>%
+        dplyr::select(id, all_of(celltype_col)) %>%
+        dplyr::left_join(preprocessed, by = "id")
+    }
 
-    preprocessed <- corrected %>%
-      dplyr::select(id, all_of(celltype_col)) %>%
-      dplyr::left_join(preprocessed, by = "id")
 
 
     message("Evaluating Earth Movers Distance..")

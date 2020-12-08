@@ -108,6 +108,8 @@ evaluate_emd <- function(preprocessed,
   missing_package("viridis", "CRAN")
   missing_package("plyr", "CRAN")
 
+  check_colname(colnames(corrected), cell_col)
+  check_colname(colnames(preprocessed), cell_col)
   # Define cell columns as characters to avoid problems with factors
   corrected[[cell_col]] <- corrected[[cell_col]] %>%
     as.character()
