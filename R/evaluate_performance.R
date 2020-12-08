@@ -44,7 +44,7 @@ compute_emd <- function(df,
     for (cellType in cellTypes) {
       # Filter data on batch and cell type
       distr[[b]][[cellType]] <- df %>%
-        dplyr::filter(label == cellType,
+        dplyr::filter(.data[[cell_col]] == cellType,
                       batch == b) %>%
         dplyr::select(all_of(markers)) %>%
         apply(2, function(x) {
