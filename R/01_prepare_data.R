@@ -27,7 +27,8 @@ compile_fcs <- function(data_dir,
   files <- list.files(data_dir,
                       pattern = pattern,
                       recursive = FALSE,
-                      full.names = TRUE)
+                      full.names = TRUE) %>%
+    sort()
   if(length(files) == 0) stop("No files found in folder \"", data_dir, "\"")
 
   # Read the data files
