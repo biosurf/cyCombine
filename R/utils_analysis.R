@@ -13,6 +13,7 @@
 #' @param uncorrected_extension The extension used to name the uncorrected data. Default: "_preprocessed"
 #' @param corrected_extension The extension used to name the corrected data. Default: "_corrected"
 #' @param variant Optional: A parameter to set a variant name of an experiment
+#' @param use_cycombine_uncor If TRUE, the uncorrected data made by cyCombine will be used.
 #' @param restart If TRUE, the SOM grid will be calculated even if it has been computed and stored previously
 #' @param md Optional: Metadata filename. Currently not useful
 #' @param panel Optional: If given, it will be used to define markers. Otherwise the function \code{\link{get_markers}} will be used
@@ -38,6 +39,7 @@ run_analysis <- function(tool,
                          uncorrected_extension = "_preprocessed",
                          corrected_extension = "_corrected",
                          variant = NULL,
+                         use_cycombine_uncor = FALSE,
                          restart = FALSE,
                          md = NULL,
                          panel = NULL,
@@ -76,10 +78,10 @@ run_analysis <- function(tool,
   message("Loading data..")
 
   # Load data
-  if(tool == "imubac"){
-    preprocessed <- readRDS(paste0(projdir, uncorrected_extension, ".RDS"))
-  } else{
+  if(use_cycombine_uncor){
     preprocessed <- readRDS(paste0(data_dir, "/cycombine_", data, variant, uncorrected_extension, ".RDS"))
+  } else{
+    preprocessed <- readRDS(paste0(projdir, uncorrected_extension, ".RDS"))
   }
   corrected <- readRDS(paste0(projdir, corrected_extension, ".RDS"))
 

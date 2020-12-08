@@ -11,6 +11,7 @@ run_analysis(
   uncorrected_extension = "_preprocessed",
   corrected_extension = "_corrected",
   variant = NULL,
+  use_cycombine_uncor = FALSE,
   restart = FALSE,
   md = NULL,
   panel = NULL,
@@ -35,6 +36,8 @@ run_analysis(
 \item{corrected_extension}{The extension used to name the corrected data. Default: "_corrected"}
 
 \item{variant}{Optional: A parameter to set a variant name of an experiment}
+
+\item{use_cycombine_uncor}{If TRUE, the uncorrected data made by cyCombine will be used.}
 
 \item{restart}{If TRUE, the SOM grid will be calculated even if it has been computed and stored previously}
 

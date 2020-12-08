@@ -28,7 +28,6 @@ corrected <- preprocesed \%>\%
 \seealso{
 Other batch: 
 \code{\link{batch_correct}()},
-\code{\link{correct_data_alt}()},
 \code{\link{create_som}()},
 \code{\link{scale_expr}()}
 }

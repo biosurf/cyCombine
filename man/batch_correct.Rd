@@ -12,8 +12,7 @@ batch_correct(
   parametric = TRUE,
   seed = 473,
   covar = NULL,
-  markers = NULL,
-  batch_col = "batch"
+  markers = NULL
 )
 }
 \arguments{
@@ -42,7 +41,6 @@ To run the workflow manually, type "batch_correct" to see the source code of thi
 }
 \seealso{
 Other batch: 
-\code{\link{correct_data_alt}()},
 \code{\link{correct_data}()},
 \code{\link{create_som}()},
 \code{\link{scale_expr}()}

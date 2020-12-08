@@ -45,10 +45,10 @@ get_markers <- function(df){
 
 #' Check colname
 #' @noRd
-check_colname <- function(df_colnames, col_name){
+check_colname <- function(df_colnames, col_name, location = "metadata"){
   if(!is.null(col_name)){
     if(col_name %!in% df_colnames){
-      stop("Column \"", col_name, "\" was not found in the metadata.")
+      stop("Column \"", col_name, "\" was not found in the ", location)
     }}
 }
 

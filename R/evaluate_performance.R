@@ -108,8 +108,8 @@ evaluate_emd <- function(preprocessed,
   missing_package("viridis", "CRAN")
   missing_package("plyr", "CRAN")
 
-  check_colname(colnames(corrected), cell_col)
-  check_colname(colnames(preprocessed), cell_col)
+  check_colname(colnames(corrected), cell_col, "corrected set")
+  check_colname(colnames(preprocessed), cell_col, "corrected set")
   # Define cell columns as characters to avoid problems with factors
   corrected[[cell_col]] <- corrected[[cell_col]] %>%
     as.character()
@@ -197,7 +197,6 @@ evaluate_emd <- function(preprocessed,
     geom_point() +
     annotate("rect", xmin = 0, xmax = filter_limit, ymin = 0, ymax = filter_limit, alpha = .5) +
     coord_cartesian(xlim = c(-2, limit), ylim = c(-2, limit)) +
-    # viridis::scale_color_viridis(discrete = TRUE) +
     geom_abline(slope = 1, intercept = 0) +
     labs(x = "EMD - Corrected",
          y = "EMD - Uncorrected",
