@@ -192,11 +192,11 @@ evaluate_emd <- function(preprocessed,
          subtitle = paste("Reduction: ", reduction))
 
 
-  scatterplot <- emds_filtered %>%
+  scatterplot <- emds %>%
     ggplot(aes(x = Corrected, y = Uncorrected)) +
     geom_point() +
     annotate("rect", xmin = 0, xmax = filter_limit, ymin = 0, ymax = filter_limit, alpha = .5) +
-    coord_cartesian(xlim = c(-5, limit), ylim = c(-5, limit)) +
+    coord_cartesian(xlim = c(-2, limit), ylim = c(-2, limit)) +
     # viridis::scale_color_viridis(discrete = TRUE) +
     geom_abline(slope = 1, intercept = 0) +
     labs(x = "EMD - Corrected",
