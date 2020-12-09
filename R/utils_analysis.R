@@ -163,8 +163,8 @@ run_analysis <- function(tool,
       }
       # Add labels
       corrected <- corrected %>%
-        dplyr::mutate(label = som_$unit.classif)
-      celltype_col <- "label"
+        dplyr::mutate(som = som_$unit.classif)
+      celltype_col <- "som"
     }
     message("Adding labels to data..")
 
