@@ -59,7 +59,7 @@ create_som <- function(df,
   }
 
   # Predict runtime
-  pred <- stats::predict(cyCombine::model, tibble::tibble("Size" = nrow(df)))
+  pred <- stats::predict(model, tibble::tibble("Size" = nrow(df)))
 
   # 10x10 SOM grid on overlapping markers, extract clustering per cell
   message("Creating SOM grid.. (This is estimated to take ", round(pred, 2), " minutes)")
