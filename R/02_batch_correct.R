@@ -37,6 +37,7 @@ scale_expr <- function(df, markers = NULL){
 #'  by samples with high abundances of a particular cell type.
 #'
 #' @importFrom kohonen som somgrid
+#' @importFrom stats predict
 #' @inheritParams scale_expr
 #' @param seed The seed to use when creating the SOM
 #' @param xdim The x-dimension size of the SOM
@@ -56,8 +57,12 @@ create_som <- function(df,
     markers <- df %>%
       cyCombine::get_markers()
   }
+
+  # Predict runtime
+  pred <- stats::predict(cyCombine::model, tibble::tibble("Size" = nrow(df)))
+
   # 10x10 SOM grid on overlapping markers, extract clustering per cell
-  message("Creating SOM grid.. (Depending on the size of the data set, this may take a while)")
+  message("Creating SOM grid.. (This is estimated to take ", round(pred, 2), " minutes)")
   set.seed(seed)
   som <- df %>%
     dplyr::select(markers) %>%
