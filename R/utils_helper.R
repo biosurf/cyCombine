@@ -67,7 +67,7 @@ run_pca <- function(df, pcs = 20){
 # @importFrom FlowSOM ReadInput BuildSOM BuildMST metaClustering_consensus
 
 
-#' Cumpute flowsom clustering
+#' Compute flowsom clustering
 #' @importFrom flowCore flowFrame colnames
 run_flowsom <- function(dataset, k = 7, seed = 473){
 
@@ -97,4 +97,9 @@ run_flowsom <- function(dataset, k = 7, seed = 473){
   labels <- fSOM_Cluster[labels_pre]
 
   return(labels)
+}
+
+#' Check if directory exists, if not, make it
+check_make_dir <- function(dir.path) {
+  if (!dir.exists(dir.path)) {dir.create(dir.path)}
 }

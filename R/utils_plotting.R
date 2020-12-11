@@ -17,7 +17,7 @@ plot_density <- function(uncorrected, corrected, markers = NULL, filename, y = "
 
 
 
-  if(is.null(markers)){
+  if (is.null(markers)){
     markers <- uncorrected %>%
       get_markers()
   }
@@ -131,6 +131,85 @@ plot_dimred <- function(df, name, type = "pca", plot = "batch", markers = NULL, 
   }
 
   return(plot)
+}
+
+
+# @importFrom uwot umap
+#' Dimensionality reduction plots - colored with labels, batches and marker expression
+#' @export
+plot_dimred_full <- function(df, name, type = "pca", markers = NULL, seed = 473, out_dir = NULL) {
+  
+  missing_package("uwot", "CRAN")
+  missing_package("ggplot2", "CRAN")
+  missing_package("ggridges", "CRAN")
+  
+  # Check out dir 
+  if (is.null(out_dir)) {
+    stop('Error! Please speicify output directory.')
+  }
+  
+  if(is.null(markers)){
+    markers <- cyCombine::get_markers(df)
+  }
+  Batch <- df$batch %>%
+    as.factor()
+  
+  Label <- df$label %>%
+    as.factor()
+  
+  df <- df %>%
+    dplyr::select(dplyr::all_of(markers))
+  
+  if (type == "pca") {
+    # Run PCA
+    pca <- df %>%
+      prcomp(scale. = TRUE, center = TRUE)
+    
+    # Make dataframe with output
+    df <- cbind.data.frame(pca$x, as.factor(Batch), as.factor(Label), df); colnames(df)[3:ncol(df)] <- c("Batch", "Label", markers)
+    
+  } else if (type == "umap") {
+    # Run UMAP
+    set.seed(seed)
+    umap <- df %>%
+      uwot::umap(n_neighbors = 15, min_dist = 0.2, metric = "euclidean")
+    
+    # Make dataframe with output
+    df <- cbind.data.frame(umap, as.factor(Batch), as.factor(Label), df); colnames(df) <- c("UMAP1", "UMAP2", "Batch", "Label", markers)
+  }
+  
+  # Make the plots
+  batch_plot <- df %>%
+    ggplot(aes_string(x = colnames(df)[1], y = colnames(df)[2])) +
+    geom_point(aes_string(color = "Batch"), alpha = 0.3, size = 0.4, shape = 1) +
+    guides(color = guide_legend(override.aes = list(alpha = 1, size = 1))) +
+    theme_bw() + theme(plot.title = element_text(hjust = 0.5)) +
+    ggtitle(paste(toupper(type), "-", name))
+  
+  label_plot <- df %>%
+    ggplot(aes_string(x = colnames(df)[1], y = colnames(df)[2])) +
+    geom_point(aes_string(color = "Label"), alpha = 0.3, size = 0.4, shape = 1) +
+    guides(color = guide_legend(override.aes = list(alpha = 1, size = 1))) +
+    theme_bw() + theme(plot.title = element_text(hjust = 0.5)) +
+    ggtitle(paste(toupper(type), "-", name))
+  
+  # Saving plots
+  cyCombine::plot_save_two(batch_plot, label_plot, paste0(out_dir, '/UMAP_batches_labels.png'))
+  
+  # Marker plots
+  cyCombine::check_make_dir(paste0(out_dir, '/UMAP_markers')) 
+  
+  marker_plots <- list()
+  for (m in markers) {
+    p <- ggplot(df, aes_string(x = colnames(df)[1], y = colnames(df)[2])) +
+      geom_point(aes_string(color = m), alpha = 0.3, size = 0.4) +
+      scale_color_gradientn(m, colors = grDevices::colorRampPalette(rev(RColorBrewer::brewer.pal(n = 11, name = "Spectral")))(50)) +
+      theme_bw() + theme(plot.title = element_text(hjust = 0.5)) +
+      ggtitle(paste(toupper(type), "-", name))
+    
+    suppressMessages(ggsave(p, filename = paste0(out_dir, '/UMAP_markers/UMAP_batches_labels', m, '.png')))
+  }
+
 }
 
 
