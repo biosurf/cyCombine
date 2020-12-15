@@ -30,6 +30,49 @@ scale_expr <- function(df, markers = NULL){
 }
 
 
+#' Batch-wise quantile normalization per marker
+#'
+#' This function quantile normalizes the data in a batch-wise manner.
+#'   The purpose is to minimize the impact of batch correction when clustering the data prior to batch correction.
+#'
+#' @param df Dataframe with expression values
+#' @param markers Markers to correct. If NULL, markers will be found using the \code{\link{get_markers}} function.
+#' @family batch
+#' @examples
+#' df_qnorm <- preprocessed %>%
+#'   quantile_norm()
+#' @export
+quantile_norm <- function(df, markers = NULL){
+  message("Quantile normalizing expression data..")
+  if(is.null(markers)){
+    # Get markers
+    markers <- df %>%
+      cyCombine::get_markers()
+  }
+  
+  # Determine goal distributions for each marker by getting quantiles across all batches
+  refq <- list()
+  for (m in markers) {
+    # Determine the quantiles
+    refq[[m]] <- quantile(unlist(df[,m]), probs=seq(0,1,length.out=5), names = F)
+  }
+  
+  qnormed_expr <- df
+  for (b in unique(df$batch)) {
+    for (m in markers) {
+      qx <- quantile(unlist(df[df$batch == b, m]), probs=seq(0,1,length.out=5), names = F)
+      spf <- splinefun(x=qx, y=refq[[m]], method="monoH.FC", ties=min)
+      
+      # Apply the spline function to adjust quantiles
+      qnormed_expr[qnormed_expr$batch == b, m] <- spf(unlist(df[df$batch==b, m]))
+      
+    }
+  }
+  
+  return(qnormed_expr)
+}
+
+
 #' Create Self-Organizing Map
 #'
 #' The function uses the kohonen package to create a Self-Organizing Map.
@@ -251,18 +294,30 @@ batch_correct <- function(df,
                           parametric = TRUE,
                           seed = 473,
                           covar = NULL,
-                          markers = NULL){
+                          markers = NULL,
+                          norm_method = 'scale'){
   # A batch column is required
   check_colname(colnames(df), "batch")
 
   # Create SOM on scaled data
-  if(is.null(label)){
-    som_ <- df %>%
-      scale_expr(markers = markers) %>%
-      create_som(markers = markers,
-                 seed = seed,
-                 xdim = xdim,
-                 ydim = ydim)
+  if(is.null(label)) {
+    if (norm_method == 'scale') {
+      som_ <- df %>%
+        scale_expr(markers = markers) %>%
+        create_som(markers = markers,
+                   seed = seed,
+                   xdim = xdim,
+                   ydim = ydim)
+    } else if (norm_method == 'qnorm') {
+      som_ <- df %>%
+        quantile_norm(markers = markers) %>%
+        create_som(markers = markers,
+                   seed = seed,
+                   xdim = xdim,
+                   ydim = ydim)
+    } else {
+      stop('Error, norm_method must be either "scale" or "qnorm"')
+    }
     label <- som_$unit.classif
   }
 
