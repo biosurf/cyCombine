@@ -72,6 +72,43 @@ quantile_norm <- function(df, markers = NULL){
   return(qnormed_expr)
 }
 
+#' Batch-wise ranking per marker
+#'
+#' This function ranks and scales the data in a batch-wise manner.
+#'   The purpose is to minimize the impact of batch correction when clustering the data prior to batch correction.
+#'
+#' @param df Dataframe with expression values
+#' @param markers Markers to correct. If NULL, markers will be found using the \code{\link{get_markers}} function.
+#' @family batch
+#' @examples
+#' df_ranked <- preprocessed %>%
+#'   ranking()
+#' @export
+ranking <- function(df, markers = NULL) {
+  
+  message("Ranking expression data..")
+  if(is.null(markers)){
+    # Get markers
+    markers <- df %>%
+      cyCombine::get_markers()
+  }
+  
+  
+  # # Ranking of each marker in each cell - reversing order 
+  # ranking_per_row <- t(apply(df[,markers], 1, rank, ties.method = 'average')) # Probably wont work that well due to many 0's and consequently assigning 0.1 a large rank...  
+  
+  # Ranking per batch/sample...? for each marker
+  adj_df <- df
+  for (m in markers) {
+    for (b in unique(df$batch)) {
+      adj_df[df$batch == b, m] <- scale(rank(df[df$batch == b, m], ties.method = 'average')) # We can discuss the ties.method, we have to normalize within the batch to avoid large batches getting larger max rank
+    }
+  }
+  
+  return(adj_df)
+}
+
+
 
 #' Create Self-Organizing Map
 #'
@@ -311,6 +348,13 @@ batch_correct <- function(df,
     } else if (norm_method == 'qnorm') {
       som_ <- df %>%
         quantile_norm(markers = markers) %>%
+        create_som(markers = markers,
+                   seed = seed,
+                   xdim = xdim,
+                   ydim = ydim)
+    } else if (norm_method == 'rank') {
+      som_ <- df %>%
+        ranking(markers = markers) %>%
         create_som(markers = markers,
                    seed = seed,
                    xdim = xdim,
