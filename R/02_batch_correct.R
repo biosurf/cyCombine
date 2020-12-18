@@ -102,7 +102,11 @@ ranking <- function(df, markers = NULL) {
   for (m in markers) {
     for (b in unique(df$batch)) {
       #adj_df[df$batch == b, m] <- scale(rank(df[df$batch == b, m], ties.method = 'average')) # We can discuss the ties.method, we have to normalize within the batch to avoid large batches getting larger max rank
-      adj_df[df$batch == b, m] <- rank(df[df$batch == b, m], ties.method = 'min') / nrow(df[df$batch == b,]) # We can discuss the ties.method, we have to normalize within the batch to avoid large batches getting larger max rank
+      adj_df[df$batch == b, m] <- rank(df[df$batch == b, m], ties.method = 'average') / nrow(df[df$batch == b,]) # We can discuss the ties.method, we have to normalize within the batch to avoid large batches getting larger max rank
+      
+      # scaled <- apply(df[df$batch == b, markers], 2, scale)
+      # adj_df[df$batch == b, markers] <- t(apply(scaled, 1, rank))
+
     }
   }
   
