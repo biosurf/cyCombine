@@ -42,21 +42,31 @@ plot_density <- function(uncorrected, corrected, markers = NULL, filename, y = "
   # df <- rbind.data.frame(uncor_df, cor_df)
 
   # For each marker, make the plot
-  p <- list()
-  for (c in 1:length(markers)) {
+  # p <- list()
+  # for (c in 1:length(markers)) {
+  #
+  #   p[[c]] <- df %>%
+  #     ggplot(aes_string(x = markers[c], y = "batch")) +
+  #     ggridges::geom_density_ridges(aes(color = .data$Type, fill = .data$Type), alpha = 0.4) +
+  #     coord_cartesian(xlim = c(-1, xlim)) +
+  #     labs(y = y) +
+  #     theme_bw()
+  # }
 
-    p[[c]] <- df %>%
-      ggplot(aes_string(x = markers[c], y = "batch")) +
-      ggridges::geom_density_ridges(aes(color = .data$Type, fill = .data$Type), alpha = 0.4) +
-      coord_cartesian(xlim = c(-1, xlim)) +
-      labs(y = y) +
-      theme_bw()
-  }
+  p <- df %>%
+    pivot_longer(cols = all_of(markers), names_to = "Marker") %>%
+    ggplot(aes(x = value, y = batch)) +
+    facet_wrap(~Marker, ncol = 6) +
+    ggridges::geom_density_ridges(aes(color = .data$Type, fill = .data$Type), alpha = 0.4) +
+    coord_cartesian(xlim = c(-1, xlim)) +
+    labs(y = y) +
+    theme_bw()
+
 
   # Save the plots
-  # ggsave(filename = filename, plot = plot_grid(plotlist = p, ncol = 6),
-         # device = "png", width = 28, height = 40)
-  cowplot::save_plot(filename, cowplot::plot_grid(plotlist = p, ncol = 6), base_width = 28, base_height = 40)
+  ggsave(filename = filename, plot = p,
+  device = "png", width = 28, height = 40)
+  # cowplot::save_plot(filename, cowplot::plot_grid(plotlist = p, ncol = 6), base_width = 28, base_height = 40)
 
 }
 
@@ -138,46 +148,46 @@ plot_dimred <- function(df, name, type = "pca", plot = "batch", markers = NULL, 
 #' Dimensionality reduction plots - colored with labels, batches and marker expression
 #' @export
 plot_dimred_full <- function(df, name, type = "pca", markers = NULL, seed = 473, out_dir = NULL) {
-  
+
   missing_package("uwot", "CRAN")
   missing_package("ggplot2", "CRAN")
   missing_package("ggridges", "CRAN")
-  
-  # Check out dir 
+
+  # Check out dir
   if (is.null(out_dir)) {
     stop('Error! Please speicify output directory.')
   }
-  
+
   if(is.null(markers)){
     markers <- cyCombine::get_markers(df)
   }
   Batch <- df$batch %>%
     as.factor()
-  
+
   Label <- df$label %>%
     as.factor()
-  
+
   df <- df %>%
     dplyr::select(dplyr::all_of(markers))
-  
+
   if (type == "pca") {
     # Run PCA
     pca <- df %>%
       prcomp(scale. = TRUE, center = TRUE)
-    
+
     # Make dataframe with output
     df <- cbind.data.frame(pca$x, as.factor(Batch), as.factor(Label), df); colnames(df)[3:ncol(df)] <- c("Batch", "Label", markers)
-    
+
   } else if (type == "umap") {
     # Run UMAP
     set.seed(seed)
     umap <- df %>%
       uwot::umap(n_neighbors = 15, min_dist = 0.2, metric = "euclidean")
-    
+
     # Make dataframe with output
     df <- cbind.data.frame(umap, as.factor(Batch), as.factor(Label), df); colnames(df) <- c("UMAP1", "UMAP2", "Batch", "Label", markers)
   }
-  
+
   # Make the plots
   batch_plot <- df %>%
     ggplot(aes_string(x = colnames(df)[1], y = colnames(df)[2])) +
@@ -185,20 +195,20 @@ plot_dimred_full <- function(df, name, type = "pca", markers = NULL, seed = 473,
     guides(color = guide_legend(override.aes = list(alpha = 1, size = 1))) +
     theme_bw() + theme(plot.title = element_text(hjust = 0.5)) +
     ggtitle(paste(toupper(type), "-", name))
-  
+
   label_plot <- df %>%
     ggplot(aes_string(x = colnames(df)[1], y = colnames(df)[2])) +
     geom_point(aes_string(color = "Label"), alpha = 0.3, size = 0.4, shape = 1) +
     guides(color = guide_legend(override.aes = list(alpha = 1, size = 1))) +
     theme_bw() + theme(plot.title = element_text(hjust = 0.5)) +
     ggtitle(paste(toupper(type), "-", name))
-  
+
   # Saving plots
   cyCombine::plot_save_two(batch_plot, label_plot, paste0(out_dir, '/UMAP_batches_labels.png'))
-  
+
   # Marker plots
-  cyCombine::check_make_dir(paste0(out_dir, '/UMAP_markers')) 
-  
+  cyCombine::check_make_dir(paste0(out_dir, '/UMAP_markers'))
+
   marker_plots <- list()
   for (m in markers) {
     p <- ggplot(df, aes_string(x = colnames(df)[1], y = colnames(df)[2])) +
@@ -206,7 +216,7 @@ plot_dimred_full <- function(df, name, type = "pca", markers = NULL, seed = 473,
       scale_color_gradientn(m, colors = grDevices::colorRampPalette(rev(RColorBrewer::brewer.pal(n = 11, name = "Spectral")))(50)) +
       theme_bw() + theme(plot.title = element_text(hjust = 0.5)) +
       ggtitle(paste(toupper(type), "-", name))
-    
+
     suppressMessages(ggsave(p, filename = paste0(out_dir, '/UMAP_markers/UMAP_batches_labels', m, '.png')))
   }
 

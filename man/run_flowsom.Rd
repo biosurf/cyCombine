@@ -2,10 +2,10 @@
 % Please edit documentation in R/utils_helper.R
 \name{run_flowsom}
 \alias{run_flowsom}
-\title{Cumpute flowsom clustering}
+\title{Compute flowsom clustering}
 \usage{
 run_flowsom(dataset, k = 7, seed = 473)
 }
 \description{
-Cumpute flowsom clustering
+Compute flowsom clustering
 }

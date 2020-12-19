@@ -12,7 +12,8 @@ batch_correct(
   parametric = TRUE,
   seed = 473,
   covar = NULL,
-  markers = NULL
+  markers = NULL,
+  norm_method = "scale"
 )
 }
 \arguments{
@@ -43,6 +44,8 @@ To run the workflow manually, type "batch_correct" to see the source code of thi
 Other batch: 
 \code{\link{correct_data}()},
 \code{\link{create_som}()},
+\code{\link{quantile_norm}()},
+\code{\link{ranking}()},
 \code{\link{scale_expr}()}
 }
 \concept{batch}

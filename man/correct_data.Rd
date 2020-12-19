@@ -29,6 +29,8 @@ corrected <- preprocesed \%>\%
 Other batch: 
 \code{\link{batch_correct}()},
 \code{\link{create_som}()},
+\code{\link{quantile_norm}()},
+\code{\link{ranking}()},
 \code{\link{scale_expr}()}
 }
 \concept{batch}

@@ -24,7 +24,7 @@ if(FALSE){
                     sample_ids = NULL,
                     batch_ids = "Batch",
                     filename_col = "FCS_name",
-                    condition = NULL,
+                    condition = "Set",
                     down_sample = TRUE,
                     sample_size = 100000) %>%
     transform_asinh(markers)
@@ -45,8 +45,25 @@ if(FALSE){
   df_cor <- df %>%
     batch_correct()
 
+  som_ <- df %>%
+    scale_expr(markers) %>%
+    create_som(markers)
+
+  df_cor <- df %>%
+    mutate(label = som_$unit.classif) %>%
+    correct_data(markers = markers,
+                 label = "label",
+                 covar = "condition")
+  df_cor2 <- df %>%
+    correct_data_alt(markers = markers,
+                 label = som_$unit.classif,
+                 covar = "condition")
+
+  preprocessed <- df %>%
+    transform_asinh(markers = markers)
+
   preprocessed <- prepare_data(data_dir = data_dir,
-                             metadata = paste0(data_dir, "/CyTOF samples cohort.xlsx"),
+                             metadata = "/CyTOF samples cohort.xlsx",
                              markers = markers,
                              sample_ids = NULL,
                              batch_ids = "Batch",
@@ -89,7 +106,7 @@ if(FALSE){
     create_som(seed = 473)
   # #
   corrected <- preprocessed %>%
-    correct_data(som_classes = som$unit.classif)
+    correct_data(label = som$unit.classif)
   #
 
 
@@ -103,17 +120,22 @@ if(FALSE){
   .
   ### Plotting ----
 
-  plot_density(uncorrected = preprocessed,
-                corrected = corrected,
+  plot_density(uncorrected = df,
+                corrected = df_cor,
                 markers = markers,
-                filename = "figs/test2.png",y="label")#03_dfci2_densities_withcovar_700k.png")
+                filename = "figs/test3.png")#03_dfci2_densities_withcovar_700k.png")
 
   # Down-sample
-  preprocessed_sliced <- preprocessed %>%
-    slice_sample(n = 10000)
+  preprocessed_sliced <- df %>%
+    semi_join(corrected_sliced, by = "id")
 
   corrected_sliced <- corrected %>%
     semi_join(preprocessed_sliced, by = "id")
+
+  corrected_sliced <- df_cor %>%
+    slice_sample(n = 10000)
+  corrected_sliced2 <- df_cor2 %>%
+    semi_join(corrected_sliced, by = "id")
 
   # PCA plot uncorrected
   pca1 <- preprocessed_sliced %>%
@@ -129,11 +151,11 @@ if(FALSE){
 
 
   # UMAP plot uncorrected
-  umap1 <- preprocessed_sliced %>%
+  umap0 <- preprocessed_sliced %>%
     plot_dimred(name = "uncorrected", type = "umap")
 
   # UMAP plot corrected
-  umap2 <- corrected_sliced %>%
+  umap2 <- corrected_sliced2 %>%
     plot_dimred(name = "corrected", type = "umap")
 
   plot_save_two(umap1, umap2, filename = "figs/02_dfci2_umap_700k.png")

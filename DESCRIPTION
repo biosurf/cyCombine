@@ -35,7 +35,8 @@ Suggests:
     emdist,
     ggridges,
     uwot,
-    plyr
+    plyr,
+    graphics
 VignetteBuilder: knitr
 Depends: 
     R (>= 4.0)
