@@ -49,26 +49,26 @@ quantile_norm <- function(df, markers = NULL){
     markers <- df %>%
       cyCombine::get_markers()
   }
-  
+
   # Determine goal distributions for each marker by getting quantiles across all batches
   refq <- list()
   for (m in markers) {
     # Determine the quantiles
     refq[[m]] <- quantile(unlist(df[,m]), probs=seq(0,1,length.out=5), names = F)
   }
-  
+
   qnormed_expr <- df
   for (b in unique(df$batch)) {
     for (m in markers) {
       qx <- quantile(unlist(df[df$batch == b, m]), probs=seq(0,1,length.out=5), names = F)
       spf <- splinefun(x=qx, y=refq[[m]], method="monoH.FC", ties=min)
-      
+
       # Apply the spline function to adjust quantiles
       qnormed_expr[qnormed_expr$batch == b, m] <- spf(unlist(df[df$batch==b, m]))
-      
+
     }
   }
-  
+
   return(qnormed_expr)
 }
 
@@ -85,31 +85,31 @@ quantile_norm <- function(df, markers = NULL){
 #'   ranking()
 #' @export
 ranking <- function(df, markers = NULL) {
-  
+
   message("Ranking expression data..")
   if(is.null(markers)){
     # Get markers
     markers <- df %>%
       cyCombine::get_markers()
   }
-  
-  
-  # # Ranking of each marker in each cell - reversing order 
-  # ranking_per_row <- t(apply(df[,markers], 1, rank, ties.method = 'average')) # Probably wont work that well due to many 0's and consequently assigning 0.1 a large rank...  
-  
+
+
+  # # Ranking of each marker in each cell - reversing order
+  # ranking_per_row <- t(apply(df[,markers], 1, rank, ties.method = 'average')) # Probably wont work that well due to many 0's and consequently assigning 0.1 a large rank...
+
   # Ranking per batch/sample...? for each marker
   adj_df <- df
   for (m in markers) {
     for (b in unique(df$batch)) {
       #adj_df[df$batch == b, m] <- scale(rank(df[df$batch == b, m], ties.method = 'average')) # We can discuss the ties.method, we have to normalize within the batch to avoid large batches getting larger max rank
       adj_df[df$batch == b, m] <- rank(df[df$batch == b, m], ties.method = 'average') / nrow(df[df$batch == b,]) # We can discuss the ties.method, we have to normalize within the batch to avoid large batches getting larger max rank
-      
+
       # scaled <- apply(df[df$batch == b, markers], 2, scale)
       # adj_df[df$batch == b, markers] <- t(apply(scaled, 1, rank))
 
     }
   }
-  
+
   return(adj_df)
 }
 
@@ -310,6 +310,7 @@ correct_data <- function(df,
     dplyr::mutate_at(dplyr::vars(all_of(markers)),
                      function(x) {
                        x[x < 0] <- 0
+                       x[x > 30] <- 30
                        return(x)
                        }) %>%
     dplyr::arrange(id) %>%
