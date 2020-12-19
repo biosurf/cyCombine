@@ -42,31 +42,31 @@ plot_density <- function(uncorrected, corrected, markers = NULL, filename, y = "
   # df <- rbind.data.frame(uncor_df, cor_df)
 
   # For each marker, make the plot
-  # p <- list()
-  # for (c in 1:length(markers)) {
-  #
-  #   p[[c]] <- df %>%
-  #     ggplot(aes_string(x = markers[c], y = "batch")) +
-  #     ggridges::geom_density_ridges(aes(color = .data$Type, fill = .data$Type), alpha = 0.4) +
-  #     coord_cartesian(xlim = c(-1, xlim)) +
-  #     labs(y = y) +
-  #     theme_bw()
-  # }
+  p <- list()
+  for (c in 1:length(markers)) {
 
-  p <- df %>%
-    pivot_longer(cols = all_of(markers), names_to = "Marker") %>%
-    ggplot(aes(x = value, y = batch)) +
-    facet_wrap(~Marker, ncol = 6) +
-    ggridges::geom_density_ridges(aes(color = .data$Type, fill = .data$Type), alpha = 0.4) +
-    coord_cartesian(xlim = c(-1, xlim)) +
-    labs(y = y) +
-    theme_bw()
+    p[[c]] <- df %>%
+      ggplot(aes_string(x = markers[c], y = "batch")) +
+      ggridges::geom_density_ridges(aes(color = .data$Type, fill = .data$Type), alpha = 0.4) +
+      coord_cartesian(xlim = c(-1, xlim)) +
+      labs(y = y) +
+      theme_bw()
+  }
+
+  # p <- df %>%
+  #   pivot_longer(cols = all_of(markers), names_to = "Marker") %>%
+  #   ggplot(aes(x = value, y = batch)) +
+  #   facet_wrap(~Marker, ncol = 6) +
+  #   ggridges::geom_density_ridges(aes(color = .data$Type, fill = .data$Type), alpha = 0.4) +
+  #   coord_cartesian(xlim = c(-1, xlim)) +
+  #   labs(y = y) +
+  #   theme_bw()
 
 
   # Save the plots
-  ggsave(filename = filename, plot = p,
-  device = "png", width = 28, height = 40)
-  # cowplot::save_plot(filename, cowplot::plot_grid(plotlist = p, ncol = 6), base_width = 28, base_height = 40)
+  # ggsave(filename = filename, plot = p,
+  # device = "png", width = 28, height = 40)
+  cowplot::save_plot(filename, cowplot::plot_grid(plotlist = p, ncol = 6), base_width = 28, base_height = 40)
 
 }
 
