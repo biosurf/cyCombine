@@ -13,7 +13,8 @@ batch_correct(
   seed = 473,
   covar = NULL,
   markers = NULL,
-  norm_method = "scale"
+  norm_method = "rank",
+  ties.method = "min"
 )
 }
 \arguments{
@@ -34,6 +35,10 @@ If NULL, no covar will be used}
 
 \item{markers}{Markers to scale. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 
+\item{norm_method}{Normalization method. Should be either 'rank', 'scale' or 'qnorm'. Default: 'rank'}
+
+\item{ties.method}{The method to handle ties, when using rank. Default: "min". See ?rank for other options.}
+
 \item{preprocessed}{The preprocessed dataframe to run batch correction on}
 }
 \description{
@@ -44,6 +49,7 @@ To run the workflow manually, type "batch_correct" to see the source code of thi
 Other batch: 
 \code{\link{correct_data}()},
 \code{\link{create_som}()},
+\code{\link{normalize}()},
 \code{\link{quantile_norm}()},
 \code{\link{ranking}()},
 \code{\link{scale_expr}()}

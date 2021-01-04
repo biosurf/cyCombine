@@ -7,6 +7,51 @@
 #'   The purpose is to minimize the impact of batch correction when clustering the data prior to batch correction.
 #'
 #' @param df Dataframe with expression values
+#' @param markers Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.
+#' @param norm_method Normalization method. Should be either 'rank', 'scale' or 'qnorm'. Default: 'rank'
+#' @param ties.method The method to handle ties, when using rank. Default: "min". See ?rank for other options.
+#' @family batch
+#' @examples
+#' df_normed <- df %>%
+#'   normalize()
+#' @export
+normalize <- function(df, markers = NULL, norm_method = "rank", ties.method = "min"){
+
+  norm_method <- norm_method %>% stringr::str_to_lower()
+
+  if(norm_method == "rank") message("Ranking expression data..")
+  else if(norm_method == "scale") message("Scaling expression data..")
+  else if(norm_method == "qnorm") {
+    # message("Quantile normalizing expression data..")
+    df_normed <- quantile_norm(df, markers = markers)
+    return(df_normed)
+    } else stop("Please use either 'scale', 'rank', or 'qnorm' as normalization method." )
+
+  if(is.null(markers)){
+    # Get markers
+    markers <- df %>%
+      cyCombine::get_markers()
+  }
+
+  # Scale at marker positions
+  df_normed <- df %>%
+    dplyr::group_by(.data$batch) %>%
+    purrr::when(norm_method == "rank"  ~ dplyr::mutate(., dplyr::across(dplyr::all_of(markers),
+                                                            .fns = ~ {rank(.x, ties.method = ties.method) / length(.x)})),
+                norm_method == "scale" ~ dplyr::mutate(., dplyr::across(dplyr::all_of(markers),
+                                                            .fns = scale))
+    ) %>%
+    dplyr::ungroup()
+  return(df_normed)
+}
+
+
+#' Batch-wise scaling of data
+#'
+#' This function scales the data in a batch-wise manner.
+#'   The purpose is to minimize the impact of batch correction when clustering the data prior to batch correction.
+#'
+#' @param df Dataframe with expression values
 #' @param markers Markers to scale. If NULL, markers will be found using the \code{\link{get_markers}} function.
 #' @family batch
 #' @examples
@@ -84,7 +129,7 @@ quantile_norm <- function(df, markers = NULL){
 #' df_ranked <- preprocessed %>%
 #'   ranking()
 #' @export
-ranking <- function(df, markers = NULL) {
+ranking <- function(df, markers = NULL, ties.method = "min") {
 
   message("Ranking expression data..")
   if(is.null(markers)){
@@ -102,7 +147,7 @@ ranking <- function(df, markers = NULL) {
   for (m in markers) {
     for (b in unique(df$batch)) {
       #adj_df[df$batch == b, m] <- scale(rank(df[df$batch == b, m], ties.method = 'average')) # We can discuss the ties.method, we have to normalize within the batch to avoid large batches getting larger max rank
-      adj_df[df$batch == b, m] <- rank(df[df$batch == b, m], ties.method = 'average') / nrow(df[df$batch == b,]) # We can discuss the ties.method, we have to normalize within the batch to avoid large batches getting larger max rank
+      adj_df[df$batch == b, m] <- rank(df[df$batch == b, m], ties.method = ties.method) / nrow(df[df$batch == b,]) # We can discuss the ties.method, we have to normalize within the batch to avoid large batches getting larger max rank
 
       # scaled <- apply(df[df$batch == b, markers], 2, scale)
       # adj_df[df$batch == b, markers] <- t(apply(scaled, 1, rank))
@@ -327,6 +372,7 @@ correct_data <- function(df,
 #'
 #' @inheritParams create_som
 #' @inheritParams correct_data
+#' @inheritParams normalize
 #' @param preprocessed The preprocessed dataframe to run batch correction on
 #' @family batch
 #' @export
@@ -338,36 +384,21 @@ batch_correct <- function(df,
                           seed = 473,
                           covar = NULL,
                           markers = NULL,
-                          norm_method = 'scale'){
+                          norm_method = 'rank',
+                          ties.method = "min"){
   # A batch column is required
   check_colname(colnames(df), "batch")
 
   # Create SOM on scaled data
   if(is.null(label)) {
-    if (norm_method == 'scale') {
-      som_ <- df %>%
-        scale_expr(markers = markers) %>%
-        create_som(markers = markers,
-                   seed = seed,
-                   xdim = xdim,
-                   ydim = ydim)
-    } else if (norm_method == 'qnorm') {
-      som_ <- df %>%
-        quantile_norm(markers = markers) %>%
-        create_som(markers = markers,
-                   seed = seed,
-                   xdim = xdim,
-                   ydim = ydim)
-    } else if (norm_method == 'rank') {
-      som_ <- df %>%
-        ranking(markers = markers) %>%
-        create_som(markers = markers,
-                   seed = seed,
-                   xdim = xdim,
-                   ydim = ydim)
-    } else {
-      stop('Error, norm_method must be either "scale" or "qnorm"')
-    }
+    som_ <- df %>%
+      normalize(markers = markers,
+                norm_method = norm_method,
+                ties.method = ties.method) %>%
+      create_som(markers = markers,
+                 seed = seed,
+                 xdim = xdim,
+                 ydim = ydim)
     label <- som_$unit.classif
   }
 

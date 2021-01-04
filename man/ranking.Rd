@@ -4,7 +4,7 @@
 \alias{ranking}
 \title{Batch-wise ranking per marker}
 \usage{
-ranking(df, markers = NULL)
+ranking(df, markers = NULL, ties.method = "min")
 }
 \arguments{
 \item{df}{Dataframe with expression values}
@@ -24,6 +24,7 @@ Other batch:
 \code{\link{batch_correct}()},
 \code{\link{correct_data}()},
 \code{\link{create_som}()},
+\code{\link{normalize}()},
 \code{\link{quantile_norm}()},
 \code{\link{scale_expr}()}
 }

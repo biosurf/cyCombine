@@ -30,6 +30,7 @@ som_ <- preprocessed \%>\%
 Other batch: 
 \code{\link{batch_correct}()},
 \code{\link{correct_data}()},
+\code{\link{normalize}()},
 \code{\link{quantile_norm}()},
 \code{\link{ranking}()},
 \code{\link{scale_expr}()}

@@ -24,6 +24,7 @@ Other batch:
 \code{\link{batch_correct}()},
 \code{\link{correct_data}()},
 \code{\link{create_som}()},
+\code{\link{normalize}()},
 \code{\link{ranking}()},
 \code{\link{scale_expr}()}
 }

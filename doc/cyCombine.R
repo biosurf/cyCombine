@@ -7,12 +7,12 @@ knitr::opts_chunk$set(
 ## ----setup--------------------------------------------------------------------
 if(FALSE){
   pkgload::load_all()
-  library(cyCombine)
+  # library(cyCombine)
   library(magrittr)
 
   ### From raw fcs files ----
   system.time({
-  data_dir <- "~/Documents/thesis/raw/fcs"
+  data_dir <- "~/data/dfci1"
   markers <- c("CD20", "CD3", "CD27", "CD45RA", "CD279", "CD5", "CD19", "CD14", "CD45RO", "GranzymeA", "GranzymeK", "FCRL6", "CD355", "CD152", "CD69", "CD33", "CD4", "CD337", "CD8", "CD197", "LAG3", "CD56", "CD137", "CD161", "FoxP3", "CD80", "CD270", "CD275", "CD134", "CD278", "CD127", "KLRG1", "CD25", "HLADR", "TBet", "XCL1")
 
   flowset <- data_dir %>%
@@ -29,24 +29,16 @@ if(FALSE){
                     sample_size = 100000) %>%
     transform_asinh(markers)
 
-  df <- data_dir %>%
-    compile_fcs() %>%
-    convert_flowset(metadata = md,
-                    batch_ids = "Batch",
-                    filename_col = "FCS_name",
-                    down_sample = TRUE,
-                    sample_size = 100000) %>%
-    transform_asinh()
+  df$condition[df$condition == "Interim"] <- "CLL"
+  df$condition <- df$condition %>% factor(levels = c("Healthy", "CLL"))
 
-  df <- data_dir %>%
-    prepare_data(down_sample = TRUE,
-                 sample_size = 100000)
 
   df_cor <- df %>%
-    batch_correct()
+    batch_correct(norm_method = "rank",
+                  markers = markers)
 
   som_ <- df %>%
-    scale_expr(markers) %>%
+    ranking(markers) %>%
     create_som(markers)
 
   df_cor <- df %>%
@@ -54,13 +46,11 @@ if(FALSE){
     correct_data(markers = markers,
                  label = "label",
                  covar = "condition")
-  df_cor2 <- df %>%
-    correct_data_alt(markers = markers,
-                 label = som_$unit.classif,
-                 covar = "condition")
 
-  preprocessed <- df %>%
-    transform_asinh(markers = markers)
+  corrected <- preprocessed %>%
+    correct_data(label = som_$unit.classif,
+                 covar = "condition",
+                 markers = markers)
 
   preprocessed <- prepare_data(data_dir = data_dir,
                              metadata = "/CyTOF samples cohort.xlsx",
@@ -126,6 +116,9 @@ if(FALSE){
                 filename = "figs/test3.png")#03_dfci2_densities_withcovar_700k.png")
 
   # Down-sample
+  corrected_sliced <- df_cor %>%
+    slice_sample(n = 10000)
+
   preprocessed_sliced <- df %>%
     semi_join(corrected_sliced, by = "id")
 
@@ -155,7 +148,7 @@ if(FALSE){
     plot_dimred(name = "uncorrected", type = "umap")
 
   # UMAP plot corrected
-  umap2 <- corrected_sliced2 %>%
+  umap2 <- corrected_sliced %>%
     plot_dimred(name = "corrected", type = "umap")
 
   plot_save_two(umap1, umap2, filename = "figs/02_dfci2_umap_700k.png")
