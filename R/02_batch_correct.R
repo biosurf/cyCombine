@@ -33,13 +33,17 @@ normalize <- function(df, markers = NULL, norm_method = "rank", ties.method = "m
       cyCombine::get_markers()
   }
 
-  # Scale at marker positions
+  # Scale or rank at marker positions individually for every batch
   df_normed <- df %>%
     dplyr::group_by(.data$batch) %>%
     purrr::when(norm_method == "rank"  ~ dplyr::mutate(., dplyr::across(dplyr::all_of(markers),
-                                                            .fns = ~ {rank(.x, ties.method = ties.method) / length(.x)})),
+                                                                        .fns = ~{
+                                                                          if(sum(.x) == 0) stop("A marker is 0 for an entire batch")
+                                                                          rank(.x, ties.method = ties.method) / length(.x)})),
                 norm_method == "scale" ~ dplyr::mutate(., dplyr::across(dplyr::all_of(markers),
-                                                            .fns = scale))
+                                                                        .fns = ~{
+                                                                          if(sum(.x) == 0) stop("A marker is 0 for an entire batch")
+                                                                          scale(.x)}))
     ) %>%
     dplyr::ungroup()
   return(df_normed)
@@ -187,6 +191,9 @@ create_som <- function(df,
     markers <- df %>%
       cyCombine::get_markers()
   }
+
+
+
 
   # Predict runtime
   pred <- stats::predict(model, tibble::tibble("Size" = nrow(df)))
