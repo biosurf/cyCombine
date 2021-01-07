@@ -194,13 +194,13 @@ create_som <- function(df,
   # 10x10 SOM grid on overlapping markers, extract clustering per cell
   message("Creating SOM grid.. (This is estimated to take ", round(pred, 2), " minutes)")
   set.seed(seed)
-  som <- df %>%
+  som_grid <- df %>%
     dplyr::select(markers) %>%
     as.matrix() %>%
     kohonen::som(grid = kohonen::somgrid(xdim = xdim,
                                          ydim = ydim),
                  dist.fcts = "euclidean")
-  return(som)
+  return(som_grid)
 }
 
 
