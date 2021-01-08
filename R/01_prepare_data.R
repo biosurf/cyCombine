@@ -205,7 +205,7 @@ convert_flowset <- function(flowset,
       stringr::str_remove_all("[ _-]")
 
     fcs_data <- fcs_data %>%
-      dplyr::select(id, dplyr::all_of(panel[[panel_channel]]))
+      dplyr::select(id, dplyr::all_of(panel[[panel_channel]][cols]))
   }else{
     col_names <- flowset[[1]] %>%
       flowCore::parameters() %>%
