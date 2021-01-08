@@ -39,6 +39,7 @@ run_analysis <- function(tool,
                          uncorrected_extension = "_preprocessed",
                          corrected_extension = "_corrected",
                          variant = NULL,
+                         uncorrected_variant = NULL,
                          use_cycombine_uncor = FALSE,
                          restart = FALSE,
                          md = NULL,
@@ -79,7 +80,7 @@ run_analysis <- function(tool,
 
   # Load data
   if(use_cycombine_uncor){
-    preprocessed <- readRDS(paste0(data_dir, "/cycombine_", data, variant, uncorrected_extension, ".RDS"))
+    preprocessed <- readRDS(paste0(data_dir, "/cycombine_", data, uncorrected_variant, uncorrected_extension, ".RDS"))
   } else{
     preprocessed <- readRDS(paste0(projdir, uncorrected_extension, ".RDS"))
   }
