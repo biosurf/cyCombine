@@ -8,28 +8,36 @@
 #' Density ridges for two sets
 #' @import ggplot2
 #' @export
-plot_density <- function(uncorrected, corrected, markers = NULL, filename, y = "batch", xlim = 10) {
+plot_density <- function(uncorrected, corrected, markers = NULL, filename, y = "batch", xlim = 10, dataset_names = NULL) {
 
   # Check for packages
   missing_package("ggridges", "CRAN")
   missing_package("ggplot2", "CRAN")
   missing_package("cowplot", "CRAN")
+  
+  if (is.null(filename)) {
+    stop('Please specify a filename for the density plot.')
+  }
 
-
-
-  if (is.null(markers)){
+  if (is.null(markers)) {
     markers <- uncorrected %>%
       get_markers()
+  }
+  
+  if (is.null(dataset_names)) {
+    dataset_names <- c('Uncorrected', 'Corrected')
+  } else if (length(dataset_names) != 2) {
+    dataset_names <- c('Dataset 1', 'Dataset 2')
   }
 
   uncorrected <- uncorrected %>%
     dplyr::select(all_of(markers)) %>%
-    dplyr::mutate(Type = "Uncorrected",
+    dplyr::mutate(Type = dataset_names[1],
                   batch = as.factor(uncorrected[[y]]))
 
   df <- corrected %>%
     dplyr::select(all_of(markers)) %>%
-    dplyr::mutate(Type = "Corrected",
+    dplyr::mutate(Type = dataset_names[2],
                   batch = as.factor(corrected[[y]])) %>%
     dplyr::bind_rows(uncorrected)
 
@@ -46,7 +54,7 @@ plot_density <- function(uncorrected, corrected, markers = NULL, filename, y = "
   for (c in 1:length(markers)) {
 
     p[[c]] <- df %>%
-      ggplot(aes_string(x = markers[c], y = "batch")) +
+      ggplot(aes_string(x = markers[c], y = y)) +
       ggridges::geom_density_ridges(aes(color = .data$Type, fill = .data$Type), alpha = 0.4) +
       coord_cartesian(xlim = c(-1, xlim)) +
       labs(y = y) +
@@ -66,7 +74,7 @@ plot_density <- function(uncorrected, corrected, markers = NULL, filename, y = "
   # Save the plots
   # ggsave(filename = filename, plot = p,
   # device = "png", width = 28, height = 40)
-  cowplot::save_plot(filename, cowplot::plot_grid(plotlist = p, ncol = 6), base_width = 28, base_height = 40)
+  cowplot::save_plot(filename, cowplot::plot_grid(plotlist = p, ncol = 6), base_width = 28, base_height = length(markers)/1.3)
 
 }
 
