@@ -32,7 +32,12 @@ salvage_problematic <- function(df, correct_batches, channel, sample_size = NULL
   complete_obs <- complete_obs[sample(nrow(complete_obs),sample_size),]
   
   # Get 8 x 8 SOM classes for each complete event - this takes some time, which is why I downsample
-  print('Calculating SOM')
+
+  # Predict runtime
+  pred <- stats::predict(model, tibble::tibble("Size" = nrow(complete_obs)))
+  message("Creating SOM grid.. (This is estimated to take ", round(pred, 2), " minutes)")
+  
+  
   som_res <- som(as.matrix(complete_obs[,!colnames(complete_obs) %in% c(channel, "batch", "sample", "id", exclude)]), 
                  grid=somgrid(xdim = 8, ydim = 8), 
                  dist.fcts = "euclidean")
@@ -103,13 +108,13 @@ impute_across_panels <- function(impute_for, complete_obs, overlap_channels, imp
   
   
   # Checking colnames
-  if (!all(impute_channels %in% complete_obs)) {
+  if (!all(impute_channels %in% colnames(complete_obs))) {
     stop("Error: Some of your impute_channels are not found among the complete_obs column names.")
   }
-  if (!all(overlap_channels %in% impute_for)) {
+  if (!all(overlap_channels %in% colnames(impute_for))) {
     stop("Error: Some of your overlap_channels are not found among the impute_for column names.")
   }
-  if (!all(overlap_channels %in% complete_obs)) {
+  if (!all(overlap_channels %in% colnames(complete_obs))) {
     stop("Error: Some of your overlap_channels are not found in among complete_obs column names.")
   }
   
@@ -117,8 +122,12 @@ impute_across_panels <- function(impute_for, complete_obs, overlap_channels, imp
   panel_imputed <- NULL
   
   # Get 8 x 8 SOM classes for complete_obs and impute_for on overlapping channels - takes some time...
-  print('Calculating SOM')
   overlapping_data <- as.matrix(rbind(complete_obs[,overlap_channels], impute_for[,overlap_channels]))
+  
+  # Predict runtime
+  pred <- stats::predict(model, tibble::tibble("Size" = nrow(overlapping_data)))
+  message("Creating SOM grid.. (This is estimated to take ", round(pred, 2), " minutes)")
+  
   som_res <- som(overlapping_data,
                  grid=somgrid(xdim = 8, ydim = 8), 
                  dist.fcts = "euclidean")

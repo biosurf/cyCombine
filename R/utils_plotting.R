@@ -7,6 +7,9 @@
 # @importFrom dplyr select_if bind_rows rename
 #' Density ridges for two sets
 #' @import ggplot2
+#' @examples 
+#' plot_density(uncorrected, corrected, y = 'batch', filename = 'my/dir/batchcor_plot.pdf')
+#' plot_density(imputed1, imputed2, y = 'Type', dataset_names = paste('Panel', 1:2), filename = 'my/dir/merging_plot.pdf')
 #' @export
 plot_density <- function(uncorrected, corrected, markers = NULL, filename, y = "batch", xlim = 10, dataset_names = NULL) {
 
@@ -30,15 +33,24 @@ plot_density <- function(uncorrected, corrected, markers = NULL, filename, y = "
     dataset_names <- c('Dataset 1', 'Dataset 2')
   }
 
+  if (y == 'Type') {
+    batch1 <- dataset_names[1]
+    batch2 <- dataset_names[2]
+  } else {
+    batch1 <- as.factor(uncorrected[[y]])
+    batch2 <- as.factor(corrected[[y]])
+  }
+  
+  
   uncorrected <- uncorrected %>%
     dplyr::select(all_of(markers)) %>%
     dplyr::mutate(Type = dataset_names[1],
-                  batch = as.factor(uncorrected[[y]]))
+                  batch = batch1)
 
   df <- corrected %>%
     dplyr::select(all_of(markers)) %>%
     dplyr::mutate(Type = dataset_names[2],
-                  batch = as.factor(corrected[[y]])) %>%
+                  batch = batch2) %>%
     dplyr::bind_rows(uncorrected)
 
 
@@ -54,7 +66,7 @@ plot_density <- function(uncorrected, corrected, markers = NULL, filename, y = "
   for (c in 1:length(markers)) {
 
     p[[c]] <- df %>%
-      ggplot(aes_string(x = markers[c], y = y)) +
+      ggplot(aes_string(x = markers[c], y = 'batch')) +
       ggridges::geom_density_ridges(aes(color = .data$Type, fill = .data$Type), alpha = 0.4) +
       coord_cartesian(xlim = c(-1, xlim)) +
       labs(y = y) +
