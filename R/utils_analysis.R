@@ -48,6 +48,7 @@ run_analysis <- function(tool,
                          celltype_col = NULL,
                          segment = "",
                          binSize = 0.1,
+                         som_type = "fsom",
                          gridsize = 8,
                          seed = 473,
                          umap_size = 20000){
@@ -154,17 +155,28 @@ run_analysis <- function(tool,
       if (file.exists(paste0(projdir, "_som.RDS")) & !restart){
         message("Loading SOMgrid..")
         som_ <- readRDS(paste0(projdir, "_som.RDS"))
+        labels <- som_$unit.classif
       }else{
-        som_ <- corrected %>%
-          cyCombine::create_som(seed = seed,
-                                xdim = gridsize,
-                                ydim = gridsize,
-                                markers = markers)
-        saveRDS(som_, file = paste0(projdir, "_som.RDS"))
+        if (som_type == "fsom"){
+          labels <- corrected %>%
+            cyCombine::create_fsom(seed = seed,
+                                   xdim = gridsize,
+                                   ydim = gridsize,
+                                   markers = markers)
+        }else{
+          som_ <- corrected %>%
+            cyCombine::create_som(seed = seed,
+                                  xdim = gridsize,
+                                  ydim = gridsize,
+                                  markers = markers)
+          labels <- som_$unit.classif
+          saveRDS(som_, file = paste0(projdir, "_som.RDS"))
+        }
+
       }
       # Add labels
       corrected <- corrected %>%
-        dplyr::mutate(som = som_$unit.classif)
+        dplyr::mutate(som = labels)
       celltype_col <- "som"
     }
     message("Adding labels to data..")
