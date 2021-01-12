@@ -7,30 +7,50 @@
 # @importFrom dplyr select_if bind_rows rename
 #' Density ridges for two sets
 #' @import ggplot2
+#' @examples 
+#' plot_density(uncorrected, corrected, y = 'batch', filename = 'my/dir/batchcor_plot.pdf')
+#' plot_density(imputed1, imputed2, y = 'Type', dataset_names = paste('Panel', 1:2), filename = 'my/dir/merging_plot.pdf')
 #' @export
-plot_density <- function(uncorrected, corrected, markers = NULL, filename, y = "batch", xlim = 10) {
+plot_density <- function(uncorrected, corrected, markers = NULL, filename, y = "batch", xlim = 10, dataset_names = NULL) {
 
   # Check for packages
   missing_package("ggridges", "CRAN")
   missing_package("ggplot2", "CRAN")
   missing_package("cowplot", "CRAN")
+  
+  if (is.null(filename)) {
+    stop('Please specify a filename for the density plot.')
+  }
 
-
-
-  if (is.null(markers)){
+  if (is.null(markers)) {
     markers <- uncorrected %>%
       get_markers()
   }
+  
+  if (is.null(dataset_names)) {
+    dataset_names <- c('Uncorrected', 'Corrected')
+  } else if (length(dataset_names) != 2) {
+    dataset_names <- c('Dataset 1', 'Dataset 2')
+  }
 
+  if (y == 'Type') {
+    batch1 <- dataset_names[1]
+    batch2 <- dataset_names[2]
+  } else {
+    batch1 <- as.factor(uncorrected[[y]])
+    batch2 <- as.factor(corrected[[y]])
+  }
+  
+  
   uncorrected <- uncorrected %>%
     dplyr::select(all_of(markers)) %>%
-    dplyr::mutate(Type = "Uncorrected",
-                  batch = as.factor(uncorrected[[y]]))
+    dplyr::mutate(Type = dataset_names[1],
+                  batch = batch1)
 
   df <- corrected %>%
     dplyr::select(all_of(markers)) %>%
-    dplyr::mutate(Type = "Corrected",
-                  batch = as.factor(corrected[[y]])) %>%
+    dplyr::mutate(Type = dataset_names[2],
+                  batch = batch2) %>%
     dplyr::bind_rows(uncorrected)
 
 
@@ -46,7 +66,7 @@ plot_density <- function(uncorrected, corrected, markers = NULL, filename, y = "
   for (c in 1:length(markers)) {
 
     p[[c]] <- df %>%
-      ggplot(aes_string(x = markers[c], y = "batch")) +
+      ggplot(aes_string(x = markers[c], y = 'batch')) +
       ggridges::geom_density_ridges(aes(color = .data$Type, fill = .data$Type), alpha = 0.4) +
       coord_cartesian(xlim = c(-1, xlim)) +
       labs(y = y) +
@@ -66,7 +86,7 @@ plot_density <- function(uncorrected, corrected, markers = NULL, filename, y = "
   # Save the plots
   # ggsave(filename = filename, plot = p,
   # device = "png", width = 28, height = 40)
-  cowplot::save_plot(filename, cowplot::plot_grid(plotlist = p, ncol = 6), base_width = 28, base_height = 40)
+  cowplot::save_plot(filename, cowplot::plot_grid(plotlist = p, ncol = 6), base_width = 28, base_height = length(markers)/1.3)
 
 }
 
