@@ -194,7 +194,6 @@ create_som <- function(df,
 
 
 
-
   # Predict runtime
   pred <- stats::predict(model, tibble::tibble("Size" = nrow(df)))
 
@@ -209,6 +208,39 @@ create_som <- function(df,
                  dist.fcts = "euclidean")
   return(som_grid)
 }
+
+#' Compute flowsom clustering
+#' @importFrom FlowSOM SOM
+#' @export
+create_fsom <- function(df,
+                        markers = NULL,
+                        seed = 473,
+                        xdim = 8,
+                        ydim = 8){
+
+  # Check for package
+  missing_package("FlowSOM", "Bioc")
+
+  # Get markers
+  if(is.null(markers)){
+    # Get markers
+    markers <- df %>%
+      cyCombine::get_markers()
+  }
+
+
+  # Create SOM grid
+  set.seed(seed)
+  fsom <- df %>%
+    dplyr::select(dplyr::all_of(markers)) %>%
+    as.matrix() %>%
+    FlowSOM::SOM(xdim = 8, ydim = 8)
+
+  labels <- fsom$mapping[, 1]
+
+  return(labels)
+}
+
 
 
 
@@ -285,7 +317,7 @@ correct_data <- function(df,
 
   # Add label to df
   if(length(label) == 1){
-    check_colname(colnames(df), label)
+    check_colname(colnames(df), label, "df")
   }else{
     df$label <- label
     label <- "label"
@@ -296,7 +328,7 @@ correct_data <- function(df,
     # No covar is given
     num_covar <- 1
   }else if(length(covar) == 1){
-    check_colname(colnames(df), covar)
+    check_colname(colnames(df), covar, "df")
   } else{
     # Covar was given as a vector
     df$covar <- as.factor(covar)
@@ -394,7 +426,7 @@ batch_correct <- function(df,
                           norm_method = 'rank',
                           ties.method = "min"){
   # A batch column is required
-  check_colname(colnames(df), "batch")
+  check_colname(colnames(df), "batch", "df")
 
   # Create SOM on scaled data
   if(is.null(label)) {
