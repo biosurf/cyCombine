@@ -10,9 +10,14 @@ plot_density(
   markers = NULL,
   filename,
   y = "batch",
-  xlim = 10
+  xlim = 10,
+  dataset_names = NULL
 )
 }
 \description{
 Density ridges for two sets
+}
+\examples{
+plot_density(uncorrected, corrected, y = 'batch', filename = 'my/dir/batchcor_plot.pdf')
+plot_density(imputed1, imputed2, y = 'Type', dataset_names = paste('Panel', 1:2), filename = 'my/dir/merging_plot.pdf')
 }

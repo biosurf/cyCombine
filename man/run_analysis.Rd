@@ -11,6 +11,7 @@ run_analysis(
   uncorrected_extension = "_preprocessed",
   corrected_extension = "_corrected",
   variant = NULL,
+  uncorrected_variant = NULL,
   use_cycombine_uncor = FALSE,
   restart = FALSE,
   md = NULL,
