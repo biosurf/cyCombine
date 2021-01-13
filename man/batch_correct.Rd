@@ -40,6 +40,8 @@ If NULL, no covar will be used}
 
 \item{ties.method}{The method to handle ties, when using rank. Default: "min". See ?rank for other options.}
 
+\item{som_type}{Default: "fsom". Determine which clustering function to use. FlowSOM or Kohonen. "fsom" sets to FlowSOM and anything else is Kohonen.}
+
 \item{preprocessed}{The preprocessed dataframe to run batch correction on}
 }
 \description{

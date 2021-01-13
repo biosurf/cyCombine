@@ -413,6 +413,7 @@ correct_data <- function(df,
 #' @inheritParams create_som
 #' @inheritParams correct_data
 #' @inheritParams normalize
+#' @param som_type Default: "fsom". Determine which clustering function to use. FlowSOM or Kohonen. "fsom" sets to FlowSOM and anything else is Kohonen.
 #' @param preprocessed The preprocessed dataframe to run batch correction on
 #' @family batch
 #' @export

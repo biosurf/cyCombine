@@ -28,7 +28,8 @@ Imports:
     stringr,
     tidyr,
     ggplot2,
-    knitr
+    knitr,
+    FlowSOM
 Suggests: 
     rmarkdown,
     testthat,
