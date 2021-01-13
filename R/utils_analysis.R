@@ -154,8 +154,8 @@ run_analysis <- function(tool,
       # Cluster and add labels
       if (file.exists(paste0(projdir, "_som.RDS")) & !restart){
         message("Loading SOMgrid..")
-        som_ <- readRDS(paste0(projdir, "_som.RDS"))
-        labels <- som_$unit.classif
+        labels <- readRDS(paste0(projdir, "_som.RDS"))
+        # labels <- som_$unit.classif
       }else{
         if (som_type == "fsom"){
           labels <- corrected %>%
@@ -164,13 +164,12 @@ run_analysis <- function(tool,
                                    ydim = gridsize,
                                    markers = markers)
         }else{
-          som_ <- corrected %>%
+          labels <- corrected %>%
             cyCombine::create_som(seed = seed,
                                   xdim = gridsize,
                                   ydim = gridsize,
                                   markers = markers)
-          labels <- som_$unit.classif
-          saveRDS(som_, file = paste0(projdir, "_som.RDS"))
+          saveRDS(labels, file = paste0(projdir, "_som.RDS"))
         }
 
       }

@@ -374,7 +374,7 @@ correct_data <- function(df,
         # The as.character is to remove factor levels not present in the SOM node
         purrr::when(num_covar > 1 ~ sva::ComBat(.,
                                                 batch = as.character(df$batch),
-                                                mod = stats::model.matrix(~as.character(df[[covar]])),
+                                                mod = stats::model.matrix(~as.factor(df[[covar]])),
                                                 par.prior = parametric),
                     ~ sva::ComBat(.,
                                   batch = as.character(df$batch),
@@ -403,6 +403,106 @@ correct_data <- function(df,
   return(corrected_data)
 }
 
+#' Alternate correction
+#' @export
+correct_data_alt <- function(df,
+                         label,
+                         covar = NULL,
+                         markers = NULL,
+                         parametric = TRUE){
+  message("Batch correcting data..")
+  if (is.null(markers)){
+    # Get markers
+    markers <- df %>%
+      cyCombine::get_markers()
+  }
+
+  # Add label to df
+  if(length(label) == 1){
+    check_colname(colnames(df), label, "df")
+  }else{
+    df$label <- label
+    label <- "label"
+  }
+
+  # Add covar to df, if given
+  if(is.null(covar)){
+    # No covar is given
+    num_covar <- 1
+  }else if(length(covar) == 1){
+    check_colname(colnames(df), covar, "df")
+  } else{
+    # Covar was given as a vector
+    df$covar <- as.factor(covar)
+    covar <- "covar"
+  }
+
+  corrected_data <- df %>%
+    dplyr::group_by(.data[[label]]) %>%
+    # Correct (modify) each label group with ComBat
+    dplyr::group_modify(.keep = TRUE, function(df, ...){
+      # Detect if only one batch is present in the node
+      num_batches <- df$batch %>%
+        unique() %>%
+        length()
+      if(num_batches == 1){
+        lab <- df[[label]][1]
+        batch <- df$batch[1]
+        message(paste("Label group", lab, "only contains cells from batch", batch))
+        df <- df %>% select(-c(label))
+        return(df)
+      }
+      message(paste("Correcting Label group", df[[label]][1]))
+      # Calculate number of covars in the node
+      if(!is.null(covar)){
+        num_covar <- df[[covar]] %>%
+          unique() %>%
+          length()
+
+        covar_counts <- df %>%
+          count(.data$batch, .data[[covar]]) %>%
+          pull(.data$n)
+
+        if(sum(covar_counts) < max(covar_counts) + num_covar*5){
+          num_covar <- 1
+        }
+      }
+
+      # Compute ComBat correction
+      ComBat_output <- df %>%
+        dplyr::select(all_of(markers)) %>%
+        t() %>%
+        # The as.character is to remove factor levels not present in the SOM node
+        purrr::when(num_covar > 1 ~ sva::ComBat(.,
+                                                batch = as.character(df$batch),
+                                                mod = stats::model.matrix(~as.factor(df[[covar]]) + as.factor(df$condition)),
+                                                par.prior = parametric),
+                    ~ sva::ComBat(.,
+                                  batch = as.character(df$batch),
+                                  par.prior = parametric)
+        ) %>%
+        t() %>%
+        tibble::as_tibble() %>%
+        dplyr::mutate(batch = df$batch,
+                      sample = df$sample,
+                      id = df$id) %>%
+        # Only add covar column, if it is not null
+        purrr::when(!is.null(covar) ~ dplyr::mutate(., covar = df[[covar]]),
+                    ~ .)
+      return(ComBat_output)
+    }) %>%
+    dplyr::ungroup() %>%
+    # Reduce all negative values to zero
+    dplyr::mutate_at(dplyr::vars(all_of(markers)),
+                     function(x) {
+                       x[x < 0] <- 0
+                       x[x > 30] <- 30
+                       return(x)
+                     }) %>%
+    dplyr::arrange(id) %>%
+    select(id, everything())
+  return(corrected_data)
+}
 
 
 #' Run batch correction on preprocessed data
