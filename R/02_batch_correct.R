@@ -206,7 +206,8 @@ create_som <- function(df,
     kohonen::som(grid = kohonen::somgrid(xdim = xdim,
                                          ydim = ydim),
                  dist.fcts = "euclidean")
-  return(som_grid)
+  label <- som_grid$unit.classif
+  return(label)
 }
 
 #' Compute flowsom clustering
@@ -236,9 +237,9 @@ create_fsom <- function(df,
     as.matrix() %>%
     FlowSOM::SOM(xdim = 8, ydim = 8)
 
-  labels <- fsom$mapping[, 1]
+  label <- fsom$mapping[, 1]
 
-  return(labels)
+  return(label)
 }
 
 
@@ -424,21 +425,29 @@ batch_correct <- function(df,
                           covar = NULL,
                           markers = NULL,
                           norm_method = 'rank',
-                          ties.method = "min"){
+                          ties.method = "average",
+                          som_type = "fsom"){
   # A batch column is required
   check_colname(colnames(df), "batch", "df")
 
   # Create SOM on scaled data
   if(is.null(label)) {
-    som_ <- df %>%
+    label <- df %>%
       normalize(markers = markers,
                 norm_method = norm_method,
                 ties.method = ties.method) %>%
-      create_som(markers = markers,
-                 seed = seed,
-                 xdim = xdim,
-                 ydim = ydim)
-    label <- som_$unit.classif
+      purrr::when(som_type == "fsom" ~
+                    create_fsom(.,
+                                markers = markers,
+                                seed = seed,
+                                xdim = xdim,
+                                ydim = ydim),
+                  TRUE ~
+                    create_som(.,
+                               markers = markers,
+                               seed = seed,
+                               xdim = xdim,
+                               ydim = ydim))
   }
 
 

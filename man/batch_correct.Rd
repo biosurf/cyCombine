@@ -14,7 +14,8 @@ batch_correct(
   covar = NULL,
   markers = NULL,
   norm_method = "rank",
-  ties.method = "min"
+  ties.method = "average",
+  som_type = "fsom"
 )
 }
 \arguments{

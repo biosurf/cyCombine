@@ -20,6 +20,7 @@ run_analysis(
   celltype_col = NULL,
   segment = "",
   binSize = 0.1,
+  som_type = "fsom",
   gridsize = 8,
   seed = 473,
   umap_size = 20000
