@@ -11,16 +11,13 @@
 #' plot_density(uncorrected, corrected, y = 'batch', filename = 'my/dir/batchcor_plot.pdf')
 #' plot_density(imputed1, imputed2, y = 'Type', dataset_names = paste('Panel', 1:2), filename = 'my/dir/merging_plot.pdf')
 #' @export
-plot_density <- function(uncorrected, corrected, markers = NULL, filename, y = "batch", xlim = 10, dataset_names = NULL) {
+plot_density <- function(uncorrected, corrected, markers = NULL, filename = NULL, y = "batch", xlim = 10, dataset_names = NULL) {
 
   # Check for packages
   missing_package("ggridges", "CRAN")
   missing_package("ggplot2", "CRAN")
   missing_package("cowplot", "CRAN")
   
-  if (is.null(filename)) {
-    stop('Please specify a filename for the density plot.')
-  }
 
   if (is.null(markers)) {
     markers <- uncorrected %>%
@@ -86,8 +83,12 @@ plot_density <- function(uncorrected, corrected, markers = NULL, filename, y = "
   # Save the plots
   # ggsave(filename = filename, plot = p,
   # device = "png", width = 28, height = 40)
-  cowplot::save_plot(filename, cowplot::plot_grid(plotlist = p, ncol = 6), base_width = 28, base_height = length(markers)/1.3)
-
+  
+  if (!is.null(filename)) {
+    cowplot::save_plot(filename, cowplot::plot_grid(plotlist = p, ncol = 6), base_width = 28, base_height = length(markers)/1.3)
+  } else {
+    return(cowplot::plot_grid(plotlist = p, ncol = 6))
+  }
 }
 
 
@@ -240,6 +241,130 @@ plot_dimred_full <- function(df, name, type = "pca", markers = NULL, seed = 473,
     suppressMessages(ggsave(p, filename = paste0(out_dir, '/UMAP_markers/UMAP_batches_labels', m, '.png')))
   }
 
+}
+
+
+
+# @importFrom uwot umap
+#' Dimensionality reduction plots for a two-batch dataset before and after correction - colored by batch and label
+#' @export
+plot_umap_labels <- function(uncorrected, corrected, filename = NULL) {
+  
+  missing_package("uwot", "CRAN")
+  missing_package("ggplot2", "CRAN")
+  missing_package("ggridges", "CRAN")
+  
+  
+  # Check if two-batch data and extract batch names
+  if (length(unique(c(unique(uncorrected$batch), unique(corrected$batch)))) == 2) {
+    batch1 <- unique(uncorrected$batch)[1]
+    batch2 <- unique(uncorrected$batch)[2]
+    
+  } else {
+    stop('Error, data must contain only two batches.')
+    
+  }
+  
+  
+  # Make a list format with all the plots to be made
+  datasets <- list(list(df = uncorrected[uncorrected$batch == batch1,], plot = 'Label', nplots = 1, name = paste0('Uncorrected ', batch1)),
+                   list(df = uncorrected[uncorrected$batch == batch2,], plot = 'Label', nplots = 1, name = paste0('Uncorrected ', batch2)),
+                   list(df = uncorrected, plot = 'Batch', nplots = 3, name = paste0('Uncorrected ', batch1, ' + ', batch2)),
+                   list(df = corrected, plot = 'Batch', nplots = 3, name = paste0('Corrected ', batch1, ' + ', batch2)),
+                   list(df = corrected[corrected$batch == batch1,], plot = 'Label', nplots = 1, name = paste0('Corrected ', batch1)),
+                   list(df = corrected[corrected$batch == batch2,], plot = 'Label', nplots = 1, name = paste0('Corrected ', batch2)))
+  
+  seed = 473
+  plots <- plots2 <- list(); plot_count = plot_count2 = 1; markers = get_markers(uncorrected)
+  for (i in 1:6) {
+    
+    df <- datasets[[i]][['df']] #%>% sample_n(1000)
+    plot <- datasets[[i]][['plot']]
+    nplots <- datasets[[i]][['nplots']]
+    name <- datasets[[i]][['name']]
+    
+    Batch <- df$batch %>%
+      as.factor()
+    Label <- df$label %>%
+      factor(levels = c(unique(corrected$label)))
+    df <- df %>%
+      dplyr::select(dplyr::all_of(markers))
+    
+    
+    # Run UMAP
+    set.seed(seed)
+    umap <- df %>%
+      uwot::umap(n_neighbors = 15, min_dist = 0.2, metric = "euclidean")
+    
+    
+    colnames(umap) <- c("UMAP1", "UMAP2")
+    df <- umap %>%
+      tibble::as_tibble() %>%
+      dplyr::mutate(Batch = Batch,
+                    Label = Label)
+    
+    
+    firstup <- function(x) {
+      substr(x, 1, 1) <- toupper(substr(x, 1, 1))
+      x
+    }
+    
+    # Make the plot
+    if (nplots == 1) {
+      plot <- df %>%
+        ggplot(aes_string(x = colnames(df)[1], y = colnames(df)[2])) +
+        geom_point(aes_string(color = plot), alpha = 0.3, size = 0.4, shape = 1) +
+        labs(plot) +
+        guides(color = guide_legend(override.aes = list(alpha = 1, size = 1))) +
+        theme_bw() + theme(plot.title = element_text(hjust = 0.5)) + 
+        ggtitle(paste("UMAP -", name))
+      
+      plots[[plot_count]] <- plot
+      plot_count = plot_count + 1
+      
+    } else if (nplots == 3) {
+      
+      # Together plot
+      plot <- df %>%
+        ggplot(aes_string(x = colnames(df)[1], y = colnames(df)[2])) +
+        geom_point(aes_string(color = plot), alpha = 0.3, size = 0.4, shape = 1) +
+        guides(color = guide_legend(override.aes = list(alpha = 1, size = 1))) +
+        labs(plot) +
+        theme_bw() + theme(plot.title = element_text(hjust = 0.5)) +
+        ggtitle(paste("UMAP -", name))
+      
+      plots[[plot_count]] <- plot
+      plot_count = plot_count + 1
+      
+      # Faceted plots
+      plot <- df %>%
+        ggplot(aes_string(x = colnames(df)[1], y = colnames(df)[2])) +
+        facet_wrap(~Batch) +
+        geom_point(aes_string(color = Label), alpha = 0.3, size = 0.4, shape = 1) +
+        guides(color = guide_legend(override.aes = list(alpha = 1, size = 1))) +
+        labs(colour = 'Label') +
+        theme_bw() + theme(plot.title = element_text(hjust = 0.5)) +
+        ggtitle(paste("UMAP -", name))
+      
+      plots2[[plot_count2]] <- plot
+      plot_count2 = plot_count2 + 1    
+      
+    }
+  }
+  
+  # Save the plots
+  plot1 <- cowplot::plot_grid(plotlist = plots, scale = 0.9)
+  plot2 <- cowplot::plot_grid(plotlist = plots2, scale = 0.9)
+  
+  if (!is.null(filename)) {
+    cowplot::save_plot(filename = filename, plot1, base_width = 24, base_height = 14)
+    cowplot::save_plot(filename = paste0(tools::file_path_sans_ext(filename), '_facets.', tools::file_ext(filename)), plot2, base_width = 32, base_height = 8)
+    
+  } else {
+    return(list(plot1, plot2))
+    
+  }
+  
 }
 
 
