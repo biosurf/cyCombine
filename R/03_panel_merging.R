@@ -9,7 +9,7 @@
 #' @param df Dataframe with expression values
 #' @param correct_batches Batches with misstaining (or other problem) for which to perform the imputation of 'channel'
 #' @param channel Channel (marker) to impute
-#' @param sample_size Number of cells to base imputation on - defaults to all cells in df not in correct_batches
+#' @param sample_size Number of cells to base imputation on - defaults to all cells in df not in 'correct_batches'
 #' @param exclude Channels to exclude (e.g. other misstained channels not to be used for imputation)
 #' @family merging
 #' @examples
@@ -18,10 +18,6 @@
 #' @export
 salvage_problematic <- function(df, correct_batches, channel, sample_size = NULL, exclude = NULL) {
   
-  if (is.null(sample_size)) {
-    sample_size = nrow(df)
-  }
-  
   print(paste('Started imputation for', channel, 'in batch(es)', paste(correct_batches, collapse = ', ')))
   
   # Get all other channels in samples to impute for
@@ -29,53 +25,57 @@ salvage_problematic <- function(df, correct_batches, channel, sample_size = NULL
   
   # Get the observations not in problematic batch(es)
   complete_obs <- df[!(df$batch %in% correct_batches),]
-  complete_obs <- complete_obs[sample(nrow(complete_obs),sample_size),]
+  if (!is.null(sample_size)) {
+    complete_obs <- complete_obs[sample(nrow(complete_obs),sample_size),]
+  }
   
-  # Get 8 x 8 SOM classes for each complete event - this takes some time, which is why I downsample
+  # Combine the data to impute for and from based on the overlapping markers
+  overlapping_data <- rbind(complete_obs[,!colnames(complete_obs) %in% c(channel, "batch", "sample", "id", exclude)],
+                            impute_for[,!colnames(impute_for) %in% c("batch", "sample", "id", exclude)])
+  
+  
+  # Get 8 x 8 SOM classes for each event - on overlapping markers
+  som_classes <- overlapping_data %>%
+    create_fsom(xdim = 5,
+                ydim = 5)
+  
+  # Split SOM classes to each original dataset
+  complete_obs_som <- som_classes[1:nrow(complete_obs)]
+  impute_obs_som <- som_classes[(nrow(complete_obs)+1):length(som_classes)]
 
-  # Predict runtime
-  pred <- stats::predict(model, tibble::tibble("Size" = nrow(complete_obs)))
-  message("Creating SOM grid.. (This is estimated to take ", round(pred, 2), " minutes)")
   
-  
-  som_res <- som(as.matrix(complete_obs[,!colnames(complete_obs) %in% c(channel, "batch", "sample", "id", exclude)]), 
-                 grid=somgrid(xdim = 8, ydim = 8), 
-                 dist.fcts = "euclidean")
-  
-  som_classes <- som_res$unit.classif
-  
-  # For each complete cluster
-  # Calculate the distance from each missing event to centroid (calculated based on mean) of each cluster
-  # AND
   # Calculate the density distribution of the channel to be imputed
-  clustdist <- matrix(nrow = nrow(impute_for), ncol = max(som_classes))
-  densList <- list()
-  for (s in sort(unique(som_classes))) {
-    
-    clustdist[,s] <- dista(x = as.matrix(impute_for[,!colnames(impute_for) %in% c("batch", "sample", "id", exclude)]), 
-                           xnew = matrix(colMeans(complete_obs[which(som_classes==s),!colnames(complete_obs) %in% c(channel, "batch", "sample", "id", exclude)]), nrow = 1), 
-                           type = "euclidean")
-    
-    densList[[s]] <- complete_obs[which(som_classes==s),] %>% 
-      pull(channel) %>% 
-      density()
-    
-  }
+  # AND
+  # For each missing event in each cluster, impute values based on density draws in respective cluster 
+  # (here represented by random sample and addition of a number with mean 0 and bandwidth sd)
   
-  # Assign cluster to each test event by finding closest centroid
-  missingCluster <- sapply(1:nrow(impute_for), function(x) {which.min(clustdist[x,])})
-  
-  # For each missing event in each cluster, impute values based on density draws in respective cluster (here represented by random sample and addition of a number with mean 0 and bandwidth sd)
   print('Performing density draws')
-  imputed <- rep(0, length(missingCluster))
-  for (s in sort(unique(missingCluster))) {
+
+  imputed <- rep(0, length(impute_obs_som))
+
+  for (s in sort(unique(impute_obs_som))) {
+
+    # Check if there's at least 50 cells from the 'training' data in the given cluster and if so, impute - otherwise set values to NA and throw a warning
+    if (sum(complete_obs_som==s) >= 50) {
+
+      # Estimate the density per marker that needs imputation
+      
+      dens <- complete_obs[which(complete_obs_som==s),] %>% 
+        pull(channel) %>% 
+        density()
+      
+      # For each missing event in each cluster, impute values based on density draws in respective cluster (here represented by random sample and addition of a number with mean 0 and bandwidth sd)
+      imputed[which(impute_obs_som==s)] <- complete_obs[which(complete_obs_som==s),] %>%
+        pull(channel) %>%
+        sample(size = sum(impute_obs_som==s), replace = T) + rnorm(sum(impute_obs_som==s), 0, dens$bw)
     
-    imputed[missingCluster==s] <- complete_obs[which(som_classes==s),] %>%
-      pull(channel) %>%
-      sample(size = sum(missingCluster==s), replace = T) + rnorm(sum(missingCluster==s), 0, densList[[s]]$bw)
-    
-    # imputed[missingCluster==s] <- sample(as.numeric(unlist(complete_obs[which(som_classes==s),channel])), length(which(missingCluster==s)), replace = T) + rnorm(length(which(missingCluster==s)), 0, densList[[s]]$bw)
+    } else {
+
+      imputed[which(impute_obs_som==s)] <- NA
+      warning('Be aware that a cluster contains cells primarily from the dataset you wish to impute for. As a result, imputations were not made for those cells.')
+    }
   }
+  
   # Fix values below 0
   imputed[imputed < 0] <- 0
   
@@ -93,84 +93,98 @@ salvage_problematic <- function(df, correct_batches, channel, sample_size = NULL
 #' This function imputes the expression values for a whole dataset based on the overlapping markers contained in another dataset
 #'   The purpose is to be able to merge multi-panel data or to merge differently run datasets which have non-overlapping markers
 #'
-#' @param impute_for Dataframe with expression values to impute markers for
-#' @param complete_obs Dataframe with expression values to base imputation on
+#' @param dataset1 Dataframe with expression values 1
+#' @param dataset2 Dataframe with expression values 2
 #' @param overlap_channels Channels (markers) that overlap between impute_for and complete_obs, which can be used to base imputation on
-#' @param impute_channels Channels to impute and add to the impute_for set (must be present in complete_obs)
+#' @param impute_channels1 Channels to impute and add to the impute_for dataset1 (must be present in dataset2)
+#' @param impute_channels2 Channels to impute and add to the impute_for dataset2 (must be present in dataset1)
 #' @family merging
 #' @examples
-#' df_imputed <- df_panel1 %>%
-#'   impute_across_panels(complete_obs = df_panel2, overlap_channels = intersect(df_panel1_markers, df_panel2_markers), impute_channels = unique_df_panel2_markers)
+#' dfs_imputed <- impute_across_panels(dataset1 = df_panel1, dataset2 = df_panel2, overlap_channels = intersect(df_panel1_markers, df_panel2_markers), impute_channels1 = unique_df_panel2_markers, , impute_channels2 = unique_df_panel1_markers)
 #' @export
-impute_across_panels <- function(impute_for, complete_obs, overlap_channels, impute_channels) {
-  
-  print(paste('Started imputation for', paste(impute_channels, collapse = ', ')))
+impute_across_panels <- function(dataset1, dataset2, overlap_channels, impute_channels1, impute_channels2) {
   
   
   # Checking colnames
-  if (!all(impute_channels %in% colnames(complete_obs))) {
-    stop("Error: Some of your impute_channels are not found among the complete_obs column names.")
+  if (!all(impute_channels1 %in% colnames(dataset2))) {
+    stop("Error: Some of your impute_channels1 are not found among the dataset2 column names.")
   }
-  if (!all(overlap_channels %in% colnames(impute_for))) {
-    stop("Error: Some of your overlap_channels are not found among the impute_for column names.")
+  if (!all(impute_channels2 %in% colnames(dataset1))) {
+    stop("Error: Some of your impute_channels2 are not found among the dataset1 column names.")
   }
-  if (!all(overlap_channels %in% colnames(complete_obs))) {
-    stop("Error: Some of your overlap_channels are not found in among complete_obs column names.")
+  if (!all(overlap_channels %in% colnames(dataset1))) {
+    stop("Error: Some of your overlap_channels are not found in among dataset1 column names.")
+  }
+  if (!all(overlap_channels %in% colnames(dataset2))) {
+    stop("Error: Some of your overlap_channels are not found in among dataset2 column names.")
   }
   
   
-  panel_imputed <- NULL
+  # Get SOM classes for datasets on overlapping channels
+  overlapping_data <- rbind(dataset1[,overlap_channels], dataset2[,overlap_channels])
   
-  # Get 8 x 8 SOM classes for complete_obs and impute_for on overlapping channels - takes some time...
-  overlapping_data <- as.matrix(rbind(complete_obs[,overlap_channels], impute_for[,overlap_channels]))
+  som_classes <- overlapping_data %>%
+    create_fsom(markers = overlap_channels,
+                xdim = 5,
+                ydim = 5)
   
-  # Predict runtime
-  pred <- stats::predict(model, tibble::tibble("Size" = nrow(overlapping_data)))
-  message("Creating SOM grid.. (This is estimated to take ", round(pred, 2), " minutes)")
-  
-  som_res <- som(overlapping_data,
-                 grid=somgrid(xdim = 8, ydim = 8), 
-                 dist.fcts = "euclidean")
-  
-  # Extract and split SOM classes
-  som_classes <- som_res$unit.classif
-  complete_obs_som <- som_classes[1:nrow(complete_obs)]
-  impute_obs_som <- som_classes[(nrow(complete_obs)+1):length(som_classes)]
+  # Split SOM classes to each original dataset
+  dataset1_som <- som_classes[1:nrow(dataset1)]
+  dataset2_som <- som_classes[(nrow(dataset1)+1):length(som_classes)]
   
   
-  # For each missing event in each cluster, impute values based on density draws in the same cluster
-  print('Performing density draws')
-  imputed <- matrix(nrow=nrow(impute_for), ncol=length(impute_channels), dimnames = list("rn"=NULL, "cn"=impute_channels))
-  
-  for (s in sort(unique(impute_obs_som))) {
+  # Now, we impute the impute_channels
+  imputed_dfs <- list(); other_set <- c(2,1)
+  for (i in 1:2) {
+
+    # Set the parameters for the loop to run
+    impute_for <- eval(parse(text=paste0('dataset', i)))
+    impute_channels <- eval(parse(text=paste0('impute_channels', i)))
+    impute_obs_som <- eval(parse(text=paste0('dataset', i, '_som')))
     
-    # Check if there's at least 50 cells from the 'training' data in the given cluster and if so, impute - otherwise set values to NA and throw a warning
-    if (sum(complete_obs_som==s) >= 50) {
+    
+    complete_obs <- eval(parse(text=paste0('dataset', other_set[i])))
+    complete_obs_som <- eval(parse(text=paste0('dataset', other_set[i], '_som')))
+    
+    
+    
+    # For each missing event in each cluster, impute values based on density draws in the same cluster
+    print(paste0('Performing density draws for dataset', i))
+    imputed <- matrix(nrow=nrow(impute_for), ncol=length(impute_channels), dimnames = list("rn"=NULL, "cn"=impute_channels))
+    
+    for (s in sort(unique(impute_obs_som))) {
       
-      # Estimate the density per marker that needs imputation
-      dens <- apply(complete_obs[which(complete_obs_som==s), impute_channels], 2, function(x) {density(x)$bw})
-      
-      # Performing the imputation
-      imputed[which(impute_obs_som==s),] <- complete_obs[which(complete_obs_som==s),] %>%
-        select(all_of(impute_channels)) %>%
-        sample_n(size = sum(impute_obs_som==s), replace = T) %>% 
-        as.matrix() + sapply(impute_channels, function(ch) {rnorm(length(which(impute_obs_som==s)), 0, dens[ch])})
-    } else {
-      
-      imputed[which(impute_obs_som==s),impute_channels] <- NA
-      warning('Be aware that a cluster contains cells only from the dataset you wish to impute for. As a result, imputations were not made for those cells.')
+      # Check if there's at least 50 cells from the 'training' data in the given cluster and if so, impute - otherwise set values to NA and throw a warning
+      if (sum(complete_obs_som==s) >= 50) {
+        
+        # Estimate the density per marker that needs imputation
+        dens <- apply(complete_obs[which(complete_obs_som==s), impute_channels], 2, function(x) {density(x)$bw})
+        
+        # Performing the imputation
+        imputed[which(impute_obs_som==s),] <- complete_obs[which(complete_obs_som==s),] %>%
+          select(all_of(impute_channels)) %>%
+          sample_n(size = sum(impute_obs_som==s), replace = T) %>% 
+          as.matrix() + sapply(impute_channels, function(ch) {rnorm(length(which(impute_obs_som==s)), 0, dens[ch])})
+      } else {
+        
+        imputed[which(impute_obs_som==s),impute_channels] <- NA
+        warning('Be aware that a cluster contains cells primarily from the dataset you wish to impute for. As a result, imputations were not made for those cells.')
+      }
     }
+    
+    # Fix values below 0
+    imputed[imputed < 0] <- 0
+    
+    # Add new columns to impute_for
+    impute_for[,impute_channels] <- imputed
+    
+    impute_for <- impute_for %>%
+      relocate(c(batch, sample, id), .after = all_of(impute_channels))
+    
+    imputed_dfs[[paste0('dataset', i)]] <- impute_for
   }
   
-  # Fix values below 0
-  imputed[imputed < 0] <- 0
   
-  # Add new columns to impute_for
-  impute_for[,impute_channels] <- imputed
-  
-  impute_for <- impute_for %>%
-    relocate(c(batch, sample, id), .after = all_of(impute_channels))
-  
-  return(impute_for)
+  return(imputed_dfs)
 }
 
