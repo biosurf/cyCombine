@@ -235,7 +235,7 @@ create_fsom <- function(df,
   fsom <- df %>%
     dplyr::select(dplyr::all_of(markers)) %>%
     as.matrix() %>%
-    FlowSOM::SOM(xdim = 8, ydim = 8)
+    FlowSOM::SOM(xdim = xdim, ydim = ydim)
 
   label <- fsom$mapping[, 1]
 
