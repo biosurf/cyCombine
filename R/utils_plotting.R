@@ -11,7 +11,7 @@
 #' plot_density(uncorrected, corrected, y = 'batch', filename = 'my/dir/batchcor_plot.pdf')
 #' plot_density(imputed1, imputed2, y = 'Type', dataset_names = paste('Panel', 1:2), filename = 'my/dir/merging_plot.pdf')
 #' @export
-plot_density <- function(uncorrected, corrected, markers = NULL, filename = NULL, y = "batch", xlim = 10, dataset_names = NULL) {
+plot_density <- function(uncorrected, corrected, markers = NULL, filename = NULL, y = "batch", xlim = 10, dataset_names = NULL, ncol = 6) {
 
   # Check for packages
   missing_package("ggridges", "CRAN")
@@ -85,9 +85,9 @@ plot_density <- function(uncorrected, corrected, markers = NULL, filename = NULL
   # device = "png", width = 28, height = 40)
   
   if (!is.null(filename)) {
-    cowplot::save_plot(filename, cowplot::plot_grid(plotlist = p, ncol = 6), base_width = 28, base_height = length(markers)/1.3)
+    cowplot::save_plot(filename, cowplot::plot_grid(plotlist = p, ncol = ncol), base_width = 28, base_height = length(markers)/1.3)
   } else {
-    return(cowplot::plot_grid(plotlist = p, ncol = 6))
+    return(cowplot::plot_grid(plotlist = p, ncol = ncol))
   }
 }
 
