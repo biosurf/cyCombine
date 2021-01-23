@@ -5,28 +5,30 @@
 \title{Impute non-overlapping channels for whole data sets}
 \usage{
 impute_across_panels(
-  impute_for,
-  complete_obs,
+  dataset1,
+  dataset2,
   overlap_channels,
-  impute_channels
+  impute_channels1,
+  impute_channels2
 )
 }
 \arguments{
-\item{impute_for}{Dataframe with expression values to impute markers for}
+\item{dataset1}{Dataframe with expression values 1}
 
-\item{complete_obs}{Dataframe with expression values to base imputation on}
+\item{dataset2}{Dataframe with expression values 2}
 
 \item{overlap_channels}{Channels (markers) that overlap between impute_for and complete_obs, which can be used to base imputation on}
 
-\item{impute_channels}{Channels to impute and add to the impute_for set (must be present in complete_obs)}
+\item{impute_channels1}{Channels to impute and add to the impute_for dataset1 (must be present in dataset2)}
+
+\item{impute_channels2}{Channels to impute and add to the impute_for dataset2 (must be present in dataset1)}
 }
 \description{
 This function imputes the expression values for a whole dataset based on the overlapping markers contained in another dataset
 The purpose is to be able to merge multi-panel data or to merge differently run datasets which have non-overlapping markers
 }
 \examples{
-df_imputed <- df_panel1 \%>\%
-  impute_across_panels(complete_obs = df_panel2, overlap_channels = intersect(df_panel1_markers, df_panel2_markers), impute_channels = unique_df_panel2_markers)
+dfs_imputed <- impute_across_panels(dataset1 = df_panel1, dataset2 = df_panel2, overlap_channels = intersect(df_panel1_markers, df_panel2_markers), impute_channels1 = unique_df_panel2_markers, , impute_channels2 = unique_df_panel1_markers)
 }
 \seealso{
 Other merging: 

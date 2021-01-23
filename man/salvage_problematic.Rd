@@ -19,7 +19,7 @@ salvage_problematic(
 
 \item{channel}{Channel (marker) to impute}
 
-\item{sample_size}{Number of cells to base imputation on - defaults to all cells in df not in correct_batches}
+\item{sample_size}{Number of cells to base imputation on - defaults to all cells in df not in 'correct_batches'}
 
 \item{exclude}{Channels to exclude (e.g. other misstained channels not to be used for imputation)}
 }

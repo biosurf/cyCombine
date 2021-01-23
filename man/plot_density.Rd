@@ -8,10 +8,11 @@ plot_density(
   uncorrected,
   corrected,
   markers = NULL,
-  filename,
+  filename = NULL,
   y = "batch",
   xlim = 10,
-  dataset_names = NULL
+  dataset_names = NULL,
+  ncol = 6
 )
 }
 \description{

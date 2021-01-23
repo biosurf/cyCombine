@@ -4,7 +4,6 @@
 .Rprofile
 _data
 dev
-README.Rmd
 figs
 inst
 Meta

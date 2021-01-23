@@ -4,7 +4,7 @@
 \alias{correct_data_alt}
 \title{Alternate correction}
 \usage{
-correct_data_alt(df, label, covar = NULL, markers = NULL, parametric = TRUE)
+correct_data_alt(df, mod, markers = NULL, parametric = TRUE)
 }
 \description{
 Alternate correction

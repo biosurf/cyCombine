@@ -1,47 +1,45 @@
+---
+output: github_document
+---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
 
 # cyCombine
 
 <!-- badges: start -->
-
-[![Lifecycle:
-experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
 <!-- badges: end -->
 
 <!-- ## Clone github repository -->
-
 <!-- ``` {sh, eval = FALSE} -->
-
 <!-- # Run in terminal -->
-
 <!-- git clone git@github.com:shdam/cyCombine.git -->
-
 <!-- ``` -->
+
 
 <!-- ## Restore renv library -->
 
 <!-- ``` {r, eval = FALSE} -->
-
 <!-- # Open project in Rstudio -->
-
 <!-- # Install renv and restore library -->
-
 <!-- install.packages("renv") -->
-
 <!-- library(renv) -->
-
 <!-- renv::restore() -->
-
 <!-- ``` -->
 
 ## Install as package
-
-### 1\. Create virtual environment with renv (optional)
-
+### 1. Create virtual environment with renv (optional)
 Initialize a local R environment:
-
-``` r
+```{r, eval = FALSE}
 # Open project in Rstudio
 # Install and initialize renv 
 install.packages("renv")
@@ -49,9 +47,8 @@ library(renv)
 renv::init()
 ```
 
-### 2\. Install package from github
-
-``` r
+### 2. Install package from github
+``` {r, eval = FALSE}
 # To ensure Rstudio looks up BioConductor packages run:
 setRepositories(ind = c(1:6, 8))
 # Then install package with
@@ -60,16 +57,14 @@ devtools::install_github("shdam/cyCombine")
 
 ## Install as cloned repository
 
-### 1\. Clone repository
-
-``` sh
+### 1. Clone repository
+```{sh, eval = FALSE}
 # In terminal at desired directory
 git clone git@github.com:shdam/cyCombine.git
 ```
 
-### 2\. Install dependencies
-
-``` r
+### 2. Install dependencies
+```{r, eval = FALSE}
 # Open cyCombine.Rproj in Rstudio
 # Install renv
 install.packages("renv")
@@ -78,19 +73,19 @@ library(renv)
 renv::restore()
 ```
 
-### 3\. Load package
-
-``` r
+### 3. Load package
+```{r, eval = FALSE}
 install.packages("devtools")
 library(devtools)
 devtools::load_all("path/to/cyCombine")
 ```
 
+
+
 ## Usage
 
 ### From a directory of preprocessed .fcs files
-
-``` r
+```{r, eval = FALSE}
 library(cyCombine)
 library(magrittr)
 # Directory containing .fcs files
@@ -119,11 +114,12 @@ corrected <- preprocessed %>%
                 som_type = "fsom", # Anything else to use Kohonen clustering method
                 covar = "condition")
 saveRDS(corrected, file = "_data/cycombine_raw_corrected.RDS")
+
 ```
 
 ### The modular alternative
 
-``` r
+```{r, eval = FALSE}
 library(cyCombine)
 library(magrittr)
 # Direcory containing .fcs files
@@ -159,49 +155,38 @@ corrected <- preprocessed %>%
   correct_data(label = labels,
                covar = "condition")
 saveRDS(corrected, file = "_data/cycombine_raw_corrected.RDS")
+
 ```
+
 
 <!-- ### From a flowset -->
 
 <!-- ```{r, eval = FALSE} -->
-
 <!-- library(cyCombine) -->
-
 <!-- library(magrittr) -->
-
 <!-- # Load data -->
-
 <!-- # Should contain the flowset, sample_ids, batch_ids, and markers of interest -->
-
 <!-- load("data/flowset.Rdata") -->
 
 <!-- # Convert flowset to workable datafram and transform data -->
-
 <!-- preprocessed <- flowset %>% -->
-
 <!--   convert_flowset(batch_ids = batch_ids, -->
-
 <!--                   sample_ids = sample_ids, -->
-
 <!--                   down_sample = TRUE, -->
-
 <!--                   sample_size = 100000, -->
-
 <!--                   seed = 473) %>%  -->
-
 <!--   transform_asinh(markers = markers) -->
 
 <!-- # Run batch correction -->
-
 <!-- corrected <- preprocessed %>% -->
-
 <!--   batch_correct(seed = 473) -->
-
 <!-- ``` -->
+
+
 
 ## Plotting
 
-``` r
+```{r, eval = FALSE}
 # Full analysis can be run with - type ?run_analysis to see how you can modify the analysis
 run_analysis(tool = "cycombine", data = "raw", data_dir = "_data")
 
@@ -228,3 +213,4 @@ plot1 <- plot_dimred(uncorrected[sample,], type = 'umap', name = 'Uncorrected')
 plot2 <- plot_dimred(corrected[sample,], type = 'umap', name = 'Corrected')
 save_two_plots(plot1, plot2, filename = 'figs/umap.png')
 ```
+
