@@ -164,14 +164,16 @@ plot_dimred <- function(df, name, type = "pca", plot = "batch", markers = NULL, 
       geom_point(aes_string(color = plot), alpha = 0.3, size = 0.4) +
       #guides(colour = guide_legend(override.aes = list(alpha = 1, size = 1))) +
       theme_bw() + theme(plot.title = element_text(hjust = 0.5)) +
-      ggtitle(paste(toupper(type), "-", name))
+      ggtitle(paste(toupper(type), "-", name)) + 
+      scale_color_viridis_c()
   }
 
   
   if (return_coord) {
     if (type == 'pca') {
-      return(list("plot" = plot, "dimred" = pca))
+      return(list("plot" = plot, "dimred" = pca$x))
     } else {
+      colnames(umap) <- c('UMAP1', 'UMAP2')
       return(list("plot" = plot, "dimred" = umap))
     } 
   } else {
