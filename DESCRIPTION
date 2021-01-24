@@ -1,13 +1,18 @@
 Package: cyCombine
-Title: What the Package Does (One Line, Title Case)
+Title: Robust Integration of Single-Cell Cytometry Datasets
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "First",
-           family = "Last",
+    c(person(given = "Christina Bligaard",
+           family = "Pedersen",
            role = c("aut", "cre"),
-           email = "first.last@example.com",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
+           comment = c(ORCID = "0000-0002-9895-0930")),
+    person(given = "Søren Helweg",
+           family = "Dam",
+           role = c("aut", "cre")),
+    person(given = "Lars Rønn",
+            family = "Olsen",
+            role = c("aut")))
+Description: A package for combining single-cell cytometry datasets, which increases the analytical flexibility and the statistical power of the analyses while minimizing technical noise.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
