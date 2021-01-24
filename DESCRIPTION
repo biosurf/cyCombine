@@ -5,10 +5,11 @@ Authors@R:
     c(person(given = "Christina Bligaard",
            family = "Pedersen",
            role = c("aut", "cre"),
+           email = "chrbl@dtu.dk",
            comment = c(ORCID = "0000-0002-9895-0930")),
     person(given = "Søren Helweg",
            family = "Dam",
-           role = c("aut", "cre")),
+           role = c("aut")),
     person(given = "Lars Rønn",
             family = "Olsen",
             role = c("aut")))
