@@ -168,7 +168,7 @@ impute_across_panels <- function(dataset1, dataset2, overlap_channels, impute_ch
       } else {
         
         imputed[which(impute_obs_som==s),impute_channels] <- NA
-        warning('Be aware that a cluster contains cells primarily from the dataset you wish to impute for. As a result, imputations were not made for those cells.')
+        warning('Be aware that a cluster contains cells primarily/only from the dataset you wish to impute for. As a result, imputations were not made for those cells.\n')
       }
     }
     
