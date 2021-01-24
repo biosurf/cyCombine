@@ -188,7 +188,7 @@ detect_batch_effect_express <- function(df, downsample = NULL, seed = 472, out_d
 #'
 #' @examples
 #' detect_batch_effect(df = exprs)
-#' detect_batch_effect(df = exprs, xdim = 8, ydim = 8, seed = 382, markers = c('CD3', 'CD4', 'CD8a', 'CD20', 'CD19', 'CD56', 'CD33))
+#' detect_batch_effect(df = exprs, xdim = 8, ydim = 8, seed = 382, markers = c('CD3', 'CD4', 'CD8a', 'CD20', 'CD19', 'CD56', 'CD33'))
 #' @export
 detect_batch_effect <- function(df,
                                 downsample = NULL,

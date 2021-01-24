@@ -145,9 +145,9 @@ load('Sample001_pregated.Rdata')
 Next, we need to figure out which markers to use when integrating the CITE-seq and CyTOF data. 
 Here, it is important to keep a couple of things in mind. 
 
-First, be careful with protein names - i.e. CD197 and CCR7 are actually the same protein, but each name is relatively commonly used. Make sure to correct the column names in either set, so it matches the other, i.e. using `colnames(himc)[colnames(himc)=='CCR7'] <- 'CD197'`.
+First, be careful with protein names - i.e. CD197 and CCR7 are actually the same protein, but each name is relatively commonly used. Make sure to correct the column names in either set, so it matches the other, i.e. using `colnames(cytof)[colnames(cytof)=='CCR7'] <- 'CD197'`.
 
-Second, one should be wary about using CITE-seq proteins with very low or no dynamic range - these do not add any information, and should be removed as they disrupt the analysis. Let us look for such proteinsin the 1k PBMC set:
+Second, one should be wary about using CITE-seq proteins with very low or no dynamic range - these do not add any information, and should be removed as they disrupt the analysis. Let us look for such proteins in the 1k PBMC set:
 
 ```{r identifying poorly captured proteins, fig.height=20, fig.width=12}
 

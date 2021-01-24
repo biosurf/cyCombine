@@ -286,10 +286,48 @@ transform_asinh <- function(df, markers = NULL, cofactor = 5, .keep = FALSE){
     purrr::when(.keep ~ .,
                 ~ dplyr::select_if(., colnames(.) %in% c(markers, non_markers))) %>%
     # Transform all data on those markers
-    dplyr::mutate_at(.vars = dplyr::all_of(markers),
-                     .funs = function(x) asinh(ceiling(x)/cofactor))
+    dplyr::mutate(dplyr::across(dplyr::all_of(markers),
+                     .fns = function(x) asinh(ceiling(x)/cofactor)))
   return(transformed)
 }
+
+
+#' Linearly shift data to lowest value to zero and all other values are shifted linearly along with it
+#'
+#' @param df The dataframe to transform
+#' @param markers The markers to transform on
+#' @param .keep Keep all channels. If FALSE, channels that are not transformed are removed
+#' @importFrom knitr combine_words
+#' @family preprocess
+#' @examples
+#' preprocessed <- df %>%
+#'   linear_shift(markers = markers)
+#' @export
+linear_shift <- function(df, markers = NULL, .keep = FALSE){
+  if(is.null(markers)){
+    markers <- df %>%
+      cyCombine::get_markers()
+  }
+  if(any(markers %!in% colnames(df))){
+    mes <- str_c("Not all given markers are in the data.\nCheck if the markers contain a _ or -:",
+                 knitr::combine_words(markers),
+                 "Columns:",
+                 knitr::combine_words(colnames(df)),
+                 sep = "\n"
+    )
+    stop(mes)
+  }
+  message("Linearly shifting data..")
+  transformed <- df %>%
+    purrr::when(.keep ~ .,
+                ~ dplyr::select_if(., colnames(.) %in% c(markers, non_markers))) %>%
+    # Transform all data on those markers
+    dplyr::mutate(dplyr::across(dplyr::all_of(markers),
+                     .fns = function(x) {x + (0-min(x))}))
+  return(transformed)
+}
+
+
 
 #### Wrapper function ----
 
@@ -355,6 +393,8 @@ prepare_data <- function(data_dir = NULL,
   message("Done!")
   return(fcs_data)
 }
+
+
 
 
 

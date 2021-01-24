@@ -1,0 +1,211 @@
+---
+title: "Integrating paired flow cytometry and CyTOF data"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Integrating paired flow cytometry and CyTOF data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+This vignette will demonstrate the integration of paired flow cytometry and CyTOF protein expression measurements using cyCombine.
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+
+knitr::opts_knit$set(root.dir = '/home/projects/dp_immunoth/people/s134891/cycombine/flow_cytof/')
+
+```
+
+
+
+
+First, let us present the datasets we will integrate:
+
+These datasets are from the article by [Oetjen et al. (2018)](https://doi.org/10.1172/jci.insight.124928). The data is from bone marrow aspirations from healthy donors. Originally, five flow cytometry panels were applied on 20 donors, and a mass cytometry panel was used for 8 of these samples.
+
+We downloaded the FCS files for the 8 CyTOF samples and the T cell flow cytometry panel (the 8 paired donors) from FlowRepository (FR-FCM-ZYQ9, FR-FCM-ZYQB). Both datasets were pre-gated to live, intact singlet cells and exported as FCS files.
+
+
+
+We start by loading some packages.
+
+```{r libraries, results = 'hide', warning=FALSE, message=FALSE}
+library(cyCombine)
+library(tidyverse)
+library(Seurat)
+
+```
+
+We are now ready to load the flow data. We have set up a panel file in csv format, so the correct information is extractable from there. Let us have a look at the contents:
+
+```{r loading flow data 1}
+# Directory with raw .fcs files
+data_dir <- "Oetjen_et_al_2018-Singlet-Live"
+
+# Panel and reading data
+flow_panel <- read_csv('flow_panel_T.csv')
+flow_panel
+```
+
+We then progress with reading the spectral flow dataset and converting it to a tibble format, which is easy to process. We use cofactor = 150 for flow cytometry data asinh-transformation.
+
+
+```{r loading flow data 2}
+
+flow_markers <- flow_panel %>% 
+  filter(Type != "none") %>% 
+  pull(Marker) %>% 
+  str_remove_all("[ _-]")
+
+flow <- prepare_data(data_dir = data_dir,
+                         metadata = "metadata.xlsx",
+                         filename_col = "FileName_T",
+                         batch_ids = "Batch",
+                         cofactor = 150,
+                         sample_ids = 'SampleID',
+                         markers = flow_markers,
+                         down_sample = FALSE)
+
+# We get rid of any negative values in the flow data using a linear shift - essentially these don't matter but it makes sense because cyCombine uses a cap of 0 for batch correction
+flow <- linear_shift(flow, .keep = T)
+
+```
+
+
+Then it is time to read the CyTOF data.
+
+```{r cytof read}
+# Directory with raw .fcs files
+data_dir <- "Oetjen_et_al_2018_CyTOF"
+
+# Panel and reading data
+cytof_panel <- read_csv('cytof_panel.csv')
+
+cytof_markers <- cytof_panel %>% 
+  filter(Type != "none") %>% 
+  pull(Marker) %>% 
+  str_remove_all("[ _-]")
+
+cytof <- prepare_data(data_dir = data_dir,
+                      metadata = "metadata.xlsx",
+                      filename_col = "FileName_T",
+                      batch_ids = "Batch",
+                      cofactor = 5,
+                      sample_ids = 'SampleID',
+                      markers = cytof_markers,
+                      down_sample = FALSE)
+
+
+
+```
+
+Next, we need to figure out which markers to use when integrating the two datasets. 
+
+Be careful with protein names - I.e. in CyTOF, the column name is CD95FAS - in flow it is CD95.
+
+```{r overlapping markers}
+
+colnames(cytof)[colnames(cytof)=='CD95FAS'] <- 'CD95'
+colnames(cytof)[colnames(cytof)=='CD8a'] <- 'CD8'
+colnames(cytof)[colnames(cytof)=='CD197'] <- 'CCR7'
+
+```
+
+
+Now, we are ready to combine the two datasets on the overlapping columns.
+
+```{r combine sets}
+
+# Get overlapping column names
+overlap_cols <- intersect(colnames(flow), colnames(cytof))
+
+# Make one tibble
+uncorrected <- bind_rows(cytof[,overlap_cols], flow[,overlap_cols]) %>%
+  mutate(id = 1:(nrow(cytof)+nrow(flow)))
+
+```
+
+And now, batch correction can be performed with cyCombine.
+
+```{r batch correction, message=FALSE, warning=FALSE, error=FALSE, results='hide'}
+# Run batch correction
+corrected <- uncorrected %>%
+  batch_correct(xdim = 8,
+                ydim = 8,
+                norm_method = 'rank',
+                ties.method = 'average')
+
+# Add manually assigned labels back
+# corrected$label <- uncorrected$label
+
+```
+
+
+We now evaluate the correction using EMD - each marker is evaluated across all cells.
+
+```{r global emd, message=FALSE, fig.height=8, fig.width=8}
+corrected$label <- uncorrected$label <- 1
+
+emd <- evaluate_emd(preprocessed = uncorrected,
+             corrected = corrected)
+
+emd$violin
+emd$scatterplot
+```
+
+Finally, let us look at some plots to visualize the correction. First, the marker distributions before and after:
+
+```{r density plot, message=FALSE, fig.height=8, fig.width=16}
+plot_density(uncorrected, corrected)
+
+```
+
+Finally, some UMAPs to visualize the correction. I will downsample to 10,000 cells from each dataset so it is easier to see what is going on.
+
+```{r umaps, fig.height=8, fig.width=8}
+
+inds <- split(1:length(uncorrected$batch), uncorrected$batch)
+sample <- unlist(lapply(inds, sample, 10000))
+
+plot1 <- plot_dimred(uncorrected[sample,], name = 'Uncorrected', type = 'umap')
+plot2 <- plot_dimred(corrected[sample,], name = 'Corrected', type = 'umap')
+
+plot1
+plot2
+```
+
+Based on the UMAP, it seems like the datasets each contain three major clusters. This is also the case after correction.
+
+Since we actually have paired samples in this dataset, it is possible to make are direct comparison.
+
+
+```{r marker umaps}
+plots <- plot_dimred(corrected[sample,], name = 'Corrected', type = 'umap', plot = 'CD3', return_coord = T)
+
+
+# We can further include the UMAP coordinates in a combined dataframe with both imputed datasets. Again, we downsample to avoid too many cells cluttering the view (the same indeces are used as before)
+combined <- cbind.data.frame(plots$dimred, corrected[sample,])
+
+
+# Now let us color the plot by the relatively few overlapping markers
+
+p <- list()
+for (m in get_markers(corrected)) {
+  
+  p[[m]] <- ggplot(combined, aes_string(x = colnames(combined)[1], y = colnames(combined)[2])) +
+  geom_point(aes_string(color = m), alpha = 0.3, size = 0.4) +
+  theme_bw() + theme(plot.title = element_text(hjust = 0.5)) + 
+  scale_color_viridis_c()
+
+}
+
+p
+
+
+```
+
+
+
