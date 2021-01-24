@@ -122,7 +122,7 @@ plot_dimred <- function(df, name, type = "pca", plot = "batch", markers = NULL, 
         dplyr::mutate(Batch = as.factor(Batch))
       #cbind.data.frame(pca$x, as.factor(batch_ids)); colnames(df)[ncol(df)] <- "Batch"
     } else {
-      df <- cbind.data.frame(pca$x, as.factor(Batch), data[, marker]); colnames(df)[(ncol(df)-1):ncol(df)] <- c("Batch", marker)
+      df <- cbind.data.frame(pca$x, as.factor(Batch), df[, plot]); colnames(df)[(ncol(df)-1):ncol(df)] <- c("Batch", plot)
     }
 
   } else if (type == "umap") {
@@ -141,7 +141,7 @@ plot_dimred <- function(df, name, type = "pca", plot = "batch", markers = NULL, 
                       # UMAP2 = V2)
       # cbind.data.frame(umap, as.factor(batch_ids)); colnames(df) <- c("UMAP1", "UMAP2", "Batch")
     } else {
-      df <- cbind.data.frame(umap, Batch, data[,marker]); colnames(df) <- c("UMAP1", "UMAP2", "Batch", marker)
+      df <- cbind.data.frame(umap, Batch, df[,plot]); colnames(df) <- c("UMAP1", "UMAP2", "Batch", plot)
     }
   }
 
@@ -155,7 +155,7 @@ plot_dimred <- function(df, name, type = "pca", plot = "batch", markers = NULL, 
       ggtitle(paste(toupper(type), "-", name))
   } else {
     plot <- ggplot(df, aes_string(x = colnames(df)[1], y = colnames(df)[2])) +
-      geom_point(aes_string(color = marker), alpha = 0.3, size = 0.4) +
+      geom_point(aes_string(color = plot), alpha = 0.3, size = 0.4) +
       #guides(colour = guide_legend(override.aes = list(alpha = 1, size = 1))) +
       theme_bw() + theme(plot.title = element_text(hjust = 0.5)) +
       ggtitle(paste(toupper(type), "-", name))
