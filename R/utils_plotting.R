@@ -96,12 +96,18 @@ plot_density <- function(uncorrected, corrected, markers = NULL, filename = NULL
 # @importFrom uwot umap
 #' Dimensionality reduction plot
 #' @export
-plot_dimred <- function(df, name, type = "pca", plot = "batch", markers = NULL, seed = 473) {
+plot_dimred <- function(df, name, type = "pca", plot = "batch", markers = NULL, seed = 473, return_coord = F) {
 
   missing_package("uwot", "CRAN")
   missing_package("ggplot2", "CRAN")
   missing_package("ggridges", "CRAN")
 
+  
+  if (!(type %in% c('pca', 'umap'))) {
+    stop("Error, please use either type = 'pca' or type = 'umap'.")
+  }
+  
+  
   if(is.null(markers)){
     markers <- cyCombine::get_markers(df)
   }
@@ -161,7 +167,17 @@ plot_dimred <- function(df, name, type = "pca", plot = "batch", markers = NULL, 
       ggtitle(paste(toupper(type), "-", name))
   }
 
-  return(plot)
+  
+  if (return_coord) {
+    if (type == 'pca') {
+      return(list("plot" = plot, "dimred" = pca))
+    } else {
+      return(list("plot" = plot, "dimred" = umap))
+    } 
+  } else {
+    return(plot)
+  }
+  
 }
 
 
