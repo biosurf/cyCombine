@@ -1,0 +1,239 @@
+---
+title: "Batch correction of CyTOF data"
+author: "Christina Bligaard Pedersen"
+date: "January 26, 2021"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+<br>
+
+This vignette will demonstrate the batch correction of a CyTOF set consisting of 136 samples in eight batches using cyCombine.
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+
+knitr::opts_knit$set(root.dir = '/home/projects/dp_immunoth/people/s153398/cyCombine/_data/')
+
+```
+
+
+<br>
+This is data from a study of CLL patients and healthy donors. The protein expression was quantified using mass cytometry for 136 samples (20 healthy donors). The data was run in eight batches, with batch 8 being run around a half year later than the other seven batches. 
+
+
+<br><br>
+
+#### Pre-processing data
+
+We start by loading some packages.
+
+```{r libraries, results = 'hide', warning=FALSE, message=FALSE}
+library(cyCombine)
+library(tidyverse)
+library(Seurat)
+
+```
+
+
+<br><br>
+
+We are now ready to load the CyTOF data. We have set up a panel file in csv format, so the correct information is extractable from there. Let us have a look at the contents:
+
+```{r loading flow data 1}
+# Directory with raw .fcs files
+data_dir <- "dfci1"
+
+# Panel and reading data
+panel <- read_csv(paste0(data_dir, "/panel1.csv"))
+panel
+
+```
+
+<br><br>
+
+We then progress with reading the CyTOF dataset and converting it to a tibble format, which is easy to process. We use cofactor = 5 (default) in this case.
+
+
+```{r loading data 2}
+# Extracting the markers
+markers <- panel %>%
+  filter(Type != "none") %>%
+  pull(Marker) %>%
+  str_remove_all("[ _-]")
+
+# Preparing the expression data
+dfci <- prepare_data(data_dir = data_dir,
+                     metadata = paste0(data_dir, "/CyTOF samples cohort.xlsx"),
+                     filename_col = "FCS_name",
+                     batch_ids = "Batch",
+                     condition = "Set",
+                     markers = markers,
+                     down_sample = T,
+                     sample_size = 100000)
+
+```
+
+<br><br>
+
+#### Checking for batch effects
+Now, let us use a cyCombine function to check if there are any batch effects to correct for at all... cyCombine will run on data even with no real batch effects, and in those cases, the batch correction should have minimal effect. However, there is no reason to run the algorithm, if we have no batch effects in the data.
+
+```{r detect batch effects}
+
+detect_batch_effect_express(dfci, downsample = 10000, out_dir = '/Users/chrbl/Desktop')
+
+```
+
+
+
+
+<br><br>
+
+#### Processing data - batch correction
+
+<br><br>
+
+Now, we are ready to combine the two datasets on the overlapping columns.
+
+```{r combine sets}
+# Get overlapping column names
+overlap_cols <- intersect(colnames(flow), colnames(cytof))
+
+# Make one tibble
+uncorrected <- bind_rows(cytof[,overlap_cols], flow[,overlap_cols]) %>%
+  mutate(id = 1:(nrow(cytof)+nrow(flow)))
+
+```
+
+And now, batch correction can be performed with cyCombine.
+
+```{r batch correction, message=FALSE, warning=FALSE, error=FALSE, results='hide'}
+# Run batch correction
+corrected <- uncorrected %>%
+  batch_correct(xdim = 8,
+                ydim = 8,
+                norm_method = 'rank',
+                ties.method = 'average')
+
+# Add manually assigned labels back
+# corrected$label <- uncorrected$label
+
+```
+
+<br><br>
+
+#### Evaluating performance
+
+We now evaluate the correction using EMD - each marker is evaluated across all cells.
+
+```{r global emd, message=FALSE, fig.height=4, fig.width=4}
+corrected$label <- uncorrected$label <- 1
+
+emd <- evaluate_emd(preprocessed = uncorrected,
+             corrected = corrected)
+
+emd$violin
+emd$scatterplot
+```
+
+Finally, let us look at some plots to visualize the correction. First, the marker distributions before and after:
+
+```{r density plot, message=FALSE, fig.height=8, fig.width=16}
+plot_density(uncorrected, corrected)
+
+```
+
+<br><br>
+
+Finally, some UMAPs to visualize the correction. I will downsample to 10,000 cells from each dataset so it is easier to see what is going on.
+
+```{r umaps, fig.height=6, fig.width=6}
+inds <- split(1:length(uncorrected$batch), uncorrected$batch)
+sample <- unlist(lapply(inds, sample, 10000))
+
+plot1 <- plot_dimred(uncorrected[sample,], name = 'Uncorrected', type = 'umap')
+plot2 <- plot_dimred(corrected[sample,], name = 'Corrected', type = 'umap')
+
+plot1
+plot2
+```
+
+Based on the UMAP, it seems like the datasets each contain three major clusters. This is also the case after correction.
+
+
+<br><br>
+
+Since we actually have paired samples in this dataset, it is possible to make a direct comparison - first we will co-cluster the data using FlowSOM.
+
+
+```{r coclustering}
+# Clustering with 3x3 SOM grid 
+som_ <- corrected %>%
+  cyCombine::create_som(seed = 48,
+                        xdim = 3,
+                        ydim = 3)
+
+# Saving labels
+corrected$label <- as.factor(som_)
+```
+
+
+<br> 
+
+Now, let us have a look at the clusters and their expression patterns.
+
+```{r marker umaps}
+plots <- plot_dimred(corrected[sample,], name = 'Corrected', type = 'umap', plot = 'CD3', return_coord = T)
+
+
+# We can further include the UMAP coordinates in a combined dataframe with both imputed datasets. Again, we downsample to avoid too many cells cluttering the view (the same indeces are used as before)
+combined <- cbind.data.frame(plots$dimred, corrected[sample,])
+
+
+# Now let us color the plot by the relatively few overlapping markers - and the cluster labels
+p <- list()
+for (m in c(get_markers(corrected))) {
+  
+  p[[m]] <- ggplot(combined, aes_string(x = colnames(combined)[1], y = colnames(combined)[2])) +
+  geom_point(aes_string(color = m), alpha = 0.3, size = 0.4) +
+  theme_bw() + theme(plot.title = element_text(hjust = 0.5)) + 
+  scale_color_viridis_c()
+
+}
+
+ggplot(combined, aes_string(x = colnames(combined)[1], y = colnames(combined)[2])) +
+  geom_point(aes_string(color = m), alpha = 0.3, size = 0.4) +
+  theme_bw() + theme(plot.title = element_text(hjust = 0.5))
+
+
+cowplot::plot_grid(plotlist = p, ncol = 3)
+
+```
+
+
+
+
+
+
+```{r coclustering visualization}
+# Comparing SOM percentages in paired samples
+count_table <- table(corrected$sample, corrected$label)
+
+as.data.frame(round((count_table/rowSums(count_table)) * 100, 2))
+
+```
+
+Here, it is seen that the sample cell type fractions correlate nicely with the counterpart from the other technology. 
+
+
+
+
+
+
+

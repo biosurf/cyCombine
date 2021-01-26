@@ -1,11 +1,13 @@
 ---
 title: "Integrating spectral flow and CyTOF data"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Integrating spectral flow and CyTOF data}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+author: "Christina Bligaard Pedersen"
+date: "January 26, 2021"
+output:
+  html_document:
+    df_print: paged
 ---
+
+<br><br><br>
 
 This vignette will demonstrate the integration of spectral flow cytometry and CyTOF protein expression measurements using cyCombine.
 
@@ -20,7 +22,7 @@ knitr::opts_knit$set(root.dir = '/home/projects/dp_immunoth/people/s134891/cycom
 ```
 
 
-
+<br>
 
 First, let us present the two datasets we will integrate:
 
@@ -39,6 +41,12 @@ library(Seurat)
 
 ```
 
+
+<br><br><br>
+
+
+#### Loading data
+##### Spectral flow cytometry data
 We are now ready to load the spectral flow data. We have set up a panel file in csv format, so the correct information is extractable from there. Let us have a look at the contents:
 
 ```{r loading spectral flow data 1}
@@ -48,13 +56,14 @@ data_dir <- "Park_et_al_2020_Live+/"
 # Panel and reading data
 sfc_panel <- read_csv(paste0(data_dir, "/panel_Park2020.csv"))
 sfc_panel
+
 ```
 
+<br>
 We then progress with reading the spectral flow dataset and converting it to a tibble format, which is easy to process. We use cofactor = 6000 for spectral flow data asinh-transformation. This looks reasonable in terms of separating negative and positive peaks in the data, and it was further recommended by [Ferrer-Font et al. (2020)](https://doi.org/10.1002/cyto.a.24016).
 
 
 ```{r loading spectral flow data 2}
-
 sfc_markers <- sfc_panel %>% 
   filter(Type != "none") %>% 
   pull(Marker) %>% 
@@ -75,15 +84,23 @@ spectral <- linear_shift(spectral, .keep = T)
 
 ```
 
+<br><br>
 
+
+##### Mass cytometry data
 Then it is time to read the CyTOF data. In this case, it's already in a tibble format - but refer to `prepare_data` as shown above, for this.
 
 ```{r cytof read}
-
 ### Get HIMC cytof data for one sample
 load('Sample001_pregated.Rdata')
 
 ```
+
+
+<br><br>
+
+
+#### Processing datasets - batch correction
 
 Next, we need to figure out which markers to use when integrating the two datasets. 
 Here, it is important to keep a couple of things in mind. 
@@ -91,7 +108,6 @@ Here, it is important to keep a couple of things in mind.
 First, be careful with protein names - i.e. CD197 and CCR7 are actually the same protein, but each name is relatively commonly used. Make sure to correct the column names in either set, so it matches the other, i.e. using `colnames(cytof)[colnames(cytof)=='CD197'] <- 'CCR7'`. In this example, there are a total of 26 overlapping markers between the two datasets. 
 
 ```{r overlapping markers}
-
 colnames(cytof)[colnames(cytof)=='CD197'] <- 'CCR7'
 colnames(cytof)[colnames(cytof)=='CD8a'] <- 'CD8'
 
@@ -100,11 +116,11 @@ intersect(sfc_markers, cytof_markers)
 
 ```
 
+<br>
 
 Now, we are ready to combine the two datasets on the overlapping columns.
 
 ```{r combine sets}
-
 # Get overlapping column names
 overlap_cols <- intersect(colnames(spectral), colnames(cytof))
 
@@ -129,6 +145,10 @@ corrected <- uncorrected %>%
 
 ```
 
+<br><br>
+
+
+#### Evaluating performance
 
 We now evaluate the correction using EMD - each marker is evaluated across all cells.
 
@@ -141,6 +161,7 @@ emd <- evaluate_emd(preprocessed = uncorrected,
 emd$violin
 emd$scatterplot
 ```
+<br>
 
 Finally, let us look at some plots to visualize the correction. First, the marker distributions before and after:
 
@@ -163,13 +184,15 @@ plot1
 plot2
 ```
 
+<br><br>
+
+#### Imputing non-overlapping markers
 
 Now, we could say that the integration is done. We have an strong idea about which cells belong in the same populations across the two technologies. But we may really curious about the non-overlapping channels. E.g. let us have a brief look on the immunoglobulins (IgD, IgM, IgG). All of these are measured in the spectral flow dataset - only IgD is included in the CyTOF data. These three proteins should also be found only among the B-cells (CD19+/CD20+). This should be true even after imputation.
 
-I will impute all the markers missing in either dataset first.
+We will impute all the markers missing in either dataset first.
 
 ```{r imputing markers}
-
 # Get the dataset-unique markers
 spectral_unique <- sfc_markers[!sfc_markers %in% overlap_cols]
 cytof_unique <- cytof_markers[!cytof_markers %in% overlap_cols]
@@ -189,11 +212,12 @@ imputed <- impute_across_panels(dataset1 = cytof_corrected,
 
 ```
 
+<br>
+
 Now that we have imputed the values, we have a chance to view the IgG / IgM expression for both datasets. We will look at this along with the CD19, CD20, and IgD expression.
 
 
 ```{r dimred plots B cells focus}
-
 # Let us make the UMAP for the corrected set (based on overlapping markers only)
 umap_plot <- plot_dimred(corrected[sample,], name = 'Corrected', type = 'umap', plot = 'CD19', return_coord = T)
 
@@ -221,21 +245,21 @@ p
 
 ```
 
+<br>
 
 We can compare this to UMAPs for the spectral flow data only (before any batch correction):
 
 ```{r dimred plots B cells focus, spectral}
-
-
 # Let us make the UMAP for the corrected set (based on overlapping markers only)
-umap_plot <- plot_dimred(spectral[sample,], name = 'Corrected', type = 'umap', plot = 'CD19', return_coord = T)
+spectral_sample <- (sample[grep('Spectral', names(sample))]-nrow(cytof))
+umap_plot <- plot_dimred(spectral[spectral_sample,], name = 'Corrected', type = 'umap', plot = 'CD19', return_coord = T)
 
 # We can view the plot colored by CD19 expression
 umap_plot$plot
 
 
 # We can further include the UMAP coordinates in a combined dataframe with both imputed datasets. Again, we downsample to avoid too many cells cluttering the view (the same indeces are used as before)
-combined <- cbind.data.frame(umap_plot$dimred, spectral[sample,])
+combined <- cbind.data.frame(umap_plot$dimred, spectral[spectral_sample,])
 
 
 # Now let us color the plot by the two other overlapping markers which are B cell-relevant
@@ -253,3 +277,6 @@ for (m in c('CD20', 'IgD', 'IgM', 'IgG')) {
 p
 
 ```
+
+<br><br>
+The distributions look quite well-transfered to the CyTOF data.

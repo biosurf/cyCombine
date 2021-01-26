@@ -1,5 +1,7 @@
 ---
 title: "Integrating CITE-seq and CyTOF data"
+author: "Christina Bligaard Pedersen"
+date: "January 26, 2021"
 output:
   html_document:
     df_print: paged

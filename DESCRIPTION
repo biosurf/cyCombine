@@ -44,7 +44,8 @@ Suggests:
     uwot,
     plyr,
     graphics,
-    stats
+    stats,
+    outliers
 VignetteBuilder: knitr
 Depends: 
     R (>= 4.0)
