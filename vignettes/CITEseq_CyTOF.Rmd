@@ -1,10 +1,8 @@
 ---
 title: "Integrating CITE-seq and CyTOF data"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Integrating CITE-seq and CyTOF data}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+output:
+  html_document:
+    df_print: paged
 ---
 
 This vignette will demonstrate the integration of CITE-seq and CyTOF protein expression measurements using cyCombine.
@@ -21,13 +19,16 @@ knitr::opts_knit$set(root.dir = '/home/projects/dp_immunoth/people/s134891/cycom
 
 
 
-
+<br>
 First, let us present the two datasets we will integrate:
 
 For the CITE-seq data, we will use the '1k Human PBMCs Stained with a Panel of TotalSeq B Antibodies, Dual Indexed' dataset from https://support.10xgenomics.com/single-cell-gene-expression/datasets. We work on the filtered feature/cell matrix.
 
 For the CyTOF data, we use the data from a single healthy donor processed at the Human Immune Monitoring Center. The sample was derived from FlowRepository https://flowrepository.org/id/FR-FCM-ZYAJ and pre-gated to live intact singlets. The data was subsequently manually gated to populations of interest. 
 
+
+
+#### Pre-processing the CITE-seq data
 
 We start by loading some packages
 
@@ -41,8 +42,7 @@ library(Seurat)
 
 Then, we load the Total-seq dataset and preprocess that using Seurat
 
-```{r load totalseq, message=FALSE, fig.height=8, fig.width=10}
-
+```{r load totalseq, message=FALSE, fig.height=6, fig.width=10}
 # Read total-seq data
 totalseq_read <- Read10X(data.dir = "filtered_feature_bc_matrix/")
 
@@ -57,15 +57,18 @@ totalseq[["percent.mt"]] <- PercentageFeatureSet(object = totalseq, pattern = "^
 
 # Filter data to exclude cells with very large/small feature counts (high number of different genes expressed) and large mitchondrial content
 VlnPlot(object = totalseq, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), pt.size = 0)
-
 totalseq <- subset(totalseq, subset = nFeature_RNA > 200 & nFeature_RNA < 3500 & percent.mt < 10)
 
 ```
 
+
+
+
+<br><br>
+
 Now, we have our Total-seq dataset and we have filtered away some of the more questionable cells. Now, we are technically ready for integration, but here, we will actually also cluster the Total-seq data, so we have a better chance of evaluating the integration performance.
 
-```{r cluster total-seq, message = FALSE, fig.height=8, fig.width=10}
-
+```{r cluster total-seq, message = FALSE, fig.height=5, fig.width=8}
 # First, we perform normalization, scaling, dimensionality reduction, and clustering based on the RNA-seq levels
 totalseq <- NormalizeData(totalseq, verbose = F) %>% 
   FindVariableFeatures(selection.method = "vst", nfeatures = 2000, verbose = F) %>%
@@ -95,15 +98,16 @@ DimPlot(totalseq)
 # Now, we use the protein and RNA expression levels to label clusters - we do this at a relatively high level 
 FeaturePlot(totalseq, features = c('CD3E', 'CD4', 'CD8A', 'CD14', 'CD19', 'NCAM1', 'adt_CD3', 'adt_CD4', 'adt_CD8a', 'adt_CD14', 'adt_CD19', 'adt_CD56'), ncol = 3)
 
-# Please note, that I plotted the corresponding gene/protein pairs in all cases.
-
 ```
 
-We notice how the protein and gene levels correspond, but they are not completely 1:1.
+Please note, that we have plotted the corresponding gene/protein pairs in all cases. For this, we can observe that the protein and gene levels correlate, but they are not completely 1:1.
 
 
-```{r label clusters, fig.height=8, fig.width=10}
+<br><br><br>
 
+
+
+```{r label clusters, fig.height=5, fig.width=8}
 # Giving clusters names
 new.cluster.ids <- c("CD4pos", "CD8pos", "CD4pos", 'Myeloid cells', 'B cells', "CD8pos", 'NK cells', "CD4pos")
 names(new.cluster.ids) <- levels(totalseq)
@@ -118,7 +122,6 @@ DimPlot(totalseq)
 Now we are ready to extract the CITE-seq data for integration using cyCombine
 
 ```{r extract cite-seq}
-
 # Extract CITE-seq data (normalized)
 citeseq <- totalseq@assays$ADT@data %>% 
                               t() %>% 
@@ -133,14 +136,20 @@ citeseq <- citeseq %>%
 ```
 
 
+
+#### Reading the CyTOF data
+
 Then it is time to read the CyTOF data. In this case, it's already in a tibble format - but refer to the `prepare_data` function for this.
 
 ```{r cytof read}
-
 ### Get HIMC cytof data for one sample
 load('Sample001_pregated.Rdata')
 
 ```
+
+
+
+#### Processing datasets together - batch correction
 
 Next, we need to figure out which markers to use when integrating the CITE-seq and CyTOF data. 
 Here, it is important to keep a couple of things in mind. 
@@ -150,15 +159,15 @@ First, be careful with protein names - i.e. CD197 and CCR7 are actually the same
 Second, one should be wary about using CITE-seq proteins with very low or no dynamic range - these do not add any information, and should be removed as they disrupt the analysis. Let us look for such proteins in the 1k PBMC set:
 
 ```{r identifying poorly captured proteins, fig.height=20, fig.width=12}
-
 VlnPlot(totalseq, features = get_markers(citeseq), assay = 'ADT', pt.size = 0.01, group.by = 'orig.ident', ncol = 5)
 
 ```
 
+<br><br>
+
 So, now we have an overview of the distributions. Here, we will exclude those where the "red violin" is not visible in the plot. 
 
 ```{r subset citeseq}
-
 # Remove columns
 citeseq <- citeseq %>%
   select(-c(CD11b, CD20, CD27, CD28, CD34, CD62L, CD69, CD80, CD86, CD137, CD197, CD274, CD278, CD335, HLADR))
@@ -168,7 +177,6 @@ citeseq <- citeseq %>%
 Now, we are ready to combine the two datasets on the overlapping columns.
 
 ```{r combine sets}
-
 # Get overlapping column names
 overlap_cols <- intersect(colnames(citeseq), colnames(cytof))
 
@@ -194,9 +202,12 @@ corrected$label <- uncorrected$label
 ```
 
 
+#### Evaluating batch correction
+
+
 We now evaluate the correction using EMD - each marker in each cluster is evaluated
 
-```{r emd, message=FALSE, fig.height=8, fig.width=8}
+```{r emd, message=FALSE, fig.height=4, fig.width=4}
 emd <- evaluate_emd(preprocessed = uncorrected,
              corrected = corrected)
 
@@ -204,23 +215,25 @@ emd$violin
 emd$scatterplot
 ```
 
+
+<br><br>
+
 Finally, let us look at some plots to visualize the correction. First, the marker distributions before and after:
 
-```{r density plot, message=FALSE, fig.height=8, fig.width=16}
+```{r density plot, message=FALSE, fig.height=5, fig.width=16}
 plot_density(uncorrected, corrected)
 
 ```
 
 Finally, some UMAPs. This function is a little heavy in computation power.
 
-```{r umaps, fig.height=10, fig.width=16}
-
+```{r umaps, fig.height=9, fig.width=16}
 plots <- plot_umap_labels(uncorrected, corrected)
 
 plots[[1]]
 ```
 
-```{r umaps2, fig.height=6, fig.width=12}
+```{r umaps2, fig.height=4, fig.width=12}
 plots[[2]]
 ```
 
