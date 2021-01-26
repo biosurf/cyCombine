@@ -371,7 +371,9 @@ prepare_data <- function(data_dir = NULL,
       cyCombine::compile_fcs(pattern = pattern)
 
     # Look for metadata in data_dir
-    if(!file.exists(file.path(metadata)) & file.exists(file.path(data_dir, metadata))) metadata <- file.path(data_dir, metadata)
+    if(!is.null(metadata)){
+      if(!file.exists(file.path(metadata)) & file.exists(file.path(data_dir, metadata))) metadata <- file.path(data_dir, metadata)
+    }
   }
   # Convert flowset to dataframe
   fcs_data <- flowset %>%

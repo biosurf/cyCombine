@@ -14,25 +14,210 @@ knitr::opts_chunk$set(
 )
 ```
 
+**This vignette will demonstrate a general use-case of cyCombine.**
+
+Alongside a directory of FCS files, a metadata and a panel file are assumed present.
+The metadata is in this example assumed to have the following columns:
+
+| Filename | batch | condition | Patient_id |
+|---------:|:------|-----------|:----------:|
+
+And the panel:
+
+| Channel | Antigen | Type |
+|---------|---------|------|
+
+### Prepare data
+
+First, the FCS files are converted into a work-able *tibble*.
+
+#### The recommended method
+
 ```{r, eval=FALSE}
-# Preprocessing step
+# Load packages
 library(cyCombine)
-library(magrittr)
-load("../data/raw/DFCI_panel1_data.Rdata")
-# Run preprocessing
-preprocessed_data <- panel1_data %>% 
-  preprocess()
+library(tidyverse)
+
+# Directory with FCS files
+data_dir <- "data"
+
+# Extract markers from panel
+panel_file <- file.path(data_dir, "panel.csv") # Can also be .xlsx
+metadata_file <- file.path(data_dir, "metadata.csv") # Can also be .xlsx
+
+# Extract markers of interest
+markers <- read.csv(panel_file) %>% 
+  filter(Type != "none") %>% 
+  pull(Antigen)
+
+# Prepare a tibble from directory of FCS files
+uncorrected <- prepare_data(
+  data_dir = data_dir,
+  metadata = metadata_file, 
+  filename_col = "Filename",
+  batch_ids = "batch",
+  condition = "condition",
+  down_sample = FALSE,
+  markers = markers
+)
 # Store result
-save(preprocessed_data, file = "../data/01_preprocessed.Rdata")
-
-
+saveRDS(uncorrected, file = file.path(data_dir, "uncorrected.RDS"))
 ```
 
-```{r, eval=FALSE}
-# Batch correction
-load("../data/01_preprocessed.Rdata")
-corrected_data <- preprocessed_data$data %>% 
-  batch_correct(markers = preprocessed_data$markers)
+#### Modular method
 
+In case you want more control, you can adjust any step of this approach.
+Feel free to skip this segment, if the method above worked for you.
+
+This example will include all possible input parameters to give an overview of what can be modified.
+
+```{r, eval=FALSE}
+# Load packages
+library(cyCombine)
+library(tidyverse)
+
+# Directory with FCS files
+data_dir <- "data"
+
+# Extract markers from panel
+panel <- read_csv(file.path(data_dir, "panel.csv")) # Can also be .xlsx
+metadata <- read_csv(file.path(data_dir, "metadata.csv"))
+
+# Extract markers of interest
+markers <- panel %>% 
+  filter(Type != "none") %>% 
+  pull(Antigen)
+
+# Read FCS files
+flowset <- compile_fcs(
+  data_dir = data_dir,
+  pattern = "\\.fsc" # Read all FCS files
+)
+
+# Convert flowset to tibble
+df <- convert_flowset(
+  flowset = flowset,
+  metadata = metadata,
+  filename_col = "Filename",
+  sample_ids = "Filename", # By default the filename is used to get sample ids
+  batch_ids = "batch",
+  condition = "condition",
+  down_sample = TRUE,
+  sample_size = 4000000,
+  seed = 101,
+  panel = panel, # Can also be the filename. It is solely used to ensure the channel names match what you expect (i.e. what is in the panel_antigen column)
+  panel_channel = "Channel",
+  panel_antigen = "Antigen"
+)
+
+# Transform data - This function also de-randomizes the data
+uncorrected <- transform_asinh(
+  df = df,
+  markers = markers,
+  cofactor = 5,
+  .keep = TRUE # Lets you keep all columns, in case they are useful to you
+)
+# Store result
+saveRDS(uncorrected, file = file.path(data_dir, "uncorrected.RDS"))
+```
+
+<!-- #### Minimal input use-case 
+
+This example illustrates the minimal, runnable use-case.
+Feel free to skip.
+It is recommended to as a minimum include the batches from the metadata, either as above or as a vector of the same length as the data.
+
+
+```{r, eval=FALSE}
+# Load packages
+library(cyCombine)
+library(tidyverse)
+
+# Directory with FCS files
+data_dir <- "data"
+
+# Extract markers from panel
+panel_file <- "data/panel.csv" # Can also be .xlsx
+metadata <- read.csv("data/metadata.csv") # Can also be .xlsx
+
+# Extract markers of interest
+markers <- read.csv(panel_file) %>% 
+  filter(Type != "none") %>% 
+  pull(Antigen)
+
+# Prepare a tibble from directory of FCS files
+uncorrected <- prepare_data(
+  data_dir = data_dir,
+  down_sample = FALSE
+)
+
+# Extract batches
+
+  
+
+# Store result
+saveRDS(uncorrected, file = "data/uncorrected.RDS")
+``` 
+-->
+
+
+### Batch correct
+
+#### The recommended method
+
+```{r, eval=FALSE}
+# Load packages
+library(cyCombine)
+library(tidyverse)
+
+# Load data (if not already loaded)
+# uncorrected <- readRDS("data/uncorrected.RDS")
+# markers <- get_markers(uncorrected)
+
+# Batch correct
+corrected <- batch_correct(
+  df = uncorrected,
+  covar = "condition",
+  markers = markers,
+  norm_method = "scale", # "rank" is recommended when combining data with heavy batch effects
+  som_type = "fsom" # "som" is recommended when combining distinct data with heavy batch effects
+)
+
+# Save result
+saveRDS(corrected, file.path(data_dir, "corrected.RDS"))
+```
+
+#### Modular method
+
+```{r, eval = FALSE}
+# Load packages
+library(cyCombine)
+library(tidyverse)
+
+# Load data (if not already loaded)
+# uncorrected <- readRDS("data/uncorrected.RDS")
+# markers <- get_markers(uncorrected)
+
+# Create cell type labels using a SOM grid (if you want to use your own labels, they can be added manually and this step should not be run)
+labels <- uncorrected %>% 
+  normalize(markers = markers,
+            norm_method = "rank", # "scale" is recommended in cases with light batch effects (e.g. when combining similar data)
+            ties.method = "average") %>% # Can also be minimum
+  create_som(markers = markers, # Consider using create_fsom with norm_method = "scale", when combining similar data
+             seed = 101,
+             xdim = 8,
+             ydim = 8)
+
+# Batch correct
+corrected <- correct_data(
+  df = uncorrected,
+  label = labels # Add custom labels here, if desired
+  covar = "condition",
+  markers = markers,
+  parametric = TRUE
+  )
+
+# Save result
+saveRDS(corrected, file.path(data_dir, "corrected.RDS"))
 ```
 
