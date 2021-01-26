@@ -4,7 +4,14 @@
 \alias{create_som}
 \title{Create Self-Organizing Map}
 \usage{
-create_som(df, markers = NULL, seed = 473, xdim = 8, ydim = 8)
+create_som(
+  df,
+  markers = NULL,
+  som_type = "kohonen",
+  seed = 473,
+  xdim = 8,
+  ydim = 8
+)
 }
 \arguments{
 \item{df}{Dataframe with expression values}

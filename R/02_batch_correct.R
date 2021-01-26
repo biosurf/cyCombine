@@ -183,9 +183,12 @@ ranking <- function(df, markers = NULL, ties.method = "min") {
 #' @export
 create_som <- function(df,
                        markers = NULL,
+                       som_type = "kohonen",
                        seed = 473,
                        xdim = 8,
                        ydim = 8){
+  if(som_type == "fsom") missing_package("FlowSOM", "Bioc") else missing_package("kohonen")
+
   if(is.null(markers)){
     # Get markers
     markers <- df %>%
@@ -198,15 +201,15 @@ create_som <- function(df,
   pred <- stats::predict(model, tibble::tibble("Size" = nrow(df)))
 
   # 10x10 SOM grid on overlapping markers, extract clustering per cell
-  message("Creating SOM grid.. (This is estimated to take ", round(pred, 2), " minutes)")
+  message("Creating SOM grid..")
   set.seed(seed)
-  som_grid <- df %>%
+  label <- df %>%
     dplyr::select(markers) %>%
     as.matrix() %>%
-    kohonen::som(grid = kohonen::somgrid(xdim = xdim,
-                                         ydim = ydim),
-                 dist.fcts = "euclidean")
-  label <- som_grid$unit.classif
+    purrr::when(som_type == "fsom" ~ FlowSOM::SOM(., xdim = xdim, ydim = ydim)$mapping[, 1],
+                TRUE ~ kohonen::som(., grid = kohonen::somgrid(xdim = xdim, ydim = ydim),
+                                       dist.fcts = "euclidean")$unit.classif)
+
   return(label)
 }
 
@@ -219,6 +222,7 @@ create_fsom <- function(df,
                         xdim = 8,
                         ydim = 8){
 
+  warning("This function is deprecated. Please use 'create_som(som_type = 'fsom')' instead.")
   # Check for package
   missing_package("FlowSOM", "Bioc")
 
@@ -474,18 +478,11 @@ batch_correct <- function(df,
       normalize(markers = markers,
                 norm_method = norm_method,
                 ties.method = ties.method) %>%
-      purrr::when(som_type == "fsom" ~
-                    create_fsom(.,
-                                markers = markers,
-                                seed = seed,
-                                xdim = xdim,
-                                ydim = ydim),
-                  TRUE ~
-                    create_som(.,
-                               markers = markers,
-                               seed = seed,
-                               xdim = xdim,
-                               ydim = ydim))
+      create_som(markers = markers,
+                 som_type = som_type,
+                 seed = seed,
+                 xdim = xdim,
+                 ydim = ydim)
   }
 
 
