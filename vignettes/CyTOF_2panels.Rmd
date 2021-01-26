@@ -1,0 +1,27 @@
+---
+title: "Batch correction of two-panel CyTOF data"
+author: "Christina Bligaard Pedersen"
+date: "January 26, 2021"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+<br>
+
+This vignette will demonstrate the batch correction of a CyTOF dataset, where samples were measured using two different panels. Not only will batch correction be performed, but we will also impute the non-overlapping markers allowing for a much more direct integration of these data.
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+
+knitr::opts_knit$set(root.dir = '/home/projects/dp_immunoth/people/s153398/cyCombine/_data/')
+
+```
+
+<br>
+Coming soon!
+<br>
