@@ -4,14 +4,14 @@
 \alias{detect_batch_effect_express}
 \title{Quicker function for detection of batch effects}
 \usage{
-detect_batch_effect_express(df, downsample = NULL, seed = 472, out_dir = NULL)
+detect_batch_effect_express(df, out_dir, downsample = NULL, seed = 472)
 }
 \arguments{
 \item{df}{Tibble containing the expression data and batch information. See prepare_data.}
 
-\item{downsample}{Number of cells to include in detection. If not specified all cells will be used.}
-
 \item{out_dir}{Directory for plot output}
+
+\item{downsample}{Number of cells to include in detection. If not specified all cells will be used.}
 }
 \description{
 Quicker function for detection of batch effects

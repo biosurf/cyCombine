@@ -6,18 +6,21 @@
 \usage{
 detect_batch_effect(
   df,
+  out_dir,
   downsample = NULL,
+  som_type = "fsom",
   xdim = 8,
   ydim = 8,
   seed = 382,
   markers = NULL,
   batch_col = "batch",
-  label_col = "label",
-  out_dir
+  label_col = "label"
 )
 }
 \arguments{
 \item{df}{Tibble containing the expression data and batch information. See prepare_data.}
+
+\item{out_dir}{Directory for plot output}
 
 \item{downsample}{Number of cells to include in detection. If not specified all cells will be used. One should be careful with the downsampling here as too strong downsampling leads to spurious results.}
 
@@ -32,8 +35,6 @@ detect_batch_effect(
 \item{batch_col}{Name of column containing batch information}
 
 \item{label_col}{If existing labels should be used, this column must be present in the data}
-
-\item{out_dir}{Directory for plot output}
 }
 \description{
 Full function for detection of batch effects using cluster proportions

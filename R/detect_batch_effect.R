@@ -10,6 +10,7 @@
 #' @import dplyr
 #' @importFrom magrittr %>%
 #' @importFrom flowCore read.flowSet fsApply
+#' @importFrom stats IQR
 #' @param df Tibble containing the expression data and batch information. See prepare_data.
 #' @param downsample Number of cells to include in detection. If not specified all cells will be used.
 #' @param out_dir Directory for plot output
@@ -18,14 +19,14 @@
 #' detect_batch_effect_express(df = exprs, out_dir = '/my/cycombine/dir/')
 #' detect_batch_effect_express(df = exprs, downsample = 100000, out_dir = '/my/cycombine/dir/')
 #' @export
-detect_batch_effect_express <- function(df, downsample = NULL, seed = 472, out_dir = NULL) {
+detect_batch_effect_express <- function(df,
+                                        out_dir,
+                                        downsample = NULL,
+                                        seed = 472) {
 
+  missing_package("stats")
   message('Starting the quick(er) detection of batch effects.')
 
-  # Check out dir
-  if (is.null(out_dir)) {
-    stop('Error! Please speicify output directory.')
-  }
 
   # This works without clustering the data, so we set all labels to 1
   df$label <- 1
@@ -124,8 +125,8 @@ detect_batch_effect_express <- function(df, downsample = NULL, seed = 472, out_d
   # Flagging markers with clear outlier batches with STRONG effects
   any_outliers <- F
   for (m in emd_markers$marker[emd_markers$mean > median(emd_markers$mean)]) {
-    if (any(batch_means[[m]] > (quantile(batch_means[[m]], 0.75) + iqr(batch_means[[m]])*3))) {
-      outliers <- which(batch_means[[m]] > (quantile(batch_means[[m]], 0.75) + iqr(batch_means[[m]])*3))
+    if (any(batch_means[[m]] > (quantile(batch_means[[m]], 0.75) + IQR(batch_means[[m]])*3))) {
+      outliers <- which(batch_means[[m]] > (quantile(batch_means[[m]], 0.75) + IQR(batch_means[[m]])*3))
       message(paste0(m, ' has clear outlier batch(es): ', paste0(names(outliers))))
 
       summary_non <- df %>% filter(!(batch %in% names(outliers))) %>% pull(m) %>% summary()
@@ -185,22 +186,25 @@ detect_batch_effect_express <- function(df, downsample = NULL, seed = 472, out_d
 #' @param batch_col Name of column containing batch information
 #' @param label_col If existing labels should be used, this column must be present in the data
 #' @param out_dir Directory for plot output
+#' @importFrom outliers dixon.test
 #'
 #' @examples
 #' detect_batch_effect(df = exprs)
 #' detect_batch_effect(df = exprs, xdim = 8, ydim = 8, seed = 382, markers = c('CD3', 'CD4', 'CD8a', 'CD20', 'CD19', 'CD56', 'CD33'))
 #' @export
 detect_batch_effect <- function(df,
+                                out_dir,
                                 downsample = NULL,
+                                som_type = "fsom",
                                 xdim = 8,
                                 ydim = 8,
                                 seed = 382,
                                 markers = NULL,
                                 batch_col = "batch",
-                                label_col = "label",
-                                out_dir) {
+                                label_col = "label") {
 
   check_colname(colnames(df), batch_col, location = "df")
+  missing_package("outliers")
 
   # Check out dir
   if (is.null(out_dir)) {
@@ -226,15 +230,17 @@ detect_batch_effect <- function(df,
   # Create SOM on scaled data if no labels exist
   if (!(label_col %in% colnames(df))) {
     message('Determining new cell type labels using SOM:')
-    som_ <- df %>%
-      cyCombine::scale_expr(markers = markers) %>%
+    labels <- df %>%
+      cyCombine::normalize(markers = markers,
+                           norm_method = "scale") %>%
       cyCombine::create_som(markers = markers,
+                            som_type = som_type,
                             seed = seed,
                             xdim = xdim,
                             ydim = ydim)
 
     # Get SOM output
-    df$label <- som_$unit.classif
+    df$label <- labels
 
   } else {
     message('Using existig cell type labels.')
@@ -263,7 +269,7 @@ detect_batch_effect <- function(df,
     markers_emd[[m]] <- marker_emd
   }
 
-  marker_emd <- which(stats::p.adjust(sapply(markers_emd, function(x) {outliers::dixon.test(x, opposite=F)$p.value}), method = 'BH') < 0.05 | p.adjust(sapply(markers_emd,  function(x) {dixon.test(x, opposite=T)$p.value}), method = 'BH') < 0.05)
+  marker_emd <- which(stats::p.adjust(sapply(markers_emd, function(x) {outliers::dixon.test(x, opposite=F)$p.value}), method = 'BH') < 0.05 | p.adjust(sapply(markers_emd,  function(x) {outliers::dixon.test(x, opposite=T)$p.value}), method = 'BH') < 0.05)
   message(paste0('\nThere are ', length(marker_emd), ' markers, which appear to be outliers in a single batch:'))
   message(paste(markers[marker_emd], collapse = ', '))
 
@@ -275,7 +281,7 @@ detect_batch_effect <- function(df,
   perc <- (counts / rowSums(counts))*100
 
   # use the Dixon test to look for outliers (test whether a single low or high value is an outlier)
-  out_cl <- which(stats::p.adjust(apply(perc, 2, function(x) {outliers::dixon.test(x, opposite=F)$p.value}), method = 'BH') < 0.05 | p.adjust(apply(perc, 2, function(x) {dixon.test(x, opposite=T)$p.value}), method = 'BH') < 0.05)
+  out_cl <- which(stats::p.adjust(apply(perc, 2, function(x) {outliers::dixon.test(x, opposite=F)$p.value}), method = 'BH') < 0.05 | p.adjust(apply(perc, 2, function(x) {outliers::dixon.test(x, opposite=T)$p.value}), method = 'BH') < 0.05)
 
   message(paste0('\nThere are ', length(out_cl), ' clusters, in which a single cluster is strongly over- or underrepresented.'))
 

@@ -43,7 +43,8 @@ Suggests:
     ggridges,
     uwot,
     plyr,
-    graphics
+    graphics,
+    stats
 VignetteBuilder: knitr
 Depends: 
     R (>= 4.0)
