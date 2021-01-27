@@ -126,8 +126,6 @@ dfci2$condition <- as.factor(as.character(dfci2$condition))
 
 #### Processing data - batch correction
 
-<br>
-
 In this case, the dataset for each panel is, as mentioned, run in eight batches - this means that there are likely some batch effects to correct for within each panel as well. We take of this first, before we start integrating acorss panels!
 
 
@@ -159,8 +157,8 @@ Let us have a quick look at some UMAPs to visualize the correction for each batc
 inds1 <- split(1:length(dfci1$batch), dfci1$batch)
 sample1 <- unlist(lapply(inds1, sample, 2000))
 
-plot1 <- plot_dimred(dfci1[sample1,], name = 'Uncorrected', type = 'umap')
-plot2 <- plot_dimred(dfci1_bc[sample1,], name = 'Corrected', type = 'umap')
+plot1 <- plot_dimred(dfci1[sample1,], name = 'Uncorrected (Panel 1)', type = 'umap')
+plot2 <- plot_dimred(dfci1_bc[sample1,], name = 'Corrected (Panel 1)', type = 'umap')
 
 cowplot::plot_grid(plot1, plot2)
 ```
@@ -171,8 +169,8 @@ cowplot::plot_grid(plot1, plot2)
 inds2 <- split(1:length(dfci2$batch), dfci2$batch)
 sample2 <- unlist(lapply(inds2, sample, 2000))
 
-plot1 <- plot_dimred(dfci2[sample2,], name = 'Uncorrected', type = 'umap')
-plot2 <- plot_dimred(dfci2_bc[sample2,], name = 'Corrected', type = 'umap')
+plot1 <- plot_dimred(dfci2[sample2,], name = 'Uncorrected (Panel 2)', type = 'umap')
+plot2 <- plot_dimred(dfci2_bc[sample2,], name = 'Corrected (Panel 2)', type = 'umap')
 
 cowplot::plot_grid(plot1, plot2)
 ```
@@ -181,9 +179,8 @@ cowplot::plot_grid(plot1, plot2)
 
 Based on the marker distributions after correction and the UMAPs, it looks like the batch effects within the data for each panel are minimzed. Now we can focus on the integration of the two sets. The first step here, is to batch correct the datasets based on the overlapping markers.
 
-<br>
 
-```{r co-correction}
+```{r co-correction, message=FALSE, warning=FALSE, error=FALSE, results='hide'}
 # Generate a combined tibble for the two datasets
 df <- rbind(dfci1_bc[,c(overlap_markers, 'sample')], 
             dfci2_bc[,c(overlap_markers, 'sample')]) %>%
@@ -218,7 +215,7 @@ This was the batch correction part - now time for the non-overlapping markers. W
 # Imputation for whole panels
 imputed <- impute_across_panels(dataset1 = co_corrected1, 
                                 dataset2 = co_corrected2,
-                                overlap_markers = overlap_markers, 
+                                overlap_channels = overlap_markers, 
                                 impute_channels1 = missing1,
                                 impute_channels2 = missing2)
 
@@ -234,7 +231,7 @@ Now, we are ready to use this combined dataset to answer the biological question
 First, we will view the data for each of the two panels only on the overlapping markers - *before* actually correcting these with cyCombine.
 
 
-```{r density plots 1, fig.height=8, fig.width=12}
+```{r density plots 1, fig.height=6, fig.width=20, message=F, warning=F}
 plot_density(dfci1_bc, dfci2_bc, 
              y = 'Type',
              markers = overlap_markers, 
@@ -247,7 +244,7 @@ plot_density(dfci1_bc, dfci2_bc,
 Finally, we will look at *all* of the markers after batch corrections and imputation.
 
 
-```{r density plots 2, fig.height=24, fig.width=12}
+```{r density plots 2, fig.height=25, fig.width=20, message=F, warning=F}
 plot_density(final1, final2, 
              y = 'Type',
              dataset_names = paste('Panel', 1:2),
