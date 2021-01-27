@@ -100,6 +100,7 @@ run_flowsom <- function(dataset, k = 7, seed = 473){
 }
 
 #' Check if directory exists, if not, make it
+#' @export
 check_make_dir <- function(dir.path) {
   if (!dir.exists(dir.path)) {dir.create(dir.path)}
 }

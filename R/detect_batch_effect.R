@@ -178,13 +178,15 @@ detect_batch_effect_express <- function(df,
 #'
 #' @param df Tibble containing the expression data and batch information. See prepare_data.
 #' @param downsample Number of cells to include in detection. If not specified all cells will be used. One should be careful with the downsampling here as too strong downsampling leads to spurious results.
-#' @param xdim Grid size in x-axis for SOM
-#' @param ydim Grid size in y-axis for SOM
+#' @param som_type Type of SOM calculation (options = 'fsom' and 'kohonen')
+#' @param xdim Grid size in x-axis for SOM (default = 8)
+#' @param ydim Grid size in y-axis for SOM (default = 8)
 #' @param seed Random seed for reproducibility
 #' @param markers If only some markers should be used this parameter is used to define them. If not set, all markers are used.
 #' @param batch_col Name of column containing batch information
 #' @param label_col If existing labels should be used, this column must be present in the data
 #' @param out_dir Directory for plot output
+#' @param name Name of dataset - used for plot titles
 #'
 #' @examples
 #' detect_batch_effect(df = exprs)
@@ -199,7 +201,8 @@ detect_batch_effect <- function(df,
                                 seed = 382,
                                 markers = NULL,
                                 batch_col = "batch",
-                                label_col = "label") {
+                                label_col = "label",
+                                name = 'raw data') {
 
   check_colname(colnames(df), batch_col, location = "df")
   missing_package("outliers")
@@ -306,7 +309,7 @@ detect_batch_effect <- function(df,
   }
 
 
-  cyCombine::plot_dimred_full(df, 'Ogishi data', type = "umap", markers = NULL, seed = 473, out_dir)
+  cyCombine::plot_dimred_full(df, name, type = "umap", markers = NULL, seed = 473, out_dir)
 
   message(paste0('Saved UMAP plot for batches and labels here: ', out_dir, ' as UMAP_batches_labels.png.'))
   message(paste0('Saved UMAP plot colored by each marker in directory: ', out_dir, '/UMAP_markers.\n'))
