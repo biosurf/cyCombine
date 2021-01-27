@@ -320,6 +320,9 @@ correct_data <- function(df,
       cyCombine::get_markers()
   }
 
+  # Add ID column to retain data order
+  if("id" %!in% colnames(df)) df$id <- 1:nrow(df)
+
   # Add label to df
   if(length(label) == 1){
     check_colname(colnames(df), label, "df")
