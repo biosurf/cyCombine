@@ -1,7 +1,7 @@
 ---
 title: "cyCombine"
 author: "Søren Helweg Dam"
-date: "January 26, 2021"
+date: "January 27, 2021"
 output: 
   prettydoc::html_pretty:
     theme: hpstr
@@ -48,7 +48,7 @@ library(cyCombine)
 library(tidyverse)
 
 # Directory with FCS files
-data_dir <- "data"
+data_dir <- "~/data"
 
 # Extract markers from panel
 panel_file <- file.path(data_dir, "panel.csv") # Can also be .xlsx
@@ -88,7 +88,7 @@ library(cyCombine)
 library(tidyverse)
 
 # Directory with FCS files
-data_dir <- "data"
+data_dir <- "~/data"
 
 # Extract markers from panel
 panel <- read_csv(file.path(data_dir, "panel.csv")) # Can also be .xlsx
@@ -114,7 +114,7 @@ df <- convert_flowset(
   batch_ids = "batch",
   condition = "condition",
   down_sample = TRUE,
-  sample_size = 4000000,
+  sample_size = 2000000,
   seed = 101,
   panel = panel, # Can also be the filename. It is solely used to ensure the channel names match what you expect (i.e. what is in the panel_antigen column)
   panel_channel = "Channel",
@@ -145,7 +145,7 @@ library(cyCombine)
 library(tidyverse)
 
 # Directory with FCS files
-data_dir <- "data"
+data_dir <- "~/data"
 
 # Extract markers from panel
 panel_file <- "data/panel.csv" # Can also be .xlsx
@@ -176,6 +176,8 @@ saveRDS(uncorrected, file = "data/uncorrected.RDS")
 
 #### The recommended method
 
+Skip this segment if you are interested in more modularity
+
 ```{r, eval=FALSE}
 # Load packages
 library(cyCombine)
@@ -191,7 +193,7 @@ corrected <- batch_correct(
   covar = "condition",
   markers = markers,
   norm_method = "scale", # "rank" is recommended when combining data with heavy batch effects
-  som_type = "fsom" # "som" is recommended when combining distinct data with heavy batch effects
+  som_type = "fsom" # "kohonen" is recommended when combining distinct data with heavy batch effects
 )
 
 # Save result
@@ -216,7 +218,8 @@ labels <- uncorrected %>%
   normalize(markers = markers,
             norm_method = "rank", # "scale" is recommended in cases with light batch effects (e.g. when combining similar data)
             ties.method = "average") %>% # Can also be minimum
-  create_som(markers = markers, # Consider using create_fsom with norm_method = "scale", when combining similar data
+  create_som(markers = markers,
+             som_type = "kohonen", # Consider using som_type = "fsom" with norm_method = "scale", when combining similar data
              seed = 101,
              xdim = 8,
              ydim = 8)
@@ -232,5 +235,75 @@ corrected <- correct_data(
 
 # Save result
 saveRDS(corrected, file.path(data_dir, "corrected.RDS"))
+```
+
+### Evaluate performance using Earth Mover's Distance
+
+The EMD reduction is implemented as the performance metric; EMDs were computed for both the uncorrected and corrected data, removing those values where both had an EMD < 2.
+
+$$Reduction = \frac{\sum{EMDs_{before}} - \sum{EMDs_{after}}}{\sum{EMDs_{before}}}$$
+
+
+```{r, eval=FALSE}
+# Load packages
+library(cyCombine)
+library(tidyverse)
+
+# Load data (if not already loaded)
+# data_dir <- "~/data"
+# uncorrected <- readRDS(file.path(data_dir, "uncorrected.RDS"))
+# corrected <- readRDS(file.path(data_dir, "corrected.RDS"))
+# markers <- get_markers(uncorrected)
+
+# Re-run clustering on corrected data
+labels <- corrected %>% 
+  create_som(markers = markers,
+             som_type = "fsom")
+uncorrected$label <- corrected$label <- labels
+
+# Evaluate EMD
+emd <- evaluate_emd(uncorrected, corrected, cell_col = "label")
+
+# Reduction
+emd$reduction
+
+# Violin plot
+emd$violin
+
+# Scatter plot
+emd$scatter
+
+```
+
+
+### Create UMAPs and density plots
+
+This segment will demonstrate the built-in functions for generating UMAPs and density plots.
+
+```{r, eval=FALSE}
+# Load packages
+library(cyCombine)
+library(tidyverse)
+
+# Load data (if not already loaded)
+# data_dir <- "~/data"
+# uncorrected <- readRDS(file.path(data_dir, "uncorrected.RDS"))
+# corrected <- readRDS(file.path(data_dir, "corrected.RDS"))
+# markers <- get_markers(uncorrected)
+
+# Create UMAPs
+sam <- sample(1:nrow(uncorrected), 30000)
+plot1 <- plot_dimred(uncorrected[sam, ], "Uncorrected", type = "umap", plot = "batch", markers = markers)
+plot2 <- plot_dimred(corrected[sam, ], "Corrected", type = "umap", plot = "batch", markers = markers)
+plot_save_two(plot1, plot2, "figs/umap.png")
+
+# Density plots
+plot_density(uncorrected,
+             corrected,
+             markers = markers,
+             filename = "figs/density.png",
+             y = "batch",
+             ncol = 6,
+             xlim = 10)
 ```
 

@@ -10,7 +10,6 @@
 #' @import dplyr
 #' @importFrom magrittr %>%
 #' @importFrom flowCore read.flowSet fsApply
-#' @importFrom stats IQR
 #' @param df Tibble containing the expression data and batch information. See prepare_data.
 #' @param downsample Number of cells to include in detection. If not specified all cells will be used.
 #' @param out_dir Directory for plot output
@@ -125,8 +124,8 @@ detect_batch_effect_express <- function(df,
   # Flagging markers with clear outlier batches with STRONG effects
   any_outliers <- F
   for (m in emd_markers$marker[emd_markers$mean > median(emd_markers$mean)]) {
-    if (any(batch_means[[m]] > (quantile(batch_means[[m]], 0.75) + IQR(batch_means[[m]])*3))) {
-      outliers <- which(batch_means[[m]] > (quantile(batch_means[[m]], 0.75) + IQR(batch_means[[m]])*3))
+    if (any(batch_means[[m]] > (quantile(batch_means[[m]], 0.75) + stats::IQR(batch_means[[m]])*3))) {
+      outliers <- which(batch_means[[m]] > (quantile(batch_means[[m]], 0.75) + stats::IQR(batch_means[[m]])*3))
       message(paste0(m, ' has clear outlier batch(es): ', paste0(names(outliers))))
 
       summary_non <- df %>% filter(!(batch %in% names(outliers))) %>% pull(m) %>% summary()
@@ -186,7 +185,6 @@ detect_batch_effect_express <- function(df,
 #' @param batch_col Name of column containing batch information
 #' @param label_col If existing labels should be used, this column must be present in the data
 #' @param out_dir Directory for plot output
-#' @importFrom outliers dixon.test
 #'
 #' @examples
 #' detect_batch_effect(df = exprs)

@@ -248,50 +248,6 @@ create_fsom <- function(df,
 
 
 
-
-
-#' Correct data using ComBat
-#'
-#' Deprecated
-#' @importFrom sva ComBat
-correct_data_prev <- function(df,
-                              som_classes){
-  # Create copy dataset
-  corrected_data <- df %>%
-    dplyr::mutate(covar = "")
-
-
-  for (s in sort(unique(som_classes))) {
-    # Extract original (non-scaled+ranked) data for cluster
-    data_subset <- df[which(som_classes==s), ]
-    message(paste("SOM class:", s))
-
-
-    # ComBat batch correction using disease status as covariate
-    covar <- rep('CLL', nrow(data_subset))
-    covar[grep('^HD', data_subset$sample)] <- 'HD'
-    magic_output <- data_subset %>%
-      dplyr::select_if(colnames(.) %!in% non_markers) %>%
-      t() %>%
-      sva::ComBat(batch = data_subset$batch, mod = stats::model.matrix(~covar)) %>%
-      t() %>%
-      tibble::as_tibble() %>%
-      dplyr::mutate(batch = data_subset$batch,
-             sample = data_subset$sample,
-             covar = covar,
-             id = data_subset$id)
-
-    # Fill copy dataset with corrected data
-    corrected_data[which(som_classes==s), ] <- magic_output
-  }
-  # Fix values below zero
-  corrected_data[corrected_data < 0] <- 0
-  corrected_data <- corrected_data %>%
-    arrange(id)
-
-  return(corrected_data)
-}
-
 #' Correct data using ComBat
 #'
 #' This function computes the batch correction on the preprocessed data using the ComBat algorithm.
@@ -319,6 +275,9 @@ correct_data <- function(df,
     markers <- df %>%
       cyCombine::get_markers()
   }
+
+  # Add ID column to retain data order
+  if("id" %!in% colnames(df)) df$id <- 1:nrow(df)
 
   # Add label to df
   if(length(label) == 1){

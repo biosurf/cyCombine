@@ -12,7 +12,7 @@
 
 <meta name="author" content="Søren Helweg Dam" />
 
-<meta name="date" content="2021-01-26" />
+<meta name="date" content="2021-01-27" />
 
 <title>cyCombine</title>
 
@@ -179,7 +179,7 @@ code span.er { color: #a61717; background-color: #e3d2d2; }
 <div class="header-title-wrap">
 <h1 class="title toc-ignore entry-title">cyCombine</h1>
 <h3 class="author">Søren Helweg Dam</h3>
-<h3 class="date">January 26, 2021</h3>
+<h3 class="date">January 27, 2021</h3>
 </div><!-- /.header-title-wrap -->
 </header>
 
@@ -224,7 +224,7 @@ code span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb1-3"><a href="#cb1-3"></a><span class="kw">library</span>(tidyverse)</span>
 <span id="cb1-4"><a href="#cb1-4"></a></span>
 <span id="cb1-5"><a href="#cb1-5"></a><span class="co"># Directory with FCS files</span></span>
-<span id="cb1-6"><a href="#cb1-6"></a>data_dir &lt;-<span class="st"> &quot;data&quot;</span></span>
+<span id="cb1-6"><a href="#cb1-6"></a>data_dir &lt;-<span class="st"> &quot;~/data&quot;</span></span>
 <span id="cb1-7"><a href="#cb1-7"></a></span>
 <span id="cb1-8"><a href="#cb1-8"></a><span class="co"># Extract markers from panel</span></span>
 <span id="cb1-9"><a href="#cb1-9"></a>panel_file &lt;-<span class="st"> </span><span class="kw">file.path</span>(data_dir, <span class="st">&quot;panel.csv&quot;</span>) <span class="co"># Can also be .xlsx</span></span>
@@ -258,7 +258,7 @@ code span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb2-3"><a href="#cb2-3"></a><span class="kw">library</span>(tidyverse)</span>
 <span id="cb2-4"><a href="#cb2-4"></a></span>
 <span id="cb2-5"><a href="#cb2-5"></a><span class="co"># Directory with FCS files</span></span>
-<span id="cb2-6"><a href="#cb2-6"></a>data_dir &lt;-<span class="st"> &quot;data&quot;</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a>data_dir &lt;-<span class="st"> &quot;~/data&quot;</span></span>
 <span id="cb2-7"><a href="#cb2-7"></a></span>
 <span id="cb2-8"><a href="#cb2-8"></a><span class="co"># Extract markers from panel</span></span>
 <span id="cb2-9"><a href="#cb2-9"></a>panel &lt;-<span class="st"> </span><span class="kw">read_csv</span>(<span class="kw">file.path</span>(data_dir, <span class="st">&quot;panel.csv&quot;</span>)) <span class="co"># Can also be .xlsx</span></span>
@@ -284,7 +284,7 @@ code span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb2-29"><a href="#cb2-29"></a>  <span class="dt">batch_ids =</span> <span class="st">&quot;batch&quot;</span>,</span>
 <span id="cb2-30"><a href="#cb2-30"></a>  <span class="dt">condition =</span> <span class="st">&quot;condition&quot;</span>,</span>
 <span id="cb2-31"><a href="#cb2-31"></a>  <span class="dt">down_sample =</span> <span class="ot">TRUE</span>,</span>
-<span id="cb2-32"><a href="#cb2-32"></a>  <span class="dt">sample_size =</span> <span class="dv">4000000</span>,</span>
+<span id="cb2-32"><a href="#cb2-32"></a>  <span class="dt">sample_size =</span> <span class="dv">2000000</span>,</span>
 <span id="cb2-33"><a href="#cb2-33"></a>  <span class="dt">seed =</span> <span class="dv">101</span>,</span>
 <span id="cb2-34"><a href="#cb2-34"></a>  <span class="dt">panel =</span> panel, <span class="co"># Can also be the filename. It is solely used to ensure the channel names match what you expect (i.e. what is in the panel_antigen column)</span></span>
 <span id="cb2-35"><a href="#cb2-35"></a>  <span class="dt">panel_channel =</span> <span class="st">&quot;Channel&quot;</span>,</span>
@@ -314,7 +314,7 @@ library(cyCombine)
 library(tidyverse)
 
 # Directory with FCS files
-data_dir <- "data"
+data_dir <- "~/data"
 
 # Extract markers from panel
 panel_file <- "data/panel.csv" # Can also be .xlsx
@@ -346,6 +346,7 @@ saveRDS(uncorrected, file = "data/uncorrected.RDS")
 <h3>Batch correct</h3>
 <div id="the-recommended-method-1" class="section level4">
 <h4>The recommended method</h4>
+<p>Skip this segment if you are interested in more modularity</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a><span class="co"># Load packages</span></span>
 <span id="cb3-2"><a href="#cb3-2"></a><span class="kw">library</span>(cyCombine)</span>
 <span id="cb3-3"><a href="#cb3-3"></a><span class="kw">library</span>(tidyverse)</span>
@@ -360,7 +361,7 @@ saveRDS(uncorrected, file = "data/uncorrected.RDS")
 <span id="cb3-12"><a href="#cb3-12"></a>  <span class="dt">covar =</span> <span class="st">&quot;condition&quot;</span>,</span>
 <span id="cb3-13"><a href="#cb3-13"></a>  <span class="dt">markers =</span> markers,</span>
 <span id="cb3-14"><a href="#cb3-14"></a>  <span class="dt">norm_method =</span> <span class="st">&quot;scale&quot;</span>, <span class="co"># &quot;rank&quot; is recommended when combining data with heavy batch effects</span></span>
-<span id="cb3-15"><a href="#cb3-15"></a>  <span class="dt">som_type =</span> <span class="st">&quot;fsom&quot;</span> <span class="co"># &quot;som&quot; is recommended when combining distinct data with heavy batch effects</span></span>
+<span id="cb3-15"><a href="#cb3-15"></a>  <span class="dt">som_type =</span> <span class="st">&quot;fsom&quot;</span> <span class="co"># &quot;kohonen&quot; is recommended when combining distinct data with heavy batch effects</span></span>
 <span id="cb3-16"><a href="#cb3-16"></a>)</span>
 <span id="cb3-17"><a href="#cb3-17"></a></span>
 <span id="cb3-18"><a href="#cb3-18"></a><span class="co"># Save result</span></span>
@@ -382,23 +383,84 @@ saveRDS(uncorrected, file = "data/uncorrected.RDS")
 <span id="cb4-11"><a href="#cb4-11"></a><span class="st">  </span><span class="kw">normalize</span>(<span class="dt">markers =</span> markers,</span>
 <span id="cb4-12"><a href="#cb4-12"></a>            <span class="dt">norm_method =</span> <span class="st">&quot;rank&quot;</span>, <span class="co"># &quot;scale&quot; is recommended in cases with light batch effects (e.g. when combining similar data)</span></span>
 <span id="cb4-13"><a href="#cb4-13"></a>            <span class="dt">ties.method =</span> <span class="st">&quot;average&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="co"># Can also be minimum</span></span>
-<span id="cb4-14"><a href="#cb4-14"></a><span class="st">  </span><span class="kw">create_som</span>(<span class="dt">markers =</span> markers, <span class="co"># Consider using create_fsom with norm_method = &quot;scale&quot;, when combining similar data</span></span>
-<span id="cb4-15"><a href="#cb4-15"></a>             <span class="dt">seed =</span> <span class="dv">101</span>,</span>
-<span id="cb4-16"><a href="#cb4-16"></a>             <span class="dt">xdim =</span> <span class="dv">8</span>,</span>
-<span id="cb4-17"><a href="#cb4-17"></a>             <span class="dt">ydim =</span> <span class="dv">8</span>)</span>
-<span id="cb4-18"><a href="#cb4-18"></a></span>
-<span id="cb4-19"><a href="#cb4-19"></a><span class="co"># Batch correct</span></span>
-<span id="cb4-20"><a href="#cb4-20"></a>corrected &lt;-<span class="st"> </span><span class="kw">correct_data</span>(</span>
-<span id="cb4-21"><a href="#cb4-21"></a>  <span class="dt">df =</span> uncorrected,</span>
-<span id="cb4-22"><a href="#cb4-22"></a>  <span class="dt">label =</span> labels <span class="co"># Add custom labels here, if desired</span></span>
-<span id="cb4-23"><a href="#cb4-23"></a>  <span class="dt">covar =</span> <span class="st">&quot;condition&quot;</span>,</span>
-<span id="cb4-24"><a href="#cb4-24"></a>  <span class="dt">markers =</span> markers,</span>
-<span id="cb4-25"><a href="#cb4-25"></a>  <span class="dt">parametric =</span> <span class="ot">TRUE</span></span>
-<span id="cb4-26"><a href="#cb4-26"></a>  )</span>
-<span id="cb4-27"><a href="#cb4-27"></a></span>
-<span id="cb4-28"><a href="#cb4-28"></a><span class="co"># Save result</span></span>
-<span id="cb4-29"><a href="#cb4-29"></a><span class="kw">saveRDS</span>(corrected, <span class="kw">file.path</span>(data_dir, <span class="st">&quot;corrected.RDS&quot;</span>))</span></code></pre></div>
+<span id="cb4-14"><a href="#cb4-14"></a><span class="st">  </span><span class="kw">create_som</span>(<span class="dt">markers =</span> markers,</span>
+<span id="cb4-15"><a href="#cb4-15"></a>             <span class="dt">som_type =</span> <span class="st">&quot;kohonen&quot;</span>, <span class="co"># Consider using som_type = &quot;fsom&quot; with norm_method = &quot;scale&quot;, when combining similar data</span></span>
+<span id="cb4-16"><a href="#cb4-16"></a>             <span class="dt">seed =</span> <span class="dv">101</span>,</span>
+<span id="cb4-17"><a href="#cb4-17"></a>             <span class="dt">xdim =</span> <span class="dv">8</span>,</span>
+<span id="cb4-18"><a href="#cb4-18"></a>             <span class="dt">ydim =</span> <span class="dv">8</span>)</span>
+<span id="cb4-19"><a href="#cb4-19"></a></span>
+<span id="cb4-20"><a href="#cb4-20"></a><span class="co"># Batch correct</span></span>
+<span id="cb4-21"><a href="#cb4-21"></a>corrected &lt;-<span class="st"> </span><span class="kw">correct_data</span>(</span>
+<span id="cb4-22"><a href="#cb4-22"></a>  <span class="dt">df =</span> uncorrected,</span>
+<span id="cb4-23"><a href="#cb4-23"></a>  <span class="dt">label =</span> labels <span class="co"># Add custom labels here, if desired</span></span>
+<span id="cb4-24"><a href="#cb4-24"></a>  <span class="dt">covar =</span> <span class="st">&quot;condition&quot;</span>,</span>
+<span id="cb4-25"><a href="#cb4-25"></a>  <span class="dt">markers =</span> markers,</span>
+<span id="cb4-26"><a href="#cb4-26"></a>  <span class="dt">parametric =</span> <span class="ot">TRUE</span></span>
+<span id="cb4-27"><a href="#cb4-27"></a>  )</span>
+<span id="cb4-28"><a href="#cb4-28"></a></span>
+<span id="cb4-29"><a href="#cb4-29"></a><span class="co"># Save result</span></span>
+<span id="cb4-30"><a href="#cb4-30"></a><span class="kw">saveRDS</span>(corrected, <span class="kw">file.path</span>(data_dir, <span class="st">&quot;corrected.RDS&quot;</span>))</span></code></pre></div>
 </div>
+</div>
+<div id="evaluate-performance-using-earth-movers-distance" class="section level3">
+<h3>Evaluate performance using Earth Mover’s Distance</h3>
+<p>The EMD reduction is implemented as the performance metric; EMDs were computed for both the uncorrected and corrected data, removing those values where both had an EMD &lt; 2.</p>
+<p><span class="math display">\[Reduction = \frac{\sum{EMDs_{before}} - \sum{EMDs_{after}}}{\sum{EMDs_{before}}}\]</span></p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a><span class="co"># Load packages</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="kw">library</span>(cyCombine)</span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="kw">library</span>(tidyverse)</span>
+<span id="cb5-4"><a href="#cb5-4"></a></span>
+<span id="cb5-5"><a href="#cb5-5"></a><span class="co"># Load data (if not already loaded)</span></span>
+<span id="cb5-6"><a href="#cb5-6"></a><span class="co"># data_dir &lt;- &quot;~/data&quot;</span></span>
+<span id="cb5-7"><a href="#cb5-7"></a><span class="co"># uncorrected &lt;- readRDS(file.path(data_dir, &quot;uncorrected.RDS&quot;))</span></span>
+<span id="cb5-8"><a href="#cb5-8"></a><span class="co"># corrected &lt;- readRDS(file.path(data_dir, &quot;corrected.RDS&quot;))</span></span>
+<span id="cb5-9"><a href="#cb5-9"></a><span class="co"># markers &lt;- get_markers(uncorrected)</span></span>
+<span id="cb5-10"><a href="#cb5-10"></a></span>
+<span id="cb5-11"><a href="#cb5-11"></a><span class="co"># Re-run clustering on corrected data</span></span>
+<span id="cb5-12"><a href="#cb5-12"></a>labels &lt;-<span class="st"> </span>corrected <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb5-13"><a href="#cb5-13"></a><span class="st">  </span><span class="kw">create_som</span>(<span class="dt">markers =</span> markers,</span>
+<span id="cb5-14"><a href="#cb5-14"></a>             <span class="dt">som_type =</span> <span class="st">&quot;fsom&quot;</span>)</span>
+<span id="cb5-15"><a href="#cb5-15"></a>uncorrected<span class="op">$</span>label &lt;-<span class="st"> </span>corrected<span class="op">$</span>label &lt;-<span class="st"> </span>labels</span>
+<span id="cb5-16"><a href="#cb5-16"></a></span>
+<span id="cb5-17"><a href="#cb5-17"></a><span class="co"># Evaluate EMD</span></span>
+<span id="cb5-18"><a href="#cb5-18"></a>emd &lt;-<span class="st"> </span><span class="kw">evaluate_emd</span>(uncorrected, corrected, <span class="dt">cell_col =</span> <span class="st">&quot;label&quot;</span>)</span>
+<span id="cb5-19"><a href="#cb5-19"></a></span>
+<span id="cb5-20"><a href="#cb5-20"></a><span class="co"># Reduction</span></span>
+<span id="cb5-21"><a href="#cb5-21"></a>emd<span class="op">$</span>reduction</span>
+<span id="cb5-22"><a href="#cb5-22"></a></span>
+<span id="cb5-23"><a href="#cb5-23"></a><span class="co"># Violin plot</span></span>
+<span id="cb5-24"><a href="#cb5-24"></a>emd<span class="op">$</span>violin</span>
+<span id="cb5-25"><a href="#cb5-25"></a></span>
+<span id="cb5-26"><a href="#cb5-26"></a><span class="co"># Scatter plot</span></span>
+<span id="cb5-27"><a href="#cb5-27"></a>emd<span class="op">$</span>scatter</span></code></pre></div>
+</div>
+<div id="create-umaps-and-density-plots" class="section level3">
+<h3>Create UMAPs and density plots</h3>
+<p>This segment will demonstrate the built-in functions for generating UMAPs and density plots.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a><span class="co"># Load packages</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="kw">library</span>(cyCombine)</span>
+<span id="cb6-3"><a href="#cb6-3"></a><span class="kw">library</span>(tidyverse)</span>
+<span id="cb6-4"><a href="#cb6-4"></a></span>
+<span id="cb6-5"><a href="#cb6-5"></a><span class="co"># Load data (if not already loaded)</span></span>
+<span id="cb6-6"><a href="#cb6-6"></a><span class="co"># data_dir &lt;- &quot;~/data&quot;</span></span>
+<span id="cb6-7"><a href="#cb6-7"></a><span class="co"># uncorrected &lt;- readRDS(file.path(data_dir, &quot;uncorrected.RDS&quot;))</span></span>
+<span id="cb6-8"><a href="#cb6-8"></a><span class="co"># corrected &lt;- readRDS(file.path(data_dir, &quot;corrected.RDS&quot;))</span></span>
+<span id="cb6-9"><a href="#cb6-9"></a><span class="co"># markers &lt;- get_markers(uncorrected)</span></span>
+<span id="cb6-10"><a href="#cb6-10"></a></span>
+<span id="cb6-11"><a href="#cb6-11"></a><span class="co"># Create UMAPs</span></span>
+<span id="cb6-12"><a href="#cb6-12"></a>sam &lt;-<span class="st"> </span><span class="kw">sample</span>(<span class="dv">1</span><span class="op">:</span><span class="kw">nrow</span>(uncorrected), <span class="dv">30000</span>)</span>
+<span id="cb6-13"><a href="#cb6-13"></a>plot1 &lt;-<span class="st"> </span><span class="kw">plot_dimred</span>(uncorrected[sam, ], <span class="st">&quot;Uncorrected&quot;</span>, <span class="dt">type =</span> <span class="st">&quot;umap&quot;</span>, <span class="dt">plot =</span> <span class="st">&quot;batch&quot;</span>, <span class="dt">markers =</span> markers)</span>
+<span id="cb6-14"><a href="#cb6-14"></a>plot2 &lt;-<span class="st"> </span><span class="kw">plot_dimred</span>(corrected[sam, ], <span class="st">&quot;Corrected&quot;</span>, <span class="dt">type =</span> <span class="st">&quot;umap&quot;</span>, <span class="dt">plot =</span> <span class="st">&quot;batch&quot;</span>, <span class="dt">markers =</span> markers)</span>
+<span id="cb6-15"><a href="#cb6-15"></a><span class="kw">plot_save_two</span>(plot1, plot2, <span class="st">&quot;figs/umap.png&quot;</span>)</span>
+<span id="cb6-16"><a href="#cb6-16"></a></span>
+<span id="cb6-17"><a href="#cb6-17"></a><span class="co"># Density plots</span></span>
+<span id="cb6-18"><a href="#cb6-18"></a><span class="kw">plot_density</span>(uncorrected,</span>
+<span id="cb6-19"><a href="#cb6-19"></a>             corrected,</span>
+<span id="cb6-20"><a href="#cb6-20"></a>             <span class="dt">markers =</span> markers,</span>
+<span id="cb6-21"><a href="#cb6-21"></a>             <span class="dt">filename =</span> <span class="st">&quot;figs/density.png&quot;</span>,</span>
+<span id="cb6-22"><a href="#cb6-22"></a>             <span class="dt">y =</span> <span class="st">&quot;batch&quot;</span>,</span>
+<span id="cb6-23"><a href="#cb6-23"></a>             <span class="dt">ncol =</span> <span class="dv">6</span>,</span>
+<span id="cb6-24"><a href="#cb6-24"></a>             <span class="dt">xlim =</span> <span class="dv">10</span>)</span></code></pre></div>
 </div>
 </div><!-- /.entry-content -->
 </article>
