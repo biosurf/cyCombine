@@ -86,6 +86,10 @@ library(devtools)
 devtools::load_all("path/to/cyCombine")
 ```
 
+## Vignettes
+
+Vignettes are available at [biosurf](https://biosurf.org/cyCombine).
+
 ## Usage
 
 ### From a directory of preprocessed .fcs files
