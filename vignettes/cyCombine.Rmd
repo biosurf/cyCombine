@@ -1,7 +1,7 @@
 ---
 title: "cyCombine"
 author: "Søren Helweg Dam"
-date: "January 26, 2021"
+date: "January 27, 2021"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{cyCombine}
@@ -41,7 +41,7 @@ library(cyCombine)
 library(tidyverse)
 
 # Directory with FCS files
-data_dir <- "data"
+data_dir <- "~/data"
 
 # Extract markers from panel
 panel_file <- file.path(data_dir, "panel.csv") # Can also be .xlsx
@@ -79,7 +79,7 @@ library(cyCombine)
 library(tidyverse)
 
 # Directory with FCS files
-data_dir <- "data"
+data_dir <- "~/data"
 
 # Extract markers from panel
 panel <- read_csv(file.path(data_dir, "panel.csv")) # Can also be .xlsx
@@ -136,7 +136,7 @@ library(cyCombine)
 library(tidyverse)
 
 # Directory with FCS files
-data_dir <- "data"
+data_dir <- "~/data"
 
 # Extract markers from panel
 panel_file <- "data/panel.csv" # Can also be .xlsx
@@ -239,7 +239,7 @@ library(cyCombine)
 library(tidyverse)
 
 # Load data (if not already loaded)
-# data_dir <- "data"
+# data_dir <- "~/data"
 # uncorrected <- readRDS(file.path(data_dir, "uncorrected.RDS"))
 # corrected <- readRDS(file.path(data_dir, "corrected.RDS"))
 # markers <- get_markers(uncorrected)
@@ -275,7 +275,7 @@ library(cyCombine)
 library(tidyverse)
 
 # Load data (if not already loaded)
-# data_dir <- "data"
+# data_dir <- "~/data"
 # uncorrected <- readRDS(file.path(data_dir, "uncorrected.RDS"))
 # corrected <- readRDS(file.path(data_dir, "corrected.RDS"))
 # markers <- get_markers(uncorrected)
