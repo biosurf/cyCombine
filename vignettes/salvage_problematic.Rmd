@@ -1,0 +1,112 @@
+---
+title: "Misstained marker imputation"
+author: "Christina Bligaard Pedersen"
+date: "January 27, 2021"
+output: 
+  prettydoc::html_pretty:
+    theme: hpstr
+    highlight: vignette
+vignette: >
+  %\VignetteIndexEntry{cyCombine}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+This vignette will demonstrate the imputation of single misstained (or in some other way) problematic channels.
+
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  strip.white = T, comment = ""
+)
+
+knitr::opts_knit$set(root.dir = '/home/projects/dp_immunoth/people/s153398/cyCombine/_data/')
+
+```
+
+
+<br>
+Imagine that you have run an expensive and time-consuming cytometry experiment. You have 100+ samples and despite the ability to use barcoding for sample multiplexing you have run several batches. However, now that you visualize the data, you notice that the expression level for a marker in one of the batches looks very different than in the others. It may be strongly over-stained - or maybe there is no signal at all - maybe the antibody was damaged during the sample preparation. 
+
+
+In any case, you really wish that you could correct this marker in this single batch. This is because you need the marker for clustering - and if it's non-sensical in one batch it could ruin the whole analysis plan. Enter cyCombine! In particular the `salvage_problematic` function, which allows imputation of a single marker in user-specified batches. The function uses the information found in all other markers in the combined dataset to determine the most likely value for the single marker. This vignette will demonstrate how.
+
+
+This is data from a study of CLL patients and healthy donors at the Dana-Farber Cancer Institute (DFCI). The protein expression was quantified using mass cytometry for 136 samples (20 healthy donors). 
+
+
+<br>
+
+#### Pre-processing data
+
+We start by loading some packages.
+
+```{r libraries, results = 'hide', warning=FALSE, message=FALSE}
+library(cyCombine)
+library(tidyverse)
+
+```
+
+
+<br>
+
+We are now ready to load the CyTOF data. We have set up a panel file in csv format, so the correct information is extractable from there.
+
+```{r loading flow data 1, warning=FALSE, message=FALSE}
+# Directory with raw .fcs files
+data_dir <- "dfci1"
+
+# Panel and reading data
+panel <- read_csv(paste0(data_dir, "/panel1.csv"))
+
+```
+
+<br>
+
+We then progress with reading the CyTOF dataset and converting it to a tibble format, which is easy to process. We use cofactor = 5 (default) in this case.
+
+
+```{r loading data 2}
+# Extracting the markers
+markers <- panel %>%
+  filter(Type != "none") %>%
+  pull(Marker) %>%
+  str_remove_all("[ _-]")
+
+# Preparing the expression data
+dfci <- prepare_data(data_dir = data_dir,
+                     metadata = paste0(data_dir, "/CyTOF samples cohort.xlsx"),
+                     filename_col = "FCS_name",
+                     batch_ids = "Batch",
+                     condition = "Set",
+                     markers = markers,
+                     down_sample = FALSE)
+
+```
+
+<br>
+
+```{r salavging xcl1}
+# Should be batch corrected first? But then, the problem sort of solves itself.
+
+# Salvage XLC1 in batch 1
+imputed <- salvage_problematic(df = dfci,
+                               correct_batches = c(1), 
+                               channel = 'XCL1', 
+                               sample_size = 100000)
+```
+
+
+<br>
+
+#### Evaluating performance
+
+Let us look at some plots to visualize the correction. First, the marker distributions before and after:
+
+```{r density plot, message=FALSE, fig.height=18, fig.width=12}
+plot_density(dfci, imputed, ncol = 4)
+
+```
+
+
+<br>
