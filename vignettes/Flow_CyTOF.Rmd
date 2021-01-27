@@ -1,21 +1,23 @@
 ---
 title: "Integrating paired flow cytometry and CyTOF data"
 author: "Christina Bligaard Pedersen"
-date: "January 26, 2021"
-output:
-  html_document:
-    df_print: paged
+date: "January 27, 2021"
+output: 
+  prettydoc::html_pretty:
+    theme: hpstr
+    highlight: vignette
+vignette: >
+  %\VignetteIndexEntry{cyCombine}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
-
-<br><br>
 
 This vignette will demonstrate the integration of paired flow cytometry and CyTOF protein expression measurements using cyCombine.
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
+  strip.white = T, comment = ""
 )
 
 knitr::opts_knit$set(root.dir = '/home/projects/dp_immunoth/people/s134891/cycombine/flow_cytof/')
@@ -23,15 +25,14 @@ knitr::opts_knit$set(root.dir = '/home/projects/dp_immunoth/people/s134891/cycom
 ```
 
 
-
-<br><br>
+<br>
 First, let us present the datasets we will integrate:
 
 These datasets are from the article by [Oetjen et al. (2018)](https://doi.org/10.1172/jci.insight.124928). The data is from bone marrow aspirations from healthy donors. Originally, five flow cytometry panels were applied on 20 donors, and a mass cytometry panel was used for 8 of these samples.
 
 We downloaded the FCS files for the 8 CyTOF samples and the T cell flow cytometry panel (the 8 paired donors) from FlowRepository (FR-FCM-ZYQ9, FR-FCM-ZYQB). Both datasets were pre-gated to live, intact singlet cells and exported as FCS files.
 
-<br><br>
+<br>
 
 #### Preparing data
 
@@ -45,11 +46,11 @@ library(Seurat)
 ```
 
 
-<br><br>
+<br>
 
 We are now ready to load the flow data. We have set up a panel file in csv format, so the correct information is extractable from there. Let us have a look at the contents:
 
-```{r loading flow data 1}
+```{r loading flow data 1, message=F, warning=F}
 # Directory with raw .fcs files
 data_dir <- "Oetjen_et_al_2018-Singlet-Live"
 
@@ -58,7 +59,7 @@ flow_panel <- read_csv('flow_panel_T.csv')
 flow_panel
 ```
 
-<br><br>
+<br>
 
 We then progress with reading the flow dataset and converting it to a tibble format, which is easy to process. We use cofactor = 150 for flow cytometry data asinh-transformation.
 
@@ -84,11 +85,11 @@ flow <- linear_shift(flow, .keep = T)
 ```
 
 
-<br><br>
+<br>
 
 Then it is time to read the CyTOF data.
 
-```{r cytof read}
+```{r cytof read, warning=F, message=F}
 # Directory with raw .fcs files
 data_dir <- "Oetjen_et_al_2018_CyTOF"
 
@@ -129,7 +130,7 @@ colnames(cytof)[colnames(cytof)=='CD197'] <- 'CCR7'
 
 ```
 
-<br><br>
+<br>
 
 Now, we are ready to combine the two datasets on the overlapping columns.
 
@@ -143,6 +144,7 @@ uncorrected <- bind_rows(cytof[,overlap_cols], flow[,overlap_cols]) %>%
 
 ```
 
+<br>
 And now, batch correction can be performed with cyCombine.
 
 ```{r batch correction, message=FALSE, warning=FALSE, error=FALSE, results='hide'}
@@ -153,9 +155,6 @@ corrected <- uncorrected %>%
                 norm_method = 'rank',
                 ties.method = 'average')
 
-# Add manually assigned labels back
-# corrected$label <- uncorrected$label
-
 ```
 
 <br><br>
@@ -164,42 +163,41 @@ corrected <- uncorrected %>%
 
 We now evaluate the correction using EMD - each marker is evaluated across all cells.
 
-```{r global emd, message=FALSE, fig.height=4, fig.width=4}
+```{r global emd, message=FALSE, fig.height=6, fig.width=12}
 corrected$label <- uncorrected$label <- 1
 
 emd <- evaluate_emd(preprocessed = uncorrected,
              corrected = corrected)
 
-emd$violin
-emd$scatterplot
+cowplot::plot_grid(emd$violin, emd$scatterplot)
+
 ```
 
-Finally, let us look at some plots to visualize the correction. First, the marker distributions before and after:
+Let us look at some plots to visualize the correction. First, the marker distributions before and after:
 
 ```{r density plot, message=FALSE, fig.height=8, fig.width=16}
-plot_density(uncorrected, corrected)
+plot_density(uncorrected, corrected, ncol = 4)
 
 ```
 
-<br><br>
+<br>
 
-Finally, some UMAPs to visualize the correction. I will downsample to 10,000 cells from each dataset so it is easier to see what is going on.
+And now some UMAPs to visualize the correction. I will downsample to 10,000 cells from each dataset so it is easier to see what is going on.
 
-```{r umaps, fig.height=6, fig.width=6}
+```{r umaps, fig.height=8, fig.width=16}
 inds <- split(1:length(uncorrected$batch), uncorrected$batch)
 sample <- unlist(lapply(inds, sample, 10000))
 
 plot1 <- plot_dimred(uncorrected[sample,], name = 'Uncorrected', type = 'umap')
 plot2 <- plot_dimred(corrected[sample,], name = 'Corrected', type = 'umap')
 
-plot1
-plot2
+cowplot::plot_grid(plot1, plot2)
 ```
 
 Based on the UMAP, it seems like the datasets each contain three major clusters. This is also the case after correction.
 
 
-<br><br>
+<br>
 
 Since we actually have paired samples in this dataset, it is possible to make a direct comparison - first we will co-cluster the data using FlowSOM.
 
@@ -246,12 +244,10 @@ ggplot(combined, aes_string(x = colnames(combined)[1], y = colnames(combined)[2]
 ```
 
 
-```{r marker umaps 2}
+```{r marker umaps 2, fig.height=8, fig.width=10}
 cowplot::plot_grid(plotlist = p, ncol = 3)
 
 ```
-
-
 
 
 
@@ -264,11 +260,8 @@ round((count_table/rowSums(count_table)) * 100, 2)
 
 ```
 
-Here, it is seen that the sample cell type fractions correlate nicely with the counterpart from the other technology. 
+Here, it is seen that the sample cell type fractions correlate nicely with the counterpart from the other technology. However, we do have some clusters, e.g. cluster 9, where the fractions are consistently larger for one technology.
 
-
-
-
-
+<br>
 
 

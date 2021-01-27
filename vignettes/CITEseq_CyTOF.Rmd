@@ -2,23 +2,26 @@
 title: "Integrating CITE-seq and CyTOF data"
 author: "Christina Bligaard Pedersen"
 date: "January 26, 2021"
-output:
-  html_document:
-    df_print: paged
+output: 
+  prettydoc::html_pretty:
+    theme: hpstr
+    highlight: vignette
+vignette: >
+  %\VignetteIndexEntry{cyCombine}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 This vignette will demonstrate the integration of CITE-seq and CyTOF protein expression measurements using cyCombine.
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
+  strip.white = T, comment = ""
 )
 
 knitr::opts_knit$set(root.dir = '/home/projects/dp_immunoth/people/s134891/cycombine/citeseq_cytof/')
 
 ```
-
 
 
 <br>
@@ -28,7 +31,7 @@ For the CITE-seq data, we will use the '1k Human PBMCs Stained with a Panel of T
 
 For the CyTOF data, we use the data from a single healthy donor processed at the Human Immune Monitoring Center. The sample was derived from FlowRepository https://flowrepository.org/id/FR-FCM-ZYAJ and pre-gated to live intact singlets. The data was subsequently manually gated to populations of interest. 
 
-
+<br>
 
 #### Pre-processing the CITE-seq data
 
@@ -66,11 +69,11 @@ totalseq <- subset(totalseq, subset = nFeature_RNA > 200 & nFeature_RNA < 3500 &
 
 
 
-<br><br>
+<br>
 
 Now, we have our Total-seq dataset and we have filtered away some of the more questionable cells. Now, we are technically ready for integration, but here, we will actually also cluster the Total-seq data, so we have a better chance of evaluating the integration performance.
 
-```{r cluster total-seq, message = FALSE, fig.height=5, fig.width=8}
+```{r cluster total-seq, message=F, warning=F, fig.height=5, fig.width=8}
 # First, we perform normalization, scaling, dimensionality reduction, and clustering based on the RNA-seq levels
 totalseq <- NormalizeData(totalseq, verbose = F) %>% 
   FindVariableFeatures(selection.method = "vst", nfeatures = 2000, verbose = F) %>%
@@ -105,7 +108,7 @@ FeaturePlot(totalseq, features = c('CD3E', 'CD4', 'CD8A', 'CD14', 'CD19', 'NCAM1
 Please note, that we have plotted the corresponding gene/protein pairs in all cases. For this, we can observe that the protein and gene levels correlate, but they are not completely 1:1.
 
 
-<br><br><br>
+<br>
 
 
 
@@ -138,6 +141,7 @@ citeseq <- citeseq %>%
 ```
 
 
+<br>
 
 #### Reading the CyTOF data
 
@@ -149,6 +153,8 @@ load('Sample001_pregated.Rdata')
 
 ```
 
+
+<br>
 
 
 #### Processing datasets together - batch correction
@@ -165,7 +171,7 @@ VlnPlot(totalseq, features = get_markers(citeseq), assay = 'ADT', pt.size = 0.01
 
 ```
 
-<br><br>
+<br>
 
 So, now we have an overview of the distributions. Here, we will exclude those where the "red violin" is not visible in the plot. 
 
@@ -204,26 +210,27 @@ corrected$label <- uncorrected$label
 ```
 
 
+<br>
+
 #### Evaluating batch correction
 
 
 We now evaluate the correction using EMD - each marker in each cluster is evaluated
 
-```{r emd, message=FALSE, fig.height=4, fig.width=4}
+```{r emd, message=FALSE, fig.height=6, fig.width=12}
 emd <- evaluate_emd(preprocessed = uncorrected,
              corrected = corrected)
 
-emd$violin
-emd$scatterplot
+cowplot::plot_grid(emd$violin, emd$scatterplot)
 ```
 
 
-<br><br>
+<br>
 
-Finally, let us look at some plots to visualize the correction. First, the marker distributions before and after:
+Now, let us look at some plots to visualize the correction. First, the marker distributions before and after:
 
-```{r density plot, message=FALSE, fig.height=5, fig.width=16}
-plot_density(uncorrected, corrected)
+```{r density plot, message=FALSE, fig.height=12, fig.width=16}
+plot_density(uncorrected, corrected, ncol = 4)
 
 ```
 

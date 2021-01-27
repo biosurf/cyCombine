@@ -11,3 +11,4 @@ renv
 tmp
 doc
 data-raw
+vignettes/images/.*

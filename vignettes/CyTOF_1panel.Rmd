@@ -1,21 +1,23 @@
 ---
 title: "Batch correction of CyTOF data"
 author: "Christina Bligaard Pedersen"
-date: "January 26, 2021"
-output:
-  html_document:
-    df_print: paged
+date: "January 27, 2021"
+output: 
+  prettydoc::html_pretty:
+    theme: hpstr
+    highlight: vignette
+vignette: >
+  %\VignetteIndexEntry{cyCombine}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
-
-
-<br>
 
 This vignette will demonstrate the batch correction of a CyTOF set consisting of 136 samples in eight batches using cyCombine.
 
+
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
+  strip.white = T, comment = ""
 )
 
 knitr::opts_knit$set(root.dir = '/home/projects/dp_immunoth/people/s153398/cyCombine/_data/')
@@ -27,7 +29,7 @@ knitr::opts_knit$set(root.dir = '/home/projects/dp_immunoth/people/s153398/cyCom
 This is data from a study of CLL patients and healthy donors at the Dana-Farber Cancer Institute (DFCI). The protein expression was quantified using mass cytometry for 136 samples (20 healthy donors). The data was run in eight batches, with batch 8 being run around a half year later than the other seven batches. 
 
 
-<br><br>
+<br>
 
 #### Pre-processing data
 
@@ -41,11 +43,11 @@ library(Seurat)
 ```
 
 
-<br><br>
+<br>
 
 We are now ready to load the CyTOF data. We have set up a panel file in csv format, so the correct information is extractable from there. Let us have a look at the contents:
 
-```{r loading flow data 1}
+```{r loading flow data 1, warning=FALSE, message=FALSE}
 # Directory with raw .fcs files
 data_dir <- "dfci1"
 
@@ -55,7 +57,7 @@ panel
 
 ```
 
-<br><br>
+<br>
 
 We then progress with reading the CyTOF dataset and converting it to a tibble format, which is easy to process. We use cofactor = 5 (default) in this case.
 
@@ -83,7 +85,7 @@ dfci$condition <- as.factor(as.character(dfci$condition))
 
 ```
 
-<br><br>
+<br>
 
 #### Checking for batch effects
 Now, let us use a cyCombine function to check if there are any batch effects to correct for at all... cyCombine will run on data even with no real batch effects, and in those cases, the batch correction should have minimal effect. However, there is no reason to run the algorithm, if we have no batch effects in the data.
@@ -97,7 +99,7 @@ detect_batch_effect_express(dfci, downsample = 10000, out_dir = paste0(data_dir,
 
 In the printed output, we already get some pointers to potential problems with batch effects. But let us look at each of these plots for this dataset. First we have the EMD per marker-plot, which shows the mean Earth Mover's Distance for all pairwise batch-to-batch comparisons. The distribution of each marker is considered globally for each comparison. The error bars represent the standard deviation. In this dataset, we observe a relatively high mean EMD for XCL1, and further this marker has a large standard deviation. This indicates that there may be a batch effect to consider in this marker - perhaps it is significantly over- or under-stained in one or more batches compared to the rest? According to the text, batch 1 is the problem. 
 
-[EMD](images/emd_per_marker.png){width=500px}
+![](images/emd_per_marker.png)
 
 <br>
 
@@ -105,14 +107,14 @@ To figure out if that is really the case, we can look at the second generated pl
 
 When looking at XCL1, we clearly observe the batch effect indicated before - batch 1 looks very different from the rest! Also, have a look at TBet. This marker had the second-highest mean EMD above - and here, the distributions for batches 6 and 7 look different than the rest.  
 
-[Distributions](images/distributions_per_batch.png){width=500px}
+![](images/distributions_per_batch.png)
 
 <br>
 
 Now for the final plot - a multidimensional scaling (MDS) plot. This form of dimensionality reduction can be used to detect outlier batches (or samples) based on the median marker expression per *sample*. Each dot corresponds to a sample - and the colors represent batches. If there are no batch effects, the pattern would be random - and though it can be hard to judge, here we will notice how the purple batch 7 samples almost exclusively appear in the top part of the plot. Meanwhile, the pink batch 8 samples lump around (2,0).
 In other words, it looks a bit like batch effects!
 
-[MDS](images/MDS_per_batch.png){width=500px}
+![](images/MDS_per_batch.png)
 
 <br>
 
@@ -120,11 +122,11 @@ We could dwell more at this, and we could also use the full `detect_batch_effect
 
 
 
-<br><br>
+<br>
 
 #### Processing data - batch correction
 
-<br><br>
+<br>
 
 Time to start the batch correction:
 
@@ -139,7 +141,7 @@ corrected <- dfci %>%
 
 ```
 
-<br><br>
+<br>
 
 #### Evaluating performance
 
@@ -150,19 +152,18 @@ plot_density(dfci, corrected, ncol = 4)
 
 ```
 
-<br><br>
+<br>
 
 Finally, some UMAPs to visualize the correction. We will downsample to 2,000 cells from each sample so it is easier to see what is going on.
 
-```{r umaps, fig.height=6, fig.width=12}
+```{r umaps, fig.height=8, fig.width=16}
 inds <- split(1:length(dfci$batch), dfci$batch)
 sample <- unlist(lapply(inds, sample, 2000))
 
 plot1 <- plot_dimred(dfci[sample,], name = 'Uncorrected', type = 'umap')
 plot2 <- plot_dimred(corrected[sample,], name = 'Corrected', type = 'umap')
 
-plot1
-plot2
+cowplot::plot_grid(plot1, plot2)
 
 ```
 
