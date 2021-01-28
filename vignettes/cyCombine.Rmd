@@ -1,7 +1,7 @@
 ---
 title: "cyCombine"
 author: "Søren Helweg Dam"
-date: "January 27, 2021"
+date: "January 28, 2021"
 output: 
   prettydoc::html_pretty:
     theme: hpstr
@@ -40,7 +40,7 @@ And the panel should contain the columns:
 
 First, the FCS files are converted into a work-able *tibble*.
 
-#### The recommended method
+#### The recommended workflow
 
 ```{r, eval=FALSE}
 # Load packages
@@ -75,10 +75,10 @@ saveRDS(uncorrected, file = file.path(data_dir, "uncorrected.RDS"))
 
 <br>
 
-#### Modular method
+#### Modular workflow
 
 In case you want more control, you can adjust any step of this approach.
-Feel free to skip this segment, if the method above worked for you.
+Feel free to skip this segment, if the method above worked just fine for you.
 
 This example will include all possible input parameters to give an overview of what can be modified.
 
@@ -174,7 +174,7 @@ saveRDS(uncorrected, file = "data/uncorrected.RDS")
 
 ### Batch correct
 
-#### The recommended method
+#### The recommended workflow
 
 Skip this segment if you are interested in more modularity
 
@@ -193,7 +193,7 @@ corrected <- batch_correct(
   covar = "condition",
   markers = markers,
   norm_method = "scale", # "rank" is recommended when combining data with heavy batch effects
-  som_type = "fsom" # "kohonen" is recommended when combining distinct data with heavy batch effects
+  som_type = "fsom" # "kohonen" is recommended when using rank normalization
 )
 
 # Save result
