@@ -36,7 +36,7 @@
 run_analysis <- function(tool,
                          data,
                          data_dir,
-                         uncorrected_extension = "_preprocessed",
+                         uncorrected_extension = "_uncorrected",
                          corrected_extension = "_corrected",
                          variant = NULL,
                          uncorrected_variant = NULL,

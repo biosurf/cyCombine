@@ -183,7 +183,7 @@ ranking <- function(df, markers = NULL, ties.method = "min") {
 #' @export
 create_som <- function(df,
                        markers = NULL,
-                       som_type = "kohonen",
+                       som_type = "fsom",
                        seed = 473,
                        xdim = 8,
                        ydim = 8){
@@ -425,7 +425,7 @@ batch_correct <- function(df,
                           seed = 473,
                           covar = NULL,
                           markers = NULL,
-                          norm_method = 'rank',
+                          norm_method = 'scale',
                           ties.method = "average",
                           som_type = "fsom"){
   # A batch column is required
