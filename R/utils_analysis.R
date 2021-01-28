@@ -158,11 +158,11 @@ run_analysis <- function(tool,
         # labels <- som_$unit.classif
       }else{
         labels <- corrected %>%
-          cyCombine::create_fsom(seed = seed,
-                                 som_type = som_type,
-                                 xdim = gridsize,
-                                 ydim = gridsize,
-                                 markers = markers)
+          cyCombine::create_som(seed = seed,
+                                som_type = som_type,
+                                xdim = gridsize,
+                                ydim = gridsize,
+                                markers = markers)
           saveRDS(labels, file = paste0(projdir, "_som.RDS"))
       }
       # Add labels
