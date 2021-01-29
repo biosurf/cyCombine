@@ -2,10 +2,10 @@
 % Please edit documentation in R/evaluate_performance.R
 \name{evaluate_emd}
 \alias{evaluate_emd}
-\title{Evaluate EMD}
+\title{Evaluate Earth Mover's Distance}
 \usage{
 evaluate_emd(
-  preprocessed,
+  uncorrected,
   corrected,
   binSize = 0.1,
   cell_col = "label",
@@ -16,7 +16,7 @@ evaluate_emd(
 )
 }
 \arguments{
-\item{preprocessed}{Dataframe of uncorrected data}
+\item{uncorrected}{Dataframe of uncorrected data}
 
 \item{corrected}{Dataframe of corrected data}
 
@@ -28,7 +28,7 @@ evaluate_emd(
 
 \item{markers}{Vector of the markers to calculate EMD for. If NULL, \code{\link{get_markers}} will be used to find markers}
 
-\item{plots}{If TRUE, a boxplot and scatterplot of the emds will be returned}
+\item{plots}{If TRUE, a violin and scatter plot of the emds will be returned}
 }
 \description{
 The function computes the Earth Mover's Distance of the two given datasets.

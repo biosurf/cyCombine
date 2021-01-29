@@ -3,7 +3,7 @@
 #' Compute EMD
 #'
 #' Given a dataframe, the Earth Movers Distance is computed, using the emdist package.
-#'   A comparison matrix is returned containing the maximum distance for each marker for each group of cells.
+#'   A matrix is returned containing the EMD for each marker for each group of cells.
 #'
 #' @param df Dataframe to compute the EMD of
 #' @param binSize The size of bins to use when binning data
@@ -11,6 +11,8 @@
 #' @param batch_col Column name of df that contains batch numbers
 #' @param markers Vector of the markers to calculate EMD for. If NULL, \code{\link{get_markers}} will be used to find markers
 #' @importFrom graphics hist
+#' @examples
+#' emd <- compute_emd(df, markers = markers)
 #' @export
 compute_emd <- function(df,
                         binSize = 0.1,
@@ -86,17 +88,18 @@ compute_emd <- function(df,
   return(distances)
 }
 
-#' Evaluate EMD
+#' Evaluate Earth Mover's Distance
 #'
 #' The function computes the Earth Mover's Distance of the two given datasets.
 #'   Then the reduction is calculated as the relative change in total EMD.
+#'
 #' @importFrom tidyr pivot_longer
 #' @inheritParams compute_emd
-#' @param preprocessed Dataframe of uncorrected data
+#' @param uncorrected Dataframe of uncorrected data
 #' @param corrected Dataframe of corrected data
-#' @param plots If TRUE, a boxplot and scatterplot of the emds will be returned
+#' @param plots If TRUE, a violin and scatter plot of the emds will be returned
 #' @export
-evaluate_emd <- function(preprocessed,
+evaluate_emd <- function(uncorrected,
                          corrected,
                          binSize = 0.1,
                          cell_col = "label",
@@ -107,15 +110,18 @@ evaluate_emd <- function(preprocessed,
 
   # Check for package
   missing_package("emdist", "CRAN")
-  missing_package("viridis", "CRAN")
   missing_package("plyr", "CRAN")
 
+  # Check colnames
   check_colname(colnames(corrected), cell_col, "corrected set")
-  check_colname(colnames(preprocessed), cell_col, "uncorrected set")
+  check_colname(colnames(uncorrected), cell_col, "uncorrected set")
+  check_colname(colnames(corrected), batch_col, "corrected set")
+  check_colname(colnames(uncorrected), batch_col, "uncorrected set")
+
   # Define cell columns as characters to avoid problems with factors
   corrected[[cell_col]] <- corrected[[cell_col]] %>%
     as.character()
-  preprocessed[[cell_col]] <- preprocessed[[cell_col]] %>%
+  uncorrected[[cell_col]] <- uncorrected[[cell_col]] %>%
     as.character()
 
   message("Computing EMD for corrected data..")
@@ -126,7 +132,7 @@ evaluate_emd <- function(preprocessed,
                            markers = markers)
 
   message("Computing EMD for uncorrected data..")
-  emd_uncorrected <- preprocessed %>%
+  emd_uncorrected <- uncorrected %>%
     dplyr::arrange(id) %>%
     cyCombine::compute_emd(binSize = binSize,
                            cell_col = cell_col,
@@ -148,14 +154,16 @@ evaluate_emd <- function(preprocessed,
   ) %>%
     dplyr::filter(!is.na(Reduction))
 
-  # Calculate total reduction
+  # Apply filter
+  message(paste("Removing EMDs below", filter_limit, "both before and after correction"))
   emds_filtered <- emds %>%
     dplyr::filter(!(Corrected < filter_limit & Uncorrected < filter_limit))
 
-  message(paste("Removing EMDs below", filter_limit, "both before and after correction"))
+
+  # Calculate total reduction
   reduction <- (sum(emds_filtered$Reduction) / sum(emds_filtered$Uncorrected)) %>%
     round(2)
-  message("The reduction is:", reduction)
+  message("The reduction is: ", reduction)
 
   if(plots == FALSE){
     return(list("reduction" = reduction,
@@ -182,7 +190,7 @@ evaluate_emd <- function(preprocessed,
     max() %>%
     plyr::round_any(5, f = ceiling) + 1
 
-  # Create violin plots
+  # Create violin plot
   violin <- emds_filtered %>%
     tidyr::pivot_longer(cols = ends_with("orrected"), names_to = "corrected") %>%
     ggplot(aes(x = corrected, y = value)) +
@@ -193,7 +201,7 @@ evaluate_emd <- function(preprocessed,
          title = "Comparison of EMD before and after correction",
          subtitle = paste("Reduction: ", reduction))
 
-
+  # Create scatterplot
   scatterplot <- emds %>%
     ggplot(aes(x = Corrected, y = Uncorrected)) +
     geom_point() +
