@@ -75,7 +75,7 @@ markers <- panel %>%
 
 # Preparing the expression data
 dfci <- prepare_data(data_dir = data_dir,
-                     metadata = paste0(data_dir, "/CyTOF samples cohort.xlsx"),
+                     metadata = paste0(data_dir, "/metadata.csv"),
                      filename_col = "FCS_name",
                      batch_ids = "Batch",
                      condition = "Set",

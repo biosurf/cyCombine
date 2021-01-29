@@ -71,16 +71,12 @@ markers <- panel %>%
 
 # Preparing the expression data
 dfci <- prepare_data(data_dir = data_dir,
-                     metadata = paste0(data_dir, "/CyTOF samples cohort.xlsx"),
+                     metadata = paste0(data_dir, "/metadata.csv"),
                      filename_col = "FCS_name",
                      batch_ids = "Batch",
                      condition = "Set",
                      markers = markers,
                      down_sample = FALSE)
-
-# In this dataset, the batch 8 samples are labeled as 'interim' for another purpose - we will rename this condition to 'CLL', so we can account for the biological difference between healthy and CLL samples during batch correction.
-dfci$condition[dfci$condition == 'Interim'] <- 'CLL'
-dfci$condition <- as.factor(as.character(dfci$condition))
 
 
 ```
@@ -136,7 +132,7 @@ corrected <- dfci %>%
   batch_correct(covar = "condition",
                 xdim = 8,
                 ydim = 8,
-                norm_method = 'rank',
+                norm_method = 'scale',
                 markers = markers)
 
 ```

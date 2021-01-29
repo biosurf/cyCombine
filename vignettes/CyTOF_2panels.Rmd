@@ -38,7 +38,6 @@ In this dataset, it seems reasonable to start by looking at the two panels.
 # Loading packages
 library(cyCombine)
 library(tidyverse)
-library(Seurat)
 
 ```
 
@@ -92,16 +91,12 @@ We are now ready to load the CyTOF data. We convert it to a tibble format, which
 ```{r loading cytof data 1}
 # Preparing the expression data
 dfci1 <- prepare_data(data_dir = "dfci1",
-                      metadata = "dfci1/CyTOF samples cohort.xlsx",
+                      metadata = "dfci1/metadata.csv",
                       filename_col = "FCS_name",
                       batch_ids = "Batch",
                       condition = "Set",
                       markers = markers1,
                       down_sample = FALSE)
-
-# In this dataset, the batch 8 samples are labeled as 'interim' for another purpose - we will rename this condition to 'CLL', so we can account for the biological difference between healthy and CLL samples during batch correction.
-dfci1$condition[dfci1$condition == 'Interim'] <- 'CLL'
-dfci1$condition <- as.factor(as.character(dfci1$condition))
 
 ```
 
@@ -109,16 +104,12 @@ dfci1$condition <- as.factor(as.character(dfci1$condition))
 ```{r loading cytof data 2}
 # Preparing the expression data
 dfci2 <- prepare_data(data_dir = "dfci2",
-                      metadata = "dfci2/CyTOF samples cohort.xlsx",
+                      metadata = "dfci2/metadata.csv",
                       filename_col = "FCS_name",
                       batch_ids = "Batch",
                       condition = "Set",
                       markers = markers2,
                       down_sample = FALSE)
-
-# In this dataset, the batch 8 samples are labeled as 'interim' for another purpose - we will rename this condition to 'CLL', so we can account for the biological difference between healthy and CLL samples during batch correction.
-dfci2$condition[dfci2$condition == 'Interim'] <- 'CLL'
-dfci2$condition <- as.factor(as.character(dfci2$condition))
 
 ```
 
@@ -136,14 +127,14 @@ dfci1_bc <- dfci1 %>%
   batch_correct(covar = "condition",
                 xdim = 8,
                 ydim = 8,
-                norm_method = 'rank',
+                norm_method = 'scale',
                 markers = markers1)
 
 dfci2_bc <- dfci2 %>%
   batch_correct(covar = "condition",
                 xdim = 8,
                 ydim = 8,
-                norm_method = 'rank',
+                norm_method = 'scale',
                 markers = markers2)
 
 ```
