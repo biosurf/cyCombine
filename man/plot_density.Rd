@@ -17,10 +17,26 @@ plot_density(
 )
 }
 \arguments{
+\item{uncorrected}{tibble with uncorrected data}
+
+\item{corrected}{tibble with corrected data}
+
+\item{markers}{Character vector with the markers to plot}
+
+\item{filename}{Output figure filename. If NULL plots are returned}
+
+\item{y}{The column to stack densities with. Default: "batch". If set to "Type", the dataset_names will be used to stack densities.}
+
+\item{xlim}{The limit of the x axis}
+
+\item{dataset_names}{Change the names of the datasets from Uncorrected and Corrected to something else. Format: c("Uncorrected", "Corrected")}
+
+\item{ncol}{Number of density plots in a single row of plots. Default: 6}
+
 \item{format}{Plotting format (1 = 1 row per batch, 2 = all batches in same row.)}
 }
 \description{
-Density ridges for two sets
+Compare densities between each batch both before and after correction
 }
 \examples{
 plot_density(uncorrected, corrected, y = 'batch', filename = 'my/dir/batchcor_plot.pdf')

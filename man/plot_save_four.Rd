@@ -6,6 +6,17 @@
 \usage{
 plot_save_four(plot1, plot2, plot3, plot4, filename)
 }
+\arguments{
+\item{plot1}{Top left plot in output}
+
+\item{plot2}{Top right plot in output}
+
+\item{plot3}{Lower left plot in output}
+
+\item{plot4}{Lower right plot in output}
+
+\item{filename}{Filename of output}
+}
 \description{
 Save four plots aligned with cowplot
 }

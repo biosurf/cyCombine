@@ -6,6 +6,13 @@
 \usage{
 plot_save_two(plot1, plot2, filename)
 }
+\arguments{
+\item{plot1}{Left plot in output}
+
+\item{plot2}{Right plot in output}
+
+\item{filename}{Filename of output}
+}
 \description{
 Save two plots aligned with cowplot
 }

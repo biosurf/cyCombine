@@ -4,7 +4,10 @@
 \alias{plot_umap_labels}
 \title{Dimensionality reduction plots for a two-batch dataset before and after correction - colored by batch and label}
 \usage{
-plot_umap_labels(uncorrected, corrected, filename = NULL)
+plot_umap_labels(uncorrected, corrected, filename = NULL, seed = 473)
+}
+\arguments{
+\item{seed}{For reproducibility}
 }
 \description{
 Dimensionality reduction plots for a two-batch dataset before and after correction - colored by batch and label
