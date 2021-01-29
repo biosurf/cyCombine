@@ -157,7 +157,7 @@ plot_dimred <- function(df,
   if (type == "pca") {
     # Run PCA
     pca <- df %>%
-      prcomp(scale. = TRUE, center = TRUE)
+      stats::prcomp(scale. = TRUE, center = TRUE)
 
     # Make dataframe with output
     if (plot == "batch") {
