@@ -92,7 +92,7 @@ Vignettes are available at [biosurf](https://biosurf.org/cyCombine).
 
 ## Usage
 
-### From a directory of preprocessed .fcs files
+### From a directory of uncorrected .fcs files
 
 ``` r
 library(cyCombine)
@@ -103,7 +103,7 @@ data_dir <- "data/raw"
 markers <- c("CD20", "CD3", "CD27", "CD45RA", "CD279", "CD5", "CD19", "CD14", "CD45RO", "GranzymeA", "GranzymeK", "FCRL6", "CD355", "CD152", "CD69", "CD33", "CD4", "CD337", "CD8", "CD197", "LAG3", "CD56", "CD137", "CD161", "FoxP3", "CD80", "CD270", "CD275", "CD134", "CD278", "CD127", "KLRG1", "CD25", "HLADR", "TBet", "XCL1")
 
 # Compile fcs files, down-sample, and preprocess
-preprocessed <- prepare_data(data_dir = data_dir,
+uncorrected <- prepare_data(data_dir = data_dir,
                              markers = markers,
                              metadata = paste0(data_dir, "/metadata.xlsx"), # Can also be .csv file or data.frame object
                              sample_ids = NULL,
@@ -114,10 +114,10 @@ preprocessed <- prepare_data(data_dir = data_dir,
                              sample_size = 500000,
                              seed = 473,
                              cofactor = 5) 
-saveRDS(preprocessed, file = "_data/cycombine_raw_preprocessed.RDS")
+saveRDS(uncorrected, file = "_data/cycombine_raw_uncorrected.RDS")
 
 # Run batch correction
-corrected <- preprocessed %>%
+corrected <- uncorrected %>%
   batch_correct(markers = markers,
                 norm_method = "scale",
                 som_type = "fsom", # Anything else to use Kohonen clustering method
@@ -148,18 +148,18 @@ df <- convert_flowset(metadata = paste0(data_dir, "/metadata.xlsx"),
                       sample_size = 500000,
                       seed = 473)
 
-preprocessed <- df %>% 
+uncorrected <- df %>% 
   transform_asinh(markers = markers)
 
-saveRDS(preprocessed, file = "_data/cycombine_raw_preprocessed.RDS")
+saveRDS(uncorrected, file = "_data/cycombine_raw_uncorrected.RDS")
 
 # Run batch correction
-labels <- preprocessed %>%
+labels <- uncorrected %>%
   normalize(markers = markers,
             norm_method = "scale") %>%
   create_fsom(markers = markers) # Alternatively, use create_som() for Kohonen clustering method
 
-corrected <- preprocessed %>%
+corrected <- uncorrected %>%
   correct_data(label = labels,
                covar = "condition")
 saveRDS(corrected, file = "_data/cycombine_raw_corrected.RDS")
@@ -181,7 +181,7 @@ saveRDS(corrected, file = "_data/cycombine_raw_corrected.RDS")
 
 <!-- # Convert flowset to workable datafram and transform data -->
 
-<!-- preprocessed <- flowset %>% -->
+<!-- uncorrected <- flowset %>% -->
 
 <!--   convert_flowset(batch_ids = batch_ids, -->
 
@@ -197,7 +197,7 @@ saveRDS(corrected, file = "_data/cycombine_raw_corrected.RDS")
 
 <!-- # Run batch correction -->
 
-<!-- corrected <- preprocessed %>% -->
+<!-- corrected <- uncorrected %>% -->
 
 <!--   batch_correct(seed = 473) -->
 
@@ -207,16 +207,16 @@ saveRDS(corrected, file = "_data/cycombine_raw_corrected.RDS")
 
 ``` r
 # Full analysis can be run with - type ?run_analysis to see how you can modify the analysis
-run_analysis(tool = "cycombine", data = "raw", data_dir = "_data")
+run_analysis(tool = "cycombine", data = "raw", data_dir = "_data", markers = markers)
 
 # Otherwise, plots can be made like so:
-density_plots(uncorrected = preprocessed,
-                corrected = corrected,
-                markers = markers,
-                filename = 'figs/densities_withcovar.png')
+density_plots(uncorrected = uncorrected,
+              corrected = corrected,
+              markers = markers,
+              filename = 'figs/densities_withcovar.png')
 
 # PCA plot uncorrected
-pca1 <- preprocessed %>%
+pca1 <- uncorrected %>%
   plot_dimred('uncorrected', type = 'pca')
   
 # PCA plot corrected

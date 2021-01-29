@@ -14,7 +14,8 @@ detect_batch_effect(
   seed = 382,
   markers = NULL,
   batch_col = "batch",
-  label_col = "label"
+  label_col = "label",
+  name = "raw data"
 )
 }
 \arguments{
@@ -24,9 +25,11 @@ detect_batch_effect(
 
 \item{downsample}{Number of cells to include in detection. If not specified all cells will be used. One should be careful with the downsampling here as too strong downsampling leads to spurious results.}
 
-\item{xdim}{Grid size in x-axis for SOM}
+\item{som_type}{Type of SOM calculation (options = 'fsom' and 'kohonen')}
 
-\item{ydim}{Grid size in y-axis for SOM}
+\item{xdim}{Grid size in x-axis for SOM (default = 8)}
+
+\item{ydim}{Grid size in y-axis for SOM (default = 8)}
 
 \item{seed}{Random seed for reproducibility}
 
@@ -35,6 +38,8 @@ detect_batch_effect(
 \item{batch_col}{Name of column containing batch information}
 
 \item{label_col}{If existing labels should be used, this column must be present in the data}
+
+\item{name}{Name of dataset - used for plot titles}
 }
 \description{
 Full function for detection of batch effects using cluster proportions

@@ -13,7 +13,7 @@ batch_correct(
   seed = 473,
   covar = NULL,
   markers = NULL,
-  norm_method = "rank",
+  norm_method = "scale",
   ties.method = "average",
   som_type = "fsom"
 )

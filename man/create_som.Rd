@@ -7,7 +7,7 @@
 create_som(
   df,
   markers = NULL,
-  som_type = "kohonen",
+  som_type = "fsom",
   seed = 473,
   xdim = 8,
   ydim = 8

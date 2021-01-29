@@ -35,7 +35,8 @@ Imports:
     tidyr,
     ggplot2,
     knitr,
-    FlowSOM
+    FlowSOM,
+    cytolib
 Suggests: 
     rmarkdown,
     testthat,
