@@ -31,7 +31,7 @@ run_analysis(
 
 \item{data}{The name of the data used}
 
-\item{data_dir}{The location of the preprocessed and corrected data}
+\item{data_dir}{The location of the uncorrected and corrected data}
 
 \item{uncorrected_extension}{The extension used to name the uncorrected data. Default: "_uncorrected}
 
