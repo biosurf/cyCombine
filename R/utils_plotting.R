@@ -7,11 +7,12 @@
 # @importFrom dplyr select_if bind_rows rename
 #' Density ridges for two sets
 #' @import ggplot2
+#' @param format Plotting format (1 = 1 row per batch, 2 = all batches in same row.)
 #' @examples 
 #' plot_density(uncorrected, corrected, y = 'batch', filename = 'my/dir/batchcor_plot.pdf')
 #' plot_density(imputed1, imputed2, y = 'Type', dataset_names = paste('Panel', 1:2), filename = 'my/dir/merging_plot.pdf')
 #' @export
-plot_density <- function(uncorrected, corrected, markers = NULL, filename = NULL, y = "batch", xlim = 10, dataset_names = NULL, ncol = 6) {
+plot_density <- function(uncorrected, corrected, markers = NULL, filename = NULL, y = "batch", xlim = 10, dataset_names = NULL, ncol = 6, format = 1) {
 
   # Check for packages
   missing_package("ggridges", "CRAN")
@@ -57,19 +58,37 @@ plot_density <- function(uncorrected, corrected, markers = NULL, filename = NULL
   # colnames(df)[(ncol(df)-1):ncol(df)] <- c("Batch", "Type")
   #
   # df <- rbind.data.frame(uncor_df, cor_df)
-
-  # For each marker, make the plot
-  p <- list()
-  for (c in 1:length(markers)) {
-
-    p[[c]] <- df %>%
-      ggplot(aes_string(x = markers[c], y = 'batch')) +
-      ggridges::geom_density_ridges(aes(color = .data$Type, fill = .data$Type), alpha = 0.4) +
-      coord_cartesian(xlim = c(-1, xlim)) +
-      labs(y = y) +
-      theme_bw()
+  
+  if (format == 1) {
+    # For each marker, make the plot
+    p <- list()
+    for (c in 1:length(markers)) {
+  
+      p[[c]] <- df %>%
+        ggplot(aes_string(x = markers[c], y = 'batch')) +
+        ggridges::geom_density_ridges(aes(color = .data$Type, fill = .data$Type), alpha = 0.4) +
+        coord_cartesian(xlim = c(-1, xlim)) +
+        labs(y = y) +
+        theme_bw()
+    }
+    
+    height_factor = 1.3
+    
+  } else if (format == 2) {
+    # For each marker, make the plot
+    p <- list()
+    for (c in 1:length(markers)) {
+      
+      p[[c]] <- df %>%
+        ggplot(aes_string(x = markers[c], y = 'Type')) +
+        ggridges::geom_density_ridges(aes(color = batch, fill = batch), alpha = 0.4) +
+        coord_cartesian(xlim = c(-1, xlim)) +
+        labs(y = y) +
+        theme_bw()
+    }
+    
+    height_factor = 2
   }
-
   # p <- df %>%
   #   pivot_longer(cols = all_of(markers), names_to = "Marker") %>%
   #   ggplot(aes(x = value, y = batch)) +
@@ -85,7 +104,7 @@ plot_density <- function(uncorrected, corrected, markers = NULL, filename = NULL
   # device = "png", width = 28, height = 40)
   
   if (!is.null(filename)) {
-    cowplot::save_plot(filename, cowplot::plot_grid(plotlist = p, ncol = ncol), base_width = 28, base_height = length(markers)/1.3)
+    cowplot::save_plot(filename, cowplot::plot_grid(plotlist = p, ncol = ncol), base_width = 28, base_height = length(markers)/height_factor)
   } else {
     return(cowplot::plot_grid(plotlist = p, ncol = ncol))
   }
