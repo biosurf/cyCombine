@@ -2,26 +2,29 @@
 % Please edit documentation in R/01_prepare_data.R
 \name{linear_shift}
 \alias{linear_shift}
-\title{Linearly shift data to lowest value to zero and all other values are shifted linearly along with it}
+\title{Linear shift of input data}
 \usage{
 linear_shift(df, markers = NULL, .keep = FALSE)
 }
 \arguments{
-\item{df}{The dataframe to transform}
+\item{df}{The tibble to transform}
 
 \item{markers}{The markers to transform on}
 
 \item{.keep}{Keep all channels. If FALSE, channels that are not transformed are removed}
 }
 \description{
-Linearly shift data to lowest value to zero and all other values are shifted linearly along with it
+Linearly shift data to lowest value to zero and all other values are shifted linearly along with it.
 }
 \examples{
-preprocessed <- df \%>\%
+uncorrected <- df \%>\%
   linear_shift(markers = markers)
 }
 \seealso{
-Other preprocess: 
+Other dataprep: 
+\code{\link{compile_fcs}()},
+\code{\link{convert_flowset}()},
+\code{\link{prepare_data}()},
 \code{\link{transform_asinh}()}
 }
-\concept{preprocess}
+\concept{dataprep}

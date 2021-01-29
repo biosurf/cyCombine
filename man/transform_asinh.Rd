@@ -7,7 +7,7 @@
 transform_asinh(df, markers = NULL, cofactor = 5, .keep = FALSE)
 }
 \arguments{
-\item{df}{The dataframe to transform}
+\item{df}{The tibble to transform}
 
 \item{markers}{The markers to transform on}
 
@@ -16,14 +16,18 @@ transform_asinh(df, markers = NULL, cofactor = 5, .keep = FALSE)
 \item{.keep}{Keep all channels. If FALSE, channels that are not transformed are removed}
 }
 \description{
-Inverse sine transformation of a dataframe.
+Inverse sine transformation of a tibble.
+This function also de-randomizes data.
 }
 \examples{
-preprocessed <- df \%>\%
+uncorrected <- df \%>\%
   transform_asinh(markers = markers)
 }
 \seealso{
-Other preprocess: 
-\code{\link{linear_shift}()}
+Other dataprep: 
+\code{\link{compile_fcs}()},
+\code{\link{convert_flowset}()},
+\code{\link{linear_shift}()},
+\code{\link{prepare_data}()}
 }
-\concept{preprocess}
+\concept{dataprep}

@@ -12,8 +12,17 @@ compile_fcs(data_dir, pattern = "\\\\.fcs")
 \item{pattern}{The pattern to use to find the files in the folder}
 }
 \description{
-Compile all .fcs files in a directory to a flowset
+A simple function to compile a directory of FCS files into a flowSet object using flowCore::read.flowSet().
+Use the pattern argument to select only a subset of FCS files.
 }
 \examples{
-fcs <- compile_fcs(data_dir = "_data/raw", metadata = "meta/metadata.csv", sample_ids = "sample", batch_ids = "batch", filename_col = "fcs_filenames")
+fcs <- compile_fcs(data_dir = "_data/raw", pattern = "\\\\.fcs")
 }
+\seealso{
+Other dataprep: 
+\code{\link{convert_flowset}()},
+\code{\link{linear_shift}()},
+\code{\link{prepare_data}()},
+\code{\link{transform_asinh}()}
+}
+\concept{dataprep}

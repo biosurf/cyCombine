@@ -3,7 +3,8 @@
 
 #' Compile all .fcs files in a directory to a flowset
 #'
-#'
+#' A simple function to compile a directory of FCS files into a flowSet object using flowCore::read.flowSet().
+#'  Use the pattern argument to select only a subset of FCS files.
 #'
 #' @importFrom readxl read_xlsx
 #' @importFrom readr read_csv
@@ -12,9 +13,9 @@
 #' @importFrom flowCore read.flowSet fsApply
 #' @param data_dir Directory containing the .fcs files
 #' @param pattern The pattern to use to find the files in the folder
-#'
+#' @family dataprep
 #' @examples
-#' fcs <- compile_fcs(data_dir = "_data/raw", metadata = "meta/metadata.csv", sample_ids = "sample", batch_ids = "batch", filename_col = "fcs_filenames")
+#' fcs <- compile_fcs(data_dir = "_data/raw", pattern = "\\.fcs")
 #' @export
 compile_fcs <- function(data_dir,
                         pattern = "\\.fcs"){
@@ -50,7 +51,16 @@ compile_fcs <- function(data_dir,
 # "batch_ids", "all_markers", which are the raw flowSet, sample ids per row, batch
 # ids per row and all measured markers in the panel
 
-#' Convert a flowset into a workable dataframe
+#' Convert a flowSet into a tibble
+#'
+#' Use this function to convert a flowSet into the tibble object that the remaining
+#'  functions in cyCombine relies on.
+#'  A tibble is a Tidyverse implementation of a data.frame and can be treated as a such.
+#'  The majority of arguments revolves adding relevant info from the metadata file/object.
+#'  The panel argument is included to adjust the output column names using a panel with channel and antigen columns.
+#'  Bear in mind the column names will be altered with the following:
+#'  \code{stringr::str_remove_all("^\\d+\[A-Za-z\]+_") %>% stringr::str_remove_all("\[ _-\]")}.
+#'
 #'
 #' @importFrom tibble as_tibble
 #' @importFrom stringr str_remove
@@ -71,9 +81,14 @@ compile_fcs <- function(data_dir,
 #' @param panel Optional: Panel as a fileanme or data.frame. Is used to define colnames from the panel_antigen column
 #' @param panel_channel Optional: Only used if panel is given. It is the column name in the panel data.frame that contains the channel names
 #' @param panel_antigen Optional: Only used if panel is given. It is the column name in the panel data.frame that contains the antigen names
-#'
+#' @family dataprep
 #' @examples
-#' df <- convert_flowset(flowset = fcs$fcs_raw, sample_ids = fcs$sample_ids, batch_ids = fcs$batch_ids, down_sample = FALSE)
+#' df <- convert_flowset(flowset = flowset,
+#'  metadata = file.path(data_dir, "metadata.csv"),
+#'  filename_col = "FCS_files",
+#'  sample_ids = "sample_id",
+#'  batch_ids = "batch_ids",
+#'  down_sample = FALSE)
 #' @export
 convert_flowset <- function(flowset,
                             metadata = NULL,
@@ -87,8 +102,9 @@ convert_flowset <- function(flowset,
                             panel = NULL,
                             panel_channel = "fcs_colname",
                             panel_antigen = "antigen"){
-  # Error handling
+  # Add metadata information (long)
   if(!is.null(metadata)){
+    # Error handling
     if(is.null(filename_col)){
       stop("Please specify a filename_col.")
     }
@@ -97,7 +113,7 @@ convert_flowset <- function(flowset,
         stop("File \"", file.path(metadata), "\" was not found")
       }
 
-    # Get metadata
+      # Get metadata
       if(endsWith(metadata, suffix = ".xlsx")){
         metadata <- suppressMessages(file.path(metadata) %>%
                                        readxl::read_xlsx())
@@ -255,16 +271,17 @@ fcs_sample <- function(flowframe, sample, nrows, seed = 473){
 
 #' Transform data using asinh
 #'
-#' Inverse sine transformation of a dataframe.
+#' Inverse sine transformation of a tibble.
+#'  This function also de-randomizes data.
 #'
-#' @param df The dataframe to transform
+#' @param df The tibble to transform
 #' @param markers The markers to transform on
 #' @param cofactor The cofactor to use when transforming
 #' @param .keep Keep all channels. If FALSE, channels that are not transformed are removed
 #' @importFrom knitr combine_words
-#' @family preprocess
+#' @family dataprep
 #' @examples
-#' preprocessed <- df %>%
+#' uncorrected <- df %>%
 #'   transform_asinh(markers = markers)
 #' @export
 transform_asinh <- function(df, markers = NULL, cofactor = 5, .keep = FALSE){
@@ -292,15 +309,14 @@ transform_asinh <- function(df, markers = NULL, cofactor = 5, .keep = FALSE){
 }
 
 
-#' Linearly shift data to lowest value to zero and all other values are shifted linearly along with it
+#' Linear shift of input data
 #'
-#' @param df The dataframe to transform
-#' @param markers The markers to transform on
-#' @param .keep Keep all channels. If FALSE, channels that are not transformed are removed
-#' @importFrom knitr combine_words
-#' @family preprocess
+#' Linearly shift data to lowest value to zero and all other values are shifted linearly along with it.
+#'
+#' @inheritParams transform_asinh
+#' @family dataprep
 #' @examples
-#' preprocessed <- df %>%
+#' uncorrected <- df %>%
 #'   linear_shift(markers = markers)
 #' @export
 linear_shift <- function(df, markers = NULL, .keep = FALSE){
@@ -323,7 +339,7 @@ linear_shift <- function(df, markers = NULL, .keep = FALSE){
                 ~ dplyr::select_if(., colnames(.) %in% c(markers, non_markers))) %>%
     # Transform all data on those markers
     dplyr::mutate(dplyr::across(dplyr::all_of(markers),
-                     .fns = function(x) {x + (0-min(x))}))
+                     .fns = function(x) x + (0-min(x))))
   return(transformed)
 }
 
@@ -335,12 +351,22 @@ linear_shift <- function(df, markers = NULL, .keep = FALSE){
 
 #' Prepare a directory of .fcs files
 #'
-#' This is a wrapper function that takes you from a directory of .fcs files or a flowset to a transformed dataframe.
+#' This is a wrapper function that takes you from a directory of .fcs files or a flowset to a transformed tibble.
+#'
 #'
 #' @param flowset Optional: Prepare a flowset instead of a directory of fcs files
 #' @inheritParams compile_fcs
 #' @inheritParams convert_flowset
 #' @inheritParams transform_asinh
+#' @family dataprep
+#' @examples
+#' uncorrected <- data_dir %>%
+#'   prepare_data(metadata = "metadata.csv",
+#'   markers = markers,
+#'   filename_col = "FCS_name",
+#'   batch_ids = "Batch",
+#'   condition = "condition",
+#'   down_sample = FALSE)
 #' @export
 prepare_data <- function(data_dir = NULL,
                          flowset = NULL,
@@ -362,17 +388,20 @@ prepare_data <- function(data_dir = NULL,
 
   # Stop if no data is given
   if(is.null(data_dir) & is.null(flowset)) stop("No data given.")
-  # Remove slash at end of data_dir
-  if(data_dir %>% endsWith("/")) data_dir <- data_dir %>% stringr::str_sub(end = -2)
 
   if(!is.null(data_dir)){
+    # Remove slash at end of data_dir
+    if(data_dir %>% endsWith("/")) data_dir <- data_dir %>% stringr::str_sub(end = -2)
+
     # Compile directory to flowset
     flowset <- data_dir %>%
       cyCombine::compile_fcs(pattern = pattern)
 
     # Look for metadata in data_dir
     if(!is.null(metadata)){
-      if(!file.exists(file.path(metadata)) & file.exists(file.path(data_dir, metadata))) metadata <- file.path(data_dir, metadata)
+      if(!"data.frame" %in% class(metadata)){
+        if(!file.exists(file.path(metadata)) & file.exists(file.path(data_dir, metadata))) metadata <- file.path(data_dir, metadata)
+      }
     }
   }
   # Convert flowset to dataframe

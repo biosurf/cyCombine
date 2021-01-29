@@ -2,7 +2,7 @@
 % Please edit documentation in R/01_prepare_data.R
 \name{convert_flowset}
 \alias{convert_flowset}
-\title{Convert a flowset into a workable dataframe}
+\title{Convert a flowSet into a tibble}
 \usage{
 convert_flowset(
   flowset,
@@ -45,8 +45,27 @@ convert_flowset(
 \item{panel_antigen}{Optional: Only used if panel is given. It is the column name in the panel data.frame that contains the antigen names}
 }
 \description{
-Convert a flowset into a workable dataframe
+Use this function to convert a flowSet into the tibble object that the remaining
+functions in cyCombine relies on.
+A tibble is a Tidyverse implementation of a data.frame and can be treated as a such.
+The majority of arguments revolves adding relevant info from the metadata file/object.
+The panel argument is included to adjust the output column names using a panel with channel and antigen columns.
+Bear in mind the column names will be altered with the following:
+\code{stringr::str_remove_all("^\\d+[A-Za-z]+_") \%>\% stringr::str_remove_all("[ _-]")}.
 }
 \examples{
-df <- convert_flowset(flowset = fcs$fcs_raw, sample_ids = fcs$sample_ids, batch_ids = fcs$batch_ids, down_sample = FALSE)
+df <- convert_flowset(flowset = flowset,
+ metadata = file.path(data_dir, "metadata.csv"),
+ filename_col = "FCS_files",
+ sample_ids = "sample_id",
+ batch_ids = "batch_ids",
+ down_sample = FALSE)
 }
+\seealso{
+Other dataprep: 
+\code{\link{compile_fcs}()},
+\code{\link{linear_shift}()},
+\code{\link{prepare_data}()},
+\code{\link{transform_asinh}()}
+}
+\concept{dataprep}

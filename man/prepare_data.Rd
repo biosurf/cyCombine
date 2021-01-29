@@ -60,5 +60,22 @@ prepare_data(
 \item{.keep}{Keep all channels. If FALSE, channels that are not transformed are removed}
 }
 \description{
-This is a wrapper function that takes you from a directory of .fcs files or a flowset to a transformed dataframe.
+This is a wrapper function that takes you from a directory of .fcs files or a flowset to a transformed tibble.
 }
+\examples{
+uncorrected <- data_dir \%>\%
+  prepare_data(metadata = "metadata.csv",
+  markers = markers,
+  filename_col = "FCS_name",
+  batch_ids = "Batch",
+  condition = "condition",
+  down_sample = FALSE)
+}
+\seealso{
+Other dataprep: 
+\code{\link{compile_fcs}()},
+\code{\link{convert_flowset}()},
+\code{\link{linear_shift}()},
+\code{\link{transform_asinh}()}
+}
+\concept{dataprep}
