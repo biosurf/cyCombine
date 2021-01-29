@@ -1,28 +1,35 @@
-#### Batch correction ####
+# Normalization ----
 
 
-#' Batch-wise scaling of data
+#' Batch-wise normalization of data
 #'
-#' This function scales the data in a batch-wise manner.
+#' This function normalizes the data in a batch-wise manner.
 #'   The purpose is to minimize the impact of batch correction when clustering the data prior to batch correction.
+#'   Three normalisation methods are implemented: Z-score, Rank, and Quantile normalization.
+#'   Z-score is recommended in cases where batches from a single study/experiment is merged.
+#'   Rank is recommend in cases where data from different studies/experiments are merged.
+#'   Quantile is not recommended.
 #'
-#' @param df Dataframe with expression values
+#' @param df tibble with expression values
 #' @param markers Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.
-#' @param norm_method Normalization method. Should be either 'rank', 'scale' or 'qnorm'. Default: 'rank'
-#' @param ties.method The method to handle ties, when using rank. Default: "min". See ?rank for other options.
+#' @param norm_method Normalization method. Should be either 'rank', 'scale' or 'qnorm'. Default: 'scale'
+#' @param ties.method The method to handle ties, when using rank. Default: "average". See ?rank for other options.
 #' @family batch
 #' @examples
 #' df_normed <- df %>%
 #'   normalize()
 #' @export
-normalize <- function(df, markers = NULL, norm_method = "rank", ties.method = "min"){
+normalize <- function(df, markers = NULL, norm_method = "scale", ties.method = "min"){
 
+  # Remove case-sensitivity
   norm_method <- norm_method %>% stringr::str_to_lower()
 
+  # Messaging
   if(norm_method == "rank") message("Ranking expression data..")
   else if(norm_method == "scale") message("Scaling expression data..")
   else if(norm_method == "qnorm") {
     # message("Quantile normalizing expression data..")
+    # Run quantile normalization
     df_normed <- quantile_norm(df, markers = markers)
     return(df_normed)
     } else stop("Please use either 'scale', 'rank', or 'qnorm' as normalization method." )
@@ -38,44 +45,15 @@ normalize <- function(df, markers = NULL, norm_method = "rank", ties.method = "m
     dplyr::group_by(.data$batch) %>%
     purrr::when(norm_method == "rank"  ~ dplyr::mutate(., dplyr::across(dplyr::all_of(markers),
                                                                         .fns = ~{
-                                                                          if(sum(.x) == 0) stop("A marker is 0 for an entire batch")
+                                                                          if(sum(.x) == 0) stop("A marker is 0 for an entire batch. Please remove this markers.")
                                                                           rank(.x, ties.method = ties.method) / length(.x)})),
                 norm_method == "scale" ~ dplyr::mutate(., dplyr::across(dplyr::all_of(markers),
                                                                         .fns = ~{
-                                                                          if(sum(.x) == 0) stop("A marker is 0 for an entire batch")
+                                                                          if(sum(.x) == 0) stop("A marker is 0 for an entire batch. Please remove this markers.")
                                                                           scale(.x)}))
     ) %>%
     dplyr::ungroup()
   return(df_normed)
-}
-
-
-#' Batch-wise scaling of data
-#'
-#' This function scales the data in a batch-wise manner.
-#'   The purpose is to minimize the impact of batch correction when clustering the data prior to batch correction.
-#'
-#' @param df Dataframe with expression values
-#' @param markers Markers to scale. If NULL, markers will be found using the \code{\link{get_markers}} function.
-#' @family batch
-#' @examples
-#' df_scaled <- preprocessed %>%
-#'   scale_expr()
-#' @export
-scale_expr <- function(df, markers = NULL){
-  message("Scaling expression data..")
-  if(is.null(markers)){
-    # Get markers
-    markers <- df %>%
-      cyCombine::get_markers()
-  }
-
-  # Scale at marker positions
-  scaled_expr <- df %>%
-    dplyr::group_by(.data$batch) %>%
-    dplyr::mutate_at(dplyr::vars(markers), .funs = scale) %>%
-    dplyr::ungroup()
-  return(scaled_expr)
 }
 
 
@@ -121,72 +99,39 @@ quantile_norm <- function(df, markers = NULL){
   return(qnormed_expr)
 }
 
-#' Batch-wise ranking per marker
-#'
-#' This function ranks and scales the data in a batch-wise manner.
-#'   The purpose is to minimize the impact of batch correction when clustering the data prior to batch correction.
-#'
-#' @param df Dataframe with expression values
-#' @param markers Markers to correct. If NULL, markers will be found using the \code{\link{get_markers}} function.
-#' @family batch
-#' @examples
-#' df_ranked <- preprocessed %>%
-#'   ranking()
-#' @export
-ranking <- function(df, markers = NULL, ties.method = "min") {
-
-  message("Ranking expression data..")
-  if(is.null(markers)){
-    # Get markers
-    markers <- df %>%
-      cyCombine::get_markers()
-  }
 
 
-  # # Ranking of each marker in each cell - reversing order
-  # ranking_per_row <- t(apply(df[,markers], 1, rank, ties.method = 'average')) # Probably wont work that well due to many 0's and consequently assigning 0.1 a large rank...
-
-  # Ranking per batch/sample...? for each marker
-  adj_df <- df
-  for (m in markers) {
-    for (b in unique(df$batch)) {
-      #adj_df[df$batch == b, m] <- scale(rank(df[df$batch == b, m], ties.method = 'average')) # We can discuss the ties.method, we have to normalize within the batch to avoid large batches getting larger max rank
-      adj_df[df$batch == b, m] <- rank(df[df$batch == b, m], ties.method = ties.method) / nrow(df[df$batch == b,]) # We can discuss the ties.method, we have to normalize within the batch to avoid large batches getting larger max rank
-
-      # scaled <- apply(df[df$batch == b, markers], 2, scale)
-      # adj_df[df$batch == b, markers] <- t(apply(scaled, 1, rank))
-
-    }
-  }
-
-  return(adj_df)
-}
-
-
+# Clustering ----
 
 #' Create Self-Organizing Map
 #'
-#' The function uses the kohonen package to create a Self-Organizing Map.
-#'   It is used to segregate the cells for the batch correction to make the correction less affected
+#' The function uses the FlowSOM or kohonen package to create a Self-Organizing Map.
+#'  It is used to segregate the cells for the batch correction to make the correction less affected
 #'  by samples with high abundances of a particular cell type.
+#'  FlowSOM is recommended with Z-score normalization.
+#'  kohonen is recommended with rank normalization
 #'
 #' @importFrom kohonen som somgrid
 #' @importFrom stats predict
-#' @inheritParams scale_expr
-#' @param seed The seed to use when creating the SOM
-#' @param xdim The x-dimension size of the SOM
-#' @param ydim The y-dimension size of the SOM
+#' @importFrom FlowSOM SOM
+#' @inheritParams normalize
+#' @param seed The seed to use when creating the SOM.
+#' @param xdim The x-dimension size of the SOM.
+#' @param ydim The y-dimension size of the SOM.
+#' @param som_type The clustering method to use. Default: "fsom" - running using FlowSOM. Set to "kohonen" to run with using kohonen.
 #' @family batch
 #' @examples
-#' som_ <- preprocessed %>%
+#' labels <- uncorrected %>%
 #'   create_som()
 #' @export
+#' @return A vector of clustering labels
 create_som <- function(df,
                        markers = NULL,
                        som_type = "fsom",
                        seed = 473,
                        xdim = 8,
                        ydim = 8){
+  # Detect missing packages
   if(som_type == "fsom") missing_package("FlowSOM", "Bioc") else missing_package("kohonen")
 
   if(is.null(markers)){
@@ -195,25 +140,20 @@ create_som <- function(df,
       cyCombine::get_markers()
   }
 
-
-
-  # Predict runtime
-  pred <- stats::predict(model, tibble::tibble("Size" = nrow(df)))
-
-  # 10x10 SOM grid on overlapping markers, extract clustering per cell
+  # SOM grid on overlapping markers, extract clustering per cell
   message("Creating SOM grid..")
   set.seed(seed)
-  label <- df %>%
+  labels <- df %>%
     dplyr::select(markers) %>%
     as.matrix() %>%
     purrr::when(som_type == "fsom" ~ FlowSOM::SOM(., xdim = xdim, ydim = ydim)$mapping[, 1],
                 TRUE ~ kohonen::som(., grid = kohonen::somgrid(xdim = xdim, ydim = ydim),
                                        dist.fcts = "euclidean")$unit.classif)
 
-  return(label)
+  return(labels)
 }
 
-#' Compute flowsom clustering
+#' Compute flowsom clustering (Deprecated)
 #' @importFrom FlowSOM SOM
 #' @export
 create_fsom <- function(df,
@@ -247,22 +187,26 @@ create_fsom <- function(df,
 }
 
 
+# Batch correction ----
 
 #' Correct data using ComBat
 #'
-#' This function computes the batch correction on the preprocessed data using the ComBat algorithm.
+#' Compute the batch correction on the data using the ComBat algorithm.
+#'  Define a covariate, either as a character vector or name of tibble column.
+#'  The covariate should preferable be the cell condition types, but can be any column that infers heteroneity in the data.
+#'  The function assumes that the batch information is in the "batch" column and the data contains a "sample" column with sample information.
 #'
 #' @importFrom sva ComBat
 #' @importFrom stats model.matrix
 #' @param label The cluster or cell type label. Either as a column name or vector.
-#' @param covar The covariate ComBat should use. Can be a vector or a column name in the input datafrome.
+#' @param covar The covariate ComBat should use. Can be a vector or a column name in the input tibble.
 #'   If NULL, no covar will be used
 #' @param parametric Default: TRUE. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used.
-#' @inheritParams scale_expr
+#' @inheritParams normalize
 #' @family batch
 #' @examples
-#' corrected <- preprocesed %>%
-#'   correct_data(label = som_$unit.classif, covar = "condition")
+#' corrected <- uncorrected %>%
+#'   correct_data(label = labels, covar = "condition")
 #' @export
 correct_data <- function(df,
                          label,
@@ -270,6 +214,9 @@ correct_data <- function(df,
                          markers = NULL,
                          parametric = TRUE){
   message("Batch correcting data..")
+  # Check for batch column
+  check_colname(colnames(df), "batch", "df")
+  check_colname(colnames(df), "sample", "df")
   if (is.null(markers)){
     # Get markers
     markers <- df %>%
@@ -307,24 +254,24 @@ correct_data <- function(df,
       num_batches <- df$batch %>%
         unique() %>%
         length()
+      lab <- df[[label]][1] # Current label group
       if(num_batches == 1){
-        lab <- df[[label]][1]
         batch <- df$batch[1]
         message(paste("Label group", lab, "only contains cells from batch", batch))
-        df <- df %>% select(-c(label))
+        df <- df %>% select(-label) # Not removed from output, but removed here to prevent bug
         return(df)
       }
-      message(paste("Correcting Label group", df[[label]][1]))
+      message(paste("Correcting Label group", lab))
       # Calculate number of covars in the node
       if(!is.null(covar)){
         num_covar <- df[[covar]] %>%
           unique() %>%
           length()
 
+        # If a node is heavily skewed to a single covar, it should be treated as having only 1 covar
         covar_counts <- df %>%
           count(.data$batch, .data[[covar]]) %>%
           pull(.data$n)
-
         if(sum(covar_counts) < max(covar_counts) + num_covar*5){
           num_covar <- 1
         }
@@ -347,10 +294,10 @@ correct_data <- function(df,
         tibble::as_tibble() %>%
         dplyr::mutate(batch = df$batch,
                       sample = df$sample,
-                      id = df$id) %>%
-        # Only add covar column, if it is not null
-        purrr::when(!is.null(covar) ~ dplyr::mutate(., covar = df[[covar]]),
-                    ~ .)
+                      id = df$id)
+      # Only add covar column, if it is not null
+      if(!is.null(covar)) ComBat_output[[covar]] <- df[[covar]]
+
       return(ComBat_output)
     }) %>%
     dplyr::ungroup() %>%
@@ -367,11 +314,20 @@ correct_data <- function(df,
 }
 
 #' Alternate correction
+#'
+#' This function allows running ComBat with a custom covar mod matrix.
+#'  A model could look like \code{stats::model.matrix(~df$covar+df$label)}
+#'
+#' @inheritParams correct_data
+#' @param mod Covariate model to use in ComBat.
+#' @examples
+#' corrected <- uncorrected %>%
+#'   correct_data(mod = stats::model.matrix(~df$covar+df$label))
 #' @export
 correct_data_alt <- function(df,
-                         mod,
-                         markers = NULL,
-                         parametric = TRUE){
+                             mod,
+                             markers = NULL,
+                             parametric = TRUE){
   message("Batch correcting data..")
   if (is.null(markers)){
     # Get markers
@@ -405,17 +361,23 @@ correct_data_alt <- function(df,
 }
 
 
-#' Run batch correction on preprocessed data
+# Wrapper ----
+
+#' Run batch correction on data
 #'
 #' This is a wrapper function for the cyCombine batch correction workflow.
-#'   To run the workflow manually, type "batch_correct" to see the source code of this wrapper and follow along.
+#'  To run the workflow manually, type "batch_correct" to see the source code of this wrapper and follow along.
+#'  som_type = "fsom" is recommended when merging batches from a single study/experiment.
+#'  som_type = "kohonen is recommended when merging data from different studies/experiments.
 #'
 #' @inheritParams create_som
 #' @inheritParams correct_data
 #' @inheritParams normalize
-#' @param som_type Default: "fsom". Determine which clustering function to use. FlowSOM or Kohonen. "fsom" sets to FlowSOM and anything else is Kohonen.
-#' @param preprocessed The preprocessed dataframe to run batch correction on
 #' @family batch
+#' @examples
+#' corrected <- uncorrected %>%
+#'   batch_correct(markers = markers,
+#'   covar = "condition")
 #' @export
 batch_correct <- function(df,
                           label = NULL,

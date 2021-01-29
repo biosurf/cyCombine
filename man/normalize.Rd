@@ -2,22 +2,26 @@
 % Please edit documentation in R/02_batch_correct.R
 \name{normalize}
 \alias{normalize}
-\title{Batch-wise scaling of data}
+\title{Batch-wise normalization of data}
 \usage{
-normalize(df, markers = NULL, norm_method = "rank", ties.method = "min")
+normalize(df, markers = NULL, norm_method = "scale", ties.method = "min")
 }
 \arguments{
-\item{df}{Dataframe with expression values}
+\item{df}{tibble with expression values}
 
 \item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 
-\item{norm_method}{Normalization method. Should be either 'rank', 'scale' or 'qnorm'. Default: 'rank'}
+\item{norm_method}{Normalization method. Should be either 'rank', 'scale' or 'qnorm'. Default: 'scale'}
 
-\item{ties.method}{The method to handle ties, when using rank. Default: "min". See ?rank for other options.}
+\item{ties.method}{The method to handle ties, when using rank. Default: "average". See ?rank for other options.}
 }
 \description{
-This function scales the data in a batch-wise manner.
+This function normalizes the data in a batch-wise manner.
 The purpose is to minimize the impact of batch correction when clustering the data prior to batch correction.
+Three normalisation methods are implemented: Z-score, Rank, and Quantile normalization.
+Z-score is recommended in cases where batches from a single study/experiment is merged.
+Rank is recommend in cases where data from different studies/experiments are merged.
+Quantile is not recommended.
 }
 \examples{
 df_normed <- df \%>\%
@@ -28,8 +32,6 @@ Other batch:
 \code{\link{batch_correct}()},
 \code{\link{correct_data}()},
 \code{\link{create_som}()},
-\code{\link{quantile_norm}()},
-\code{\link{ranking}()},
-\code{\link{scale_expr}()}
+\code{\link{quantile_norm}()}
 }
 \concept{batch}

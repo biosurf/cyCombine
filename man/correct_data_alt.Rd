@@ -6,6 +6,20 @@
 \usage{
 correct_data_alt(df, mod, markers = NULL, parametric = TRUE)
 }
+\arguments{
+\item{df}{tibble with expression values}
+
+\item{mod}{Covariate model to use in ComBat.}
+
+\item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
+
+\item{parametric}{Default: TRUE. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used.}
+}
 \description{
-Alternate correction
+This function allows running ComBat with a custom covar mod matrix.
+A model could look like \code{stats::model.matrix(~df$covar+df$label)}
+}
+\examples{
+corrected <- uncorrected \%>\%
+  correct_data(mod = stats::model.matrix(~df$covar+df$label))
 }

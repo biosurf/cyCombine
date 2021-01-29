@@ -14,23 +14,30 @@ create_som(
 )
 }
 \arguments{
-\item{df}{Dataframe with expression values}
+\item{df}{tibble with expression values}
 
-\item{markers}{Markers to scale. If NULL, markers will be found using the \code{\link{get_markers}} function.}
+\item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 
-\item{seed}{The seed to use when creating the SOM}
+\item{som_type}{The clustering method to use. Default: "fsom" - running using FlowSOM. Set to "kohonen" to run with using kohonen.}
 
-\item{xdim}{The x-dimension size of the SOM}
+\item{seed}{The seed to use when creating the SOM.}
 
-\item{ydim}{The y-dimension size of the SOM}
+\item{xdim}{The x-dimension size of the SOM.}
+
+\item{ydim}{The y-dimension size of the SOM.}
+}
+\value{
+A vector of clustering labels
 }
 \description{
-The function uses the kohonen package to create a Self-Organizing Map.
+The function uses the FlowSOM or kohonen package to create a Self-Organizing Map.
 It is used to segregate the cells for the batch correction to make the correction less affected
 by samples with high abundances of a particular cell type.
+FlowSOM is recommended with Z-score normalization.
+kohonen is recommended with rank normalization
 }
 \examples{
-som_ <- preprocessed \%>\%
+labels <- uncorrected \%>\%
   create_som()
 }
 \seealso{
@@ -38,8 +45,6 @@ Other batch:
 \code{\link{batch_correct}()},
 \code{\link{correct_data}()},
 \code{\link{normalize}()},
-\code{\link{quantile_norm}()},
-\code{\link{ranking}()},
-\code{\link{scale_expr}()}
+\code{\link{quantile_norm}()}
 }
 \concept{batch}

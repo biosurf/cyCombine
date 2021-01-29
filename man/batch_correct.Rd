@@ -2,7 +2,7 @@
 % Please edit documentation in R/02_batch_correct.R
 \name{batch_correct}
 \alias{batch_correct}
-\title{Run batch correction on preprocessed data}
+\title{Run batch correction on data}
 \usage{
 batch_correct(
   df,
@@ -19,42 +19,45 @@ batch_correct(
 )
 }
 \arguments{
-\item{df}{Dataframe with expression values}
+\item{df}{tibble with expression values}
 
 \item{label}{The cluster or cell type label. Either as a column name or vector.}
 
-\item{xdim}{The x-dimension size of the SOM}
+\item{xdim}{The x-dimension size of the SOM.}
 
-\item{ydim}{The y-dimension size of the SOM}
+\item{ydim}{The y-dimension size of the SOM.}
 
 \item{parametric}{Default: TRUE. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used.}
 
-\item{seed}{The seed to use when creating the SOM}
+\item{seed}{The seed to use when creating the SOM.}
 
-\item{covar}{The covariate ComBat should use. Can be a vector or a column name in the input datafrome.
+\item{covar}{The covariate ComBat should use. Can be a vector or a column name in the input tibble.
 If NULL, no covar will be used}
 
-\item{markers}{Markers to scale. If NULL, markers will be found using the \code{\link{get_markers}} function.}
+\item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 
-\item{norm_method}{Normalization method. Should be either 'rank', 'scale' or 'qnorm'. Default: 'rank'}
+\item{norm_method}{Normalization method. Should be either 'rank', 'scale' or 'qnorm'. Default: 'scale'}
 
-\item{ties.method}{The method to handle ties, when using rank. Default: "min". See ?rank for other options.}
+\item{ties.method}{The method to handle ties, when using rank. Default: "average". See ?rank for other options.}
 
-\item{som_type}{Default: "fsom". Determine which clustering function to use. FlowSOM or Kohonen. "fsom" sets to FlowSOM and anything else is Kohonen.}
-
-\item{preprocessed}{The preprocessed dataframe to run batch correction on}
+\item{som_type}{The clustering method to use. Default: "fsom" - running using FlowSOM. Set to "kohonen" to run with using kohonen.}
 }
 \description{
 This is a wrapper function for the cyCombine batch correction workflow.
 To run the workflow manually, type "batch_correct" to see the source code of this wrapper and follow along.
+som_type = "fsom" is recommended when merging batches from a single study/experiment.
+som_type = "kohonen is recommended when merging data from different studies/experiments.
+}
+\examples{
+corrected <- uncorrected \%>\%
+  batch_correct(markers = markers,
+  covar = "condition")
 }
 \seealso{
 Other batch: 
 \code{\link{correct_data}()},
 \code{\link{create_som}()},
 \code{\link{normalize}()},
-\code{\link{quantile_norm}()},
-\code{\link{ranking}()},
-\code{\link{scale_expr}()}
+\code{\link{quantile_norm}()}
 }
 \concept{batch}

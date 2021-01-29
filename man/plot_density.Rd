@@ -12,8 +12,12 @@ plot_density(
   y = "batch",
   xlim = 10,
   dataset_names = NULL,
-  ncol = 6
+  ncol = 6,
+  format = 1
 )
+}
+\arguments{
+\item{format}{Plotting format (1 = 1 row per batch, 2 = all batches in same row.)}
 }
 \description{
 Density ridges for two sets

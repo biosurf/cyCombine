@@ -2,10 +2,10 @@
 % Please edit documentation in R/02_batch_correct.R
 \name{create_fsom}
 \alias{create_fsom}
-\title{Compute flowsom clustering}
+\title{Compute flowsom clustering (Deprecated)}
 \usage{
 create_fsom(df, markers = NULL, seed = 473, xdim = 8, ydim = 8)
 }
 \description{
-Compute flowsom clustering
+Compute flowsom clustering (Deprecated)
 }
