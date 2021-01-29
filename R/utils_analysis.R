@@ -3,14 +3,14 @@
 #'
 #' This function only runs under the assumption that the batch correction has been run with the cyCombine workflow in mind.
 #'   Some result preparation can be necessary, if cyCombine was not used during batch correction.
-#'   This function assumes that the uncorrected data us stored under the name "{data_dir}/{tool}_{data}{variant}{uncorrected_extension}.RDS" and
-#'   the corrected data is stored with the name "{data_dir}/{tool}_{data}{variant}{corrected_extension}.RDS".
+#'   This function assumes that the uncorrected data us stored under the name \code{"{data_dir}/{tool}_{data}{variant}{uncorrected_extension}.RDS"} and
+#'   the corrected data is stored with the name \code{"{data_dir}/{tool}_{data}{variant}{corrected_extension}.RDS"}.
 #'   The analysis currently encompass marker-wise density plots, UMAP of corrected vs uncorrected, and Earth Movers Distance.
 #'
 #' @param tool The name of the tool used to batch correct
 #' @param data The name of the data used
-#' @param data_dir The location of the preprocessed and corrected data
-#' @param uncorrected_extension The extension used to name the uncorrected data. Default: "_preprocessed"
+#' @param data_dir The location of the uncorrected and corrected data
+#' @param uncorrected_extension The extension used to name the uncorrected data. Default: "_uncorrected
 #' @param corrected_extension The extension used to name the corrected data. Default: "_corrected"
 #' @param variant Optional: A parameter to set a variant name of an experiment
 #' @param use_cycombine_uncor If TRUE, the uncorrected data made by cyCombine will be used.
@@ -25,13 +25,13 @@
 #'
 #' @examples
 #' run_analysis(tool = "cycombine",
-#' data = "FR-FCM-ZY34",
-#' data_dir = "_data")
-#' run_analysis(tool = "cycombine",
-#' data = "FR-FCM-ZY34",
-#' data_dir = "_data",
-#' variant = "_p3",
-#' panel = "/attachments/MC_panel3.xlsx")
+#'  data = "dfci1",
+#'  data_dir = "_data")
+#'  run_analysis(tool = "cycombine",
+#'  data = "FR-FCM-ZY34",
+#'  data_dir = "_data",
+#'  variant = "_p3",
+#'  panel = "/attachments/MC_panel3.xlsx")
 #' @export
 run_analysis <- function(tool,
                          data,
@@ -81,9 +81,9 @@ run_analysis <- function(tool,
 
   # Load data
   if(use_cycombine_uncor){
-    preprocessed <- readRDS(paste0(data_dir, "/cycombine_", data, uncorrected_variant, uncorrected_extension, ".RDS"))
+    uncorrected <- readRDS(paste0(data_dir, "/cycombine_", data, uncorrected_variant, uncorrected_extension, ".RDS"))
   } else{
-    preprocessed <- readRDS(paste0(projdir, uncorrected_extension, ".RDS"))
+    uncorrected <- readRDS(paste0(projdir, uncorrected_extension, ".RDS"))
   }
   corrected <- readRDS(paste0(projdir, corrected_extension, ".RDS"))
 
@@ -91,7 +91,7 @@ run_analysis <- function(tool,
   # Get markers
   if(is.null(markers)){
     if(is.null(panel)){
-      markers <- cyCombine::get_markers(preprocessed)
+      markers <- cyCombine::get_markers(uncorrected)
     } else{
       markers <- panel %>%
         dplyr::filter(marker_class %!in% c("none")) %>%
@@ -110,33 +110,27 @@ run_analysis <- function(tool,
     message("Creating density plots..")
     # Density plots
     suppressMessages(
-      cyCombine::plot_density(uncorrected = preprocessed,
+      cyCombine::plot_density(uncorrected = uncorrected,
                               corrected = corrected,
                               markers = markers,
-                              filename = paste0("figs/", project, "_densities_withcovar.png"))
+                              filename = paste0("figs/", project, "_densities.png"))
     )
   }
-  # suppressMessages(
-  # plot_density(uncorrected = preprocessed,
-  #              corrected = corrected,
-  #              markers = markers,
-  #              filename = paste0("figs/", project, "_densities_withcovar_label.png"),
-  #              y = "label")
-  # )
+
   # UMAP
   if(any(segment %in% c("", "umap"))){
     message("Creating UMAPs..")
 
     # Down-sample
     set.seed(seed)
-    preprocessed_sliced <- preprocessed %>%
+    uncorrected_sliced <- uncorrected %>%
       dplyr::slice_sample(n = umap_size)
 
     corrected_sliced <- corrected %>%
-      dplyr::semi_join(preprocessed_sliced, by = "id")
+      dplyr::semi_join(uncorrected_sliced, by = "id")
 
     # UMAP plot uncorrected
-    umap1 <- preprocessed_sliced %>%
+    umap1 <- uncorrected_sliced %>%
       cyCombine::plot_dimred(name = "uncorrected", type = "umap", markers = markers)
 
     # UMAP plot corrected
@@ -172,17 +166,20 @@ run_analysis <- function(tool,
     }
     message("Adding labels to data..")
 
-    if(celltype_col %!in% colnames(preprocessed)){
-      preprocessed <- corrected %>%
+    if(celltype_col %!in% colnames(uncorrected)){
+      uncorrected <- corrected %>%
         dplyr::select(id, all_of(celltype_col)) %>%
-        dplyr::left_join(preprocessed, by = "id")
+        dplyr::left_join(uncorrected, by = "id")
     }
 
 
 
     message("Evaluating Earth Movers Distance..")
-    emd_val <- preprocessed %>%
-      cyCombine::evaluate_emd(corrected, binSize = binSize, markers = markers, cell_col = celltype_col)
+    emd_val <- uncorrected %>%
+      cyCombine::evaluate_emd(corrected,
+                              binSize = binSize,
+                              markers = markers,
+                              cell_col = celltype_col)
 
     message("Saving results..")
     ggsave(filename = paste0("figs/", project, "_violin.png"),
