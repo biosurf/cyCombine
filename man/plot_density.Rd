@@ -42,3 +42,12 @@ Compare densities between each batch both before and after correction
 plot_density(uncorrected, corrected, y = 'batch', filename = 'my/dir/batchcor_plot.pdf')
 plot_density(imputed1, imputed2, y = 'Type', dataset_names = paste('Panel', 1:2), filename = 'my/dir/merging_plot.pdf')
 }
+\seealso{
+Other plot: 
+\code{\link{plot_dimred_full}()},
+\code{\link{plot_dimred}()},
+\code{\link{plot_save_four}()},
+\code{\link{plot_save_two}()},
+\code{\link{plot_umap_labels}()}
+}
+\concept{plot}

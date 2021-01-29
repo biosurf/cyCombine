@@ -18,6 +18,7 @@
 #' @param xlim The limit of the x axis
 #' @param dataset_names Change the names of the datasets from Uncorrected and Corrected to something else. Format: c("Uncorrected", "Corrected")
 #' @param ncol Number of density plots in a single row of plots. Default: 6
+#' @family plot
 #' @examples
 #' plot_density(uncorrected, corrected, y = 'batch', filename = 'my/dir/batchcor_plot.pdf')
 #' plot_density(imputed1, imputed2, y = 'Type', dataset_names = paste('Panel', 1:2), filename = 'my/dir/merging_plot.pdf')
@@ -124,6 +125,7 @@ plot_density <- function(uncorrected,
 #' @param markers Markers to include in dimensionality reduction
 #' @param seed For reproducibility
 #' @param return_coord Return coordinates and not just the plot
+#' @family plot
 #' @examples
 #' uncor_umap <- plot_dimred(uncorrected, "Uncorrected", markers = markers)
 #' @export
@@ -231,6 +233,7 @@ plot_dimred <- function(df,
 #' Dimensionality reduction plots - colored with labels, batches and marker expression
 #' @inheritParams plot_dimred
 #' @param out_dir Directory to put output figures
+#' @family plot
 #' @export
 plot_dimred_full <- function(df,
                              name,
@@ -327,6 +330,7 @@ plot_dimred_full <- function(df,
 # @importFrom uwot umap
 #' Dimensionality reduction plots for a two-batch dataset before and after correction - colored by batch and label
 #' @inheritParams plot_dimred
+#' @family plot
 #' @export
 plot_umap_labels <- function(uncorrected,
                              corrected,
@@ -466,6 +470,7 @@ plot_umap_labels <- function(uncorrected,
 #' @param plot1 Left plot in output
 #' @param plot2 Right plot in output
 #' @param filename Filename of output
+#' @family plot
 #' @export
 plot_save_two <- function(plot1, plot2, filename) {
   missing_package("cowplot", "CRAN")
@@ -481,6 +486,7 @@ plot_save_two <- function(plot1, plot2, filename) {
 #' @param plot3 Lower left plot in output
 #' @param plot4 Lower right plot in output
 #' @param filename Filename of output
+#' @family plot
 #' @export
 plot_save_four <- function(plot1, plot2, plot3, plot4, filename) {
   missing_package("cowplot", "CRAN")

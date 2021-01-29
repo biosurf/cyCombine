@@ -9,6 +9,7 @@ detect_batch_effect(
   out_dir,
   downsample = NULL,
   som_type = "fsom",
+  norm_method = "scale",
   xdim = 8,
   ydim = 8,
   seed = 382,
@@ -26,6 +27,8 @@ detect_batch_effect(
 \item{downsample}{Number of cells to include in detection. If not specified all cells will be used. One should be careful with the downsampling here as too strong downsampling leads to spurious results.}
 
 \item{som_type}{Type of SOM calculation (options = 'fsom' and 'kohonen')}
+
+\item{norm_method}{Normalization methods (options = 'scale' and 'rank')}
 
 \item{xdim}{Grid size in x-axis for SOM (default = 8)}
 
@@ -48,3 +51,8 @@ Full function for detection of batch effects using cluster proportions
 detect_batch_effect(df = exprs)
 detect_batch_effect(df = exprs, xdim = 8, ydim = 8, seed = 382, markers = c('CD3', 'CD4', 'CD8a', 'CD20', 'CD19', 'CD56', 'CD33'))
 }
+\seealso{
+Other detect_batch_effect: 
+\code{\link{detect_batch_effect_express}()}
+}
+\concept{detect_batch_effect}

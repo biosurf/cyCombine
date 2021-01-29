@@ -30,3 +30,8 @@ A matrix is returned containing the EMD for each marker for each group of cells.
 \examples{
 emd <- compute_emd(df, markers = markers)
 }
+\seealso{
+Other emd: 
+\code{\link{evaluate_emd}()}
+}
+\concept{emd}

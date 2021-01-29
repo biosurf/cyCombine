@@ -34,3 +34,8 @@ evaluate_emd(
 The function computes the Earth Mover's Distance of the two given datasets.
 Then the reduction is calculated as the relative change in total EMD.
 }
+\seealso{
+Other emd: 
+\code{\link{compute_emd}()}
+}
+\concept{emd}

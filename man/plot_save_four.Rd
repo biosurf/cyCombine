@@ -20,3 +20,12 @@ plot_save_four(plot1, plot2, plot3, plot4, filename)
 \description{
 Save four plots aligned with cowplot
 }
+\seealso{
+Other plot: 
+\code{\link{plot_density}()},
+\code{\link{plot_dimred_full}()},
+\code{\link{plot_dimred}()},
+\code{\link{plot_save_two}()},
+\code{\link{plot_umap_labels}()}
+}
+\concept{plot}

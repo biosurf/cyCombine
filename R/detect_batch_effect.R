@@ -7,13 +7,12 @@
 #'
 #' @importFrom readxl read_xlsx
 #' @importFrom readr read_csv
-#' @import dplyr
 #' @importFrom magrittr %>%
 #' @importFrom flowCore read.flowSet fsApply
 #' @param df Tibble containing the expression data and batch information. See prepare_data.
 #' @param downsample Number of cells to include in detection. If not specified all cells will be used.
 #' @param out_dir Directory for plot output
-#'
+#' @family detect_batch_effect
 #' @examples
 #' detect_batch_effect_express(df = exprs, out_dir = '/my/cycombine/dir/')
 #' detect_batch_effect_express(df = exprs, downsample = 100000, out_dir = '/my/cycombine/dir/')
@@ -24,6 +23,7 @@ detect_batch_effect_express <- function(df,
                                         seed = 472) {
 
   missing_package("stats")
+  missing_package("Matrix")
   message('Starting the quick(er) detection of batch effects.')
 
 
@@ -40,7 +40,7 @@ detect_batch_effect_express <- function(df,
     message(paste0('Downsampling to ', downsample, ' cells.'))
     if (downsample <= nrow(df)) {
       set.seed(seed)
-      df <- df %>% sample_n(downsample)
+      df <- df %>% dplyr::slice_sample(n = downsample)
     } else {
       warning('Specified downsample parameter exceeds the number of cells in the dataset.')
     }
@@ -58,8 +58,11 @@ detect_batch_effect_express <- function(df,
   p <- list()
   for (c in 1:length(all_markers)) {
 
-    p[[c]] <- ggplot2::ggplot(df, aes_string(x = all_markers[c], y = "batch")) +
-      ggridges::geom_density_ridges(aes(color = batch, fill = batch), alpha = 0.4, quantile_lines = TRUE) +
+    p[[c]] <- ggplot2::ggplot(df, aes_string(x = all_markers[c],
+                                             y = "batch")) +
+      ggridges::geom_density_ridges(aes(color = batch, fill = batch),
+                                    alpha = 0.4,
+                                    quantile_lines = TRUE) +
       ggplot2::theme_bw()
   }
 
@@ -153,7 +156,7 @@ detect_batch_effect_express <- function(df,
     dplyr::group_by(sample) %>%
     dplyr::summarise_at(get_markers(df), median)
 
-  dist_mat <- as.matrix(dist(median_expr[,all_markers]))   # Euclidean distance
+  dist_mat <- as.matrix(dist(median_expr[, all_markers]))   # Euclidean distance
   rownames(dist_mat) <- colnames(dist_mat) <- median_expr$sample
 
   mds <- as.data.frame(stats::cmdscale(dist_mat, k = 2))
@@ -161,8 +164,9 @@ detect_batch_effect_express <- function(df,
   mds$batch <- as.factor(df$batch[match(mds$sample, df$sample)])
 
   p <- ggplot2::ggplot(mds, aes(V1, V2)) +
-    ggplot2::geom_point(aes(colour=batch), size=2) +
-    ggplot2::labs(x="MDS1", y="MDS2", title="MDS plot") + ggplot2::theme_bw()
+    ggplot2::geom_point(aes(colour = batch), size = 2) +
+    ggplot2::labs(x = "MDS1", y = "MDS2", title = "MDS plot") +
+    ggplot2::theme_bw()
 
   suppressMessages(ggplot2::ggsave(p, filename = paste0(out_dir, '/MDS_per_batch.png')))
   message(paste0('Saved MDS plot here: ', out_dir, '/MDS_per_batch.png'))
@@ -179,6 +183,7 @@ detect_batch_effect_express <- function(df,
 #' @param df Tibble containing the expression data and batch information. See prepare_data.
 #' @param downsample Number of cells to include in detection. If not specified all cells will be used. One should be careful with the downsampling here as too strong downsampling leads to spurious results.
 #' @param som_type Type of SOM calculation (options = 'fsom' and 'kohonen')
+#' @param norm_method Normalization methods (options = 'scale' and 'rank')
 #' @param xdim Grid size in x-axis for SOM (default = 8)
 #' @param ydim Grid size in y-axis for SOM (default = 8)
 #' @param seed Random seed for reproducibility
@@ -187,7 +192,7 @@ detect_batch_effect_express <- function(df,
 #' @param label_col If existing labels should be used, this column must be present in the data
 #' @param out_dir Directory for plot output
 #' @param name Name of dataset - used for plot titles
-#'
+#' @family detect_batch_effect
 #' @examples
 #' detect_batch_effect(df = exprs)
 #' detect_batch_effect(df = exprs, xdim = 8, ydim = 8, seed = 382, markers = c('CD3', 'CD4', 'CD8a', 'CD20', 'CD19', 'CD56', 'CD33'))
@@ -196,6 +201,7 @@ detect_batch_effect <- function(df,
                                 out_dir,
                                 downsample = NULL,
                                 som_type = "fsom",
+                                norm_method = "scale",
                                 xdim = 8,
                                 ydim = 8,
                                 seed = 382,
@@ -233,7 +239,7 @@ detect_batch_effect <- function(df,
     message('Determining new cell type labels using SOM:')
     labels <- df %>%
       cyCombine::normalize(markers = markers,
-                           norm_method = "scale") %>%
+                           norm_method = norm_method) %>%
       cyCombine::create_som(markers = markers,
                             som_type = som_type,
                             seed = seed,
@@ -263,7 +269,7 @@ detect_batch_effect <- function(df,
     marker_emd <- lapply(marker_emd, function(x) {Matrix::forceSymmetric(x, uplo='U')})
 
     marker_emd <- do.call(rbind, marker_emd)
-    marker_emd <- colMeans(as.matrix(marker_emd), na.rm = T)
+    marker_emd <- Matrix::colMeans(as.matrix(marker_emd), na.rm = T)
 
     # print(m)
     # print(marker_emd)
@@ -279,7 +285,7 @@ detect_batch_effect <- function(df,
 
   # Look for cluster over- and under-representation
   counts <- table(df$batch, df$label)
-  perc <- (counts / rowSums(counts))*100
+  perc <- (counts / Matrix::rowSums(counts))*100
 
   # use the Dixon test to look for outliers (test whether a single low or high value is an outlier)
   out_cl <- which(stats::p.adjust(apply(perc, 2, function(x) {outliers::dixon.test(x, opposite=F)$p.value}), method = 'BH') < 0.05 | p.adjust(apply(perc, 2, function(x) {outliers::dixon.test(x, opposite=T)$p.value}), method = 'BH') < 0.05)
@@ -309,7 +315,12 @@ detect_batch_effect <- function(df,
   }
 
 
-  cyCombine::plot_dimred_full(df, name, type = "umap", markers = NULL, seed = 473, out_dir)
+  cyCombine::plot_dimred_full(df,
+                              name,
+                              type = "umap",
+                              markers = NULL,
+                              seed = 473,
+                              out_dir)
 
   message(paste0('Saved UMAP plot for batches and labels here: ', out_dir, ' as UMAP_batches_labels.png.'))
   message(paste0('Saved UMAP plot colored by each marker in directory: ', out_dir, '/UMAP_markers.\n'))

@@ -29,3 +29,12 @@ plot_dimred_full(
 \description{
 Dimensionality reduction plots - colored with labels, batches and marker expression
 }
+\seealso{
+Other plot: 
+\code{\link{plot_density}()},
+\code{\link{plot_dimred}()},
+\code{\link{plot_save_four}()},
+\code{\link{plot_save_two}()},
+\code{\link{plot_umap_labels}()}
+}
+\concept{plot}

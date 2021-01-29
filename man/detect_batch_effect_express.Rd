@@ -20,3 +20,8 @@ Quicker function for detection of batch effects
 detect_batch_effect_express(df = exprs, out_dir = '/my/cycombine/dir/')
 detect_batch_effect_express(df = exprs, downsample = 100000, out_dir = '/my/cycombine/dir/')
 }
+\seealso{
+Other detect_batch_effect: 
+\code{\link{detect_batch_effect}()}
+}
+\concept{detect_batch_effect}

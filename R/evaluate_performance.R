@@ -11,6 +11,7 @@
 #' @param batch_col Column name of df that contains batch numbers
 #' @param markers Vector of the markers to calculate EMD for. If NULL, \code{\link{get_markers}} will be used to find markers
 #' @importFrom graphics hist
+#' @family emd
 #' @examples
 #' emd <- compute_emd(df, markers = markers)
 #' @export
@@ -98,6 +99,7 @@ compute_emd <- function(df,
 #' @param uncorrected Dataframe of uncorrected data
 #' @param corrected Dataframe of corrected data
 #' @param plots If TRUE, a violin and scatter plot of the emds will be returned
+#' @family emd
 #' @export
 evaluate_emd <- function(uncorrected,
                          corrected,

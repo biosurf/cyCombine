@@ -35,3 +35,12 @@ Dimensionality reduction plot
 \examples{
 uncor_umap <- plot_dimred(uncorrected, "Uncorrected", markers = markers)
 }
+\seealso{
+Other plot: 
+\code{\link{plot_density}()},
+\code{\link{plot_dimred_full}()},
+\code{\link{plot_save_four}()},
+\code{\link{plot_save_two}()},
+\code{\link{plot_umap_labels}()}
+}
+\concept{plot}
