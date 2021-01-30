@@ -7,8 +7,9 @@
 create_som(
   df,
   markers = NULL,
-  som_type = "fsom",
+  som_type = "kohonen",
   seed = 473,
+  rlen = 10,
   xdim = 8,
   ydim = 8
 )
@@ -18,9 +19,11 @@ create_som(
 
 \item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 
-\item{som_type}{The clustering method to use. Default: "fsom" - running using FlowSOM. Set to "kohonen" to run with using kohonen.}
+\item{som_type}{The clustering method to use. Default: "kohonen" - running using kohonen Set to "fsom" to run with using FlowSOM}
 
 \item{seed}{The seed to use when creating the SOM.}
+
+\item{rlen}{Number of times the data is presented to the SOM network}
 
 \item{xdim}{The x-dimension size of the SOM.}
 

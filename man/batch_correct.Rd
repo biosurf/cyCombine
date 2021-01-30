@@ -9,13 +9,14 @@ batch_correct(
   label = NULL,
   xdim = 8,
   ydim = 8,
+  rlen = 10,
   parametric = TRUE,
   seed = 473,
   covar = NULL,
   markers = NULL,
   norm_method = "scale",
   ties.method = "average",
-  som_type = "fsom"
+  som_type = "kohonen"
 )
 }
 \arguments{
@@ -26,6 +27,8 @@ batch_correct(
 \item{xdim}{The x-dimension size of the SOM.}
 
 \item{ydim}{The y-dimension size of the SOM.}
+
+\item{rlen}{Number of times the data is presented to the SOM network}
 
 \item{parametric}{Default: TRUE. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used.}
 
@@ -40,7 +43,7 @@ If NULL, no covar will be used}
 
 \item{ties.method}{The method to handle ties, when using rank. Default: "average". See ?rank for other options.}
 
-\item{som_type}{The clustering method to use. Default: "fsom" - running using FlowSOM. Set to "kohonen" to run with using kohonen.}
+\item{som_type}{The clustering method to use. Default: "kohonen" - running using kohonen Set to "fsom" to run with using FlowSOM}
 }
 \description{
 This is a wrapper function for the cyCombine batch correction workflow.
