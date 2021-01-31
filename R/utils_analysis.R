@@ -22,6 +22,7 @@
 #' @param segment Optional: Run only a specific segment of the analysis. Options include: "emd", "density", "umap"
 #' @param gridsize The gridsize to use when clustering. Only used if no celltype_col is given
 #' @param seed The seed to use when creating the UMAP
+#' @inheritParams create_som
 #'
 #' @examples
 #' run_analysis(tool = "cycombine",
@@ -49,6 +50,7 @@ run_analysis <- function(tool,
                          segment = "",
                          binSize = 0.1,
                          som_type = "fsom",
+                         rlen = 10,
                          gridsize = 8,
                          seed = 473,
                          umap_size = 20000){
@@ -154,6 +156,7 @@ run_analysis <- function(tool,
         labels <- corrected %>%
           cyCombine::create_som(seed = seed,
                                 som_type = som_type,
+                                rlen = rlen,
                                 xdim = gridsize,
                                 ydim = gridsize,
                                 markers = markers)

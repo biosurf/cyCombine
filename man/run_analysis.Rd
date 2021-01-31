@@ -21,6 +21,7 @@ run_analysis(
   segment = "",
   binSize = 0.1,
   som_type = "fsom",
+  rlen = 10,
   gridsize = 8,
   seed = 473,
   umap_size = 20000
@@ -52,6 +53,10 @@ run_analysis(
 \item{celltype_col}{Optional: If the cell types are know, specify which column they are defined in}
 
 \item{segment}{Optional: Run only a specific segment of the analysis. Options include: "emd", "density", "umap"}
+
+\item{som_type}{The clustering method to use. Default: "kohonen" - running using kohonen Set to "fsom" to run with using FlowSOM}
+
+\item{rlen}{Number of times the data is presented to the SOM network}
 
 \item{gridsize}{The gridsize to use when clustering. Only used if no celltype_col is given}
 
