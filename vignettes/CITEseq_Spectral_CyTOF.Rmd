@@ -1,0 +1,401 @@
+---
+title: "Integrating CITE-seq, spectral flow and CyTOF data"
+author: "Christina Bligaard Pedersen"
+date: "February 2, 2021"
+output: 
+  prettydoc::html_pretty:
+    theme: hpstr
+    highlight: vignette
+vignette: >
+  %\VignetteIndexEntry{cyCombine}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+This vignette will demonstrate the integration of CITE-seq, spectral flow cytometry and CyTOF protein expression measurements using cyCombine.
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  strip.white = T, comment = ""
+)
+
+knitr::opts_knit$set(root.dir = '/home/projects/dp_immunoth/people/s134891/cycombine/citeseq_cytof/')
+
+```
+
+
+<br>
+First, let us present the two datasets we will integrate:
+
+For the CITE-seq data, we will use the '1k Human PBMCs Stained with a Panel of TotalSeq B Antibodies, Dual Indexed' dataset from https://support.10xgenomics.com/single-cell-gene-expression/datasets. We work on the filtered feature/cell matrix.
+
+For spectral flow cytometry data, we will use the dataset from [Park et al. (2020)](https://doi.org/10.1002/cyto.a.24213). The data is based on human PBMCs, and contains four samples, which we downloaded and pre-gated to live single cells.
+
+For the CyTOF data, we use the data from a single healthy donor processed at the Human Immune Monitoring Center. The sample was derived from FlowRepository https://flowrepository.org/id/FR-FCM-ZYAJ and pre-gated to live intact singlets. The data was subsequently manually gated to populations of interest. 
+
+<br>
+
+#### Pre-processing the CITE-seq data
+
+We start by loading some packages
+
+```{r libraries, results = 'hide', warning=FALSE, message=FALSE}
+library(cyCombine)
+library(tidyverse)
+library(Seurat)
+
+```
+
+
+Then, we load the Total-seq dataset and preprocess that using Seurat
+
+```{r load totalseq, message=FALSE, fig.height=6, fig.width=10}
+# Read total-seq data
+totalseq_read <- Read10X(data.dir = "filtered_feature_bc_matrix/")
+
+# Create Seurat object, have to set min.cells = 0 to allow addition of ADT information in the next step. 
+totalseq <- CreateSeuratObject(counts = totalseq_read$`Gene Expression`, min.cells = 0, min.features = 0, project = "cyCombine")
+
+# Add CITE-seq data
+totalseq[["ADT"]] <- CreateAssayObject(counts = totalseq_read$`Antibody Capture`)
+
+# Add MT percentage for cell filtering
+totalseq[["percent.mt"]] <- PercentageFeatureSet(object = totalseq, pattern = "^MT-")
+
+# Filter data to exclude cells with very large/small feature counts (high number of different genes expressed) and large mitchondrial content
+VlnPlot(object = totalseq, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), pt.size = 0)
+totalseq <- subset(totalseq, subset = nFeature_RNA > 200 & nFeature_RNA < 3500 & percent.mt < 10)
+
+```
+
+
+
+
+<br>
+
+Now, we have our Total-seq dataset and we have filtered away some of the more questionable cells. Now, we are technically ready for integration, but here, we will actually also cluster the Total-seq data, so we have a better chance of evaluating the integration performance.
+
+```{r cluster total-seq, message=F, warning=F, fig.height=5, fig.width=8}
+# First, we perform normalization, scaling, dimensionality reduction, and clustering based on the RNA-seq levels
+totalseq <- NormalizeData(totalseq, verbose = F) %>% 
+  FindVariableFeatures(selection.method = "vst", nfeatures = 2000, verbose = F) %>%
+  ScaleData(verbose = F) %>%
+  RunPCA(pc.genes = totalseq@var.genes, npcs = 20, verbose = F)
+
+totalseq <- totalseq %>% 
+  RunUMAP(dims = 1:20, verbose = F, seed.use = 574) %>% 
+  FindNeighbors(dims = 1:20, verbose = F) %>%
+  FindClusters(resolution = 0.5, verbose = F)
+
+# Next, we normalize and scale the CITE-seq portion of the dataset
+totalseq <- NormalizeData(totalseq, assay = "ADT", normalization.method = "CLR", verbose = F) %>% 
+  ScaleData(verbose = F)
+
+# Now, we alter the rownames of the CITE-seq data slightly, so they're easier to work with
+rownames(totalseq@assays$ADT@data) <- gsub('\\.1$', '', rownames(totalseq@assays$ADT@data))
+rownames(totalseq@assays$ADT@data) <- gsub('[ _-]', '', rownames(totalseq@assays$ADT@data))
+
+
+# Let us see the clustering based on RNA levels
+DimPlot(totalseq)
+
+```
+
+```{r plot cluster features, fig.height=10, fig.width=10}
+# Now, we use the protein and RNA expression levels to label clusters - we do this at a relatively high level 
+FeaturePlot(totalseq, features = c('CD3E', 'CD4', 'CD8A', 'CD14', 'CD19', 'NCAM1', 'adt_CD3', 'adt_CD4', 'adt_CD8a', 'adt_CD14', 'adt_CD19', 'adt_CD56'), ncol = 3)
+
+```
+
+Please note, that we have plotted the corresponding gene/protein pairs in all cases. For this, we can observe that the protein and gene levels correlate, but they are not completely 1:1.
+
+
+<br>
+
+
+
+```{r label clusters, fig.height=5, fig.width=8}
+# Giving clusters names
+new.cluster.ids <- c("CD4pos", "CD8pos", "CD4pos", 'Myeloid cells', 'B cells', "CD8pos", 'NK cells', "CD4pos")
+names(new.cluster.ids) <- levels(totalseq)
+totalseq <- RenameIdents(totalseq, new.cluster.ids)
+
+# Visualizing in UMAP with new labels
+DimPlot(totalseq)
+
+```
+
+
+Now we are ready to extract the CITE-seq data for integration using cyCombine
+
+```{r extract cite-seq}
+# Extract CITE-seq data (normalized)
+citeseq <- totalseq@assays$ADT@data %>% 
+                              t() %>% 
+                              as_tibble()
+
+# Add columns to tibble for cyCombine processing
+citeseq <- citeseq %>%
+  mutate('batch' = 'CITEseq',
+         'sample' = 'Sample1',
+         'label' = Idents(totalseq)) 
+
+```
+
+<br>
+
+#### Reading the spectral flow cytometry data data
+
+We are now ready to load the spectral flow data. We convert it to a tibble format, which is easy to process. We use cofactor = 6000 for spectral flow data asinh-transformation. This looks reasonable in terms of separating negative and positive peaks in the data, and it was further recommended by [Ferrer-Font et al. (2020)](https://doi.org/10.1002/cyto.a.24016).
+
+In this example, we will use only a single sample to better match the conditions from the CITE-seq and CyTOF datasets.
+
+```{r change dir, include = FALSE}
+knitr::opts_knit$set(root.dir = '/home/projects/dp_immunoth/people/s134891/cycombine/flow_cytof/')
+```
+
+```{r loading spectral flow data, paged.print = T, message=F, warning=F}
+# Directory with raw .fcs files
+data_dir <- "Park_et_al_2020_Live+/"
+
+# Panel and reading data
+sfc_panel <- read_csv(paste0(data_dir, "/panel_Park2020.csv"))
+
+sfc_markers <- sfc_panel %>% 
+  filter(Type != "none") %>% 
+  pull(Marker) %>% 
+  str_remove_all("[ _-]")
+
+spectral <- prepare_data(data_dir = data_dir,
+                         metadata = paste0(data_dir, "/Spectral samples cohort.xlsx"),
+                         filename_col = "FCS_name",
+                         batch_ids = "Batch",
+                         condition = "Set",
+                         sample_ids = "Patient id",
+                         cofactor = 6000,
+                         markers = sfc_markers,
+                         down_sample = FALSE)
+
+
+# Subset to a single sample
+spectral <- spectral %>%
+  filter(sample == "303444")
+
+
+# Load previously assigned labels
+spectral$label <- readRDS('303444_labels.rds')
+```
+
+
+Let us - for a second focus on the spectral flow data. We are not too happy with the negative expression values, since they tend to have a very long, almost invisible tail of small values. It can be considered best to do something about this before going into batch correction.
+
+```{r loading spectral flow data 2, message=F, fig.height=25, fig.width=20}
+# Alternative We get rid of any negative values in the flow data using a linear shift - essentially these don't matter but it makes sense because cyCombine uses a cap of 0 for batch correction. We use a shit which results in the subtraction of 0 - the 1st percentile of the data from every value
+spectral <- linear_shift(spectral, .keep = T)
+
+```
+
+<br>
+
+#### Reading the CyTOF data
+
+Then it is time to read the CyTOF data. In this case, it's already in a tibble format - but refer to the `prepare_data` function for this.
+
+```{r cytof read}
+### Get HIMC cytof data for one sample
+load('Sample001_pregated.Rdata')
+
+```
+
+
+<br>
+
+
+#### Processing datasets together - batch correction
+
+Next, we need to figure out which markers to use when integrating the CITE-seq, spectral flow and CyTOF data. 
+Here, it is important to keep a couple of things in mind. 
+
+First, be careful with protein names - i.e. CD197 and CCR7 are actually the same protein, but each name is relatively commonly used. Make sure to correct the column names in either set, so it matches the other, i.e. using `colnames(spectral)[colnames(spectral)=='CCR7'] <- 'CD197'`.
+
+```{r change colnames}
+colnames(spectral)[colnames(spectral)=='CCR7'] <- 'CD197'
+colnames(spectral)[colnames(spectral)=='CD8'] <- 'CD8a'
+
+```
+
+
+
+Second, one should be wary about using CITE-seq proteins with very low or no dynamic range - these do not add any information, and should be removed as they disrupt the analysis. Let us look for such proteins in the 1k PBMC set:
+
+```{r identifying poorly captured proteins, fig.height=20, fig.width=12}
+VlnPlot(totalseq, features = get_markers(citeseq), assay = 'ADT', pt.size = 0.01, group.by = 'orig.ident', ncol = 5)
+
+```
+
+<br>
+
+So, now we have an overview of the distributions. Here, we will exclude those where the "red violin" is not visible in the plot. 
+
+```{r subset citeseq}
+# Remove columns
+citeseq <- citeseq %>%
+  select(-c(CD11b, CD20, CD27, CD28, CD34, CD62L, CD69, CD80, CD86, CD137, CD197, CD274, CD278, CD335, HLADR))
+
+```
+
+Now, we are ready to combine the two datasets on the overlapping columns. There are only 11 markers which overlap between the sets.
+
+```{r combine sets}
+# Get overlapping column names
+overlap_cols <- intersect(colnames(citeseq), intersect(colnames(cytof), colnames(spectral)))
+
+# Make one tibble
+uncorrected <- bind_rows(cytof[,overlap_cols], citeseq[,overlap_cols], spectral[,overlap_cols]) %>%
+  mutate(id = 1:(nrow(cytof)+nrow(citeseq)+nrow(spectral)))
+
+```
+
+And finally, batch correction can be performed with cyCombine.
+
+```{r batch correction, message=FALSE, warning=FALSE, error=FALSE, results='hide'}
+# Run batch correction
+corrected <- uncorrected %>%
+  batch_correct(xdim = 8,
+                ydim = 8,
+                norm_method = 'rank',
+                ties.method = 'average',
+                som_type = 'fsom')
+
+# Add labels back from uncorrected
+corrected$label <- uncorrected$label
+
+```
+
+
+<br>
+
+#### Evaluating batch correction
+
+We now evaluate the correction using EMD - first clustering and then evaluation of each marker in each cluster.
+
+```{r emd, message=FALSE, fig.height=6, fig.width=12}
+# Generate labels for EMD evaluation
+labels <- corrected %>%
+  create_som(seed = 647,
+                    som_type = 'fsom',
+                    xdim = 8,
+                    ydim = 8,
+                    markers = get_markers(corrected))
+
+# Add labels
+corrected <- corrected %>%
+  dplyr::mutate(som = labels)
+celltype_col <- "som"
+
+uncorrected <- corrected %>%
+  dplyr::select(id, all_of(celltype_col)) %>%
+  dplyr::left_join(uncorrected, by = "id")
+
+
+# Evaluate Earth Movers Distance
+emd <- uncorrected %>%
+  evaluate_emd(corrected, markers = get_markers(corrected), cell_col = celltype_col)
+
+# Show plots
+cowplot::plot_grid(emd$violin, emd$scatterplot)
+
+```
+
+
+<br>
+
+Now, let us look at some plots to visualize the correction. First, the marker distributions before and after:
+
+```{r density plot, message=FALSE, fig.height=12, fig.width=16}
+plot_density(uncorrected, corrected, ncol = 4)
+
+```
+
+Let us also see the UMAPs for uncorrected and corrected data colored by batch.
+
+```{r umaps 1, fig.height=8, fig.width=16}
+# Downsampling and making pre- and post-correction UMAPs for datasets - sampling all CITEseq cells since there are so few
+
+# Create indices by sample
+inds <- split(1:length(uncorrected$batch), uncorrected$batch)
+
+# UMAP/clustering downsampling
+dimred_ncells <- pmin(table(uncorrected$batch), 10000)
+
+## Get subsampled indices for UMAP
+set.seed(543)
+dimred_inds <- lapply(names(inds), function(i){
+  sample(inds[[i]], dimred_ncells[i], replace = FALSE)
+})
+dimred_inds <- unlist(dimred_inds)
+
+
+# UMAP plot uncorrected
+umap1 <- uncorrected[dimred_inds,] %>%
+  plot_dimred(name = "uncorrected", type = "umap")
+
+# UMAP plot corrected
+umap2 <- corrected[dimred_inds,] %>%
+  plot_dimred(name = "corrected", type = "umap")
+
+# Show plots
+cowplot::plot_grid(umap1, umap2)
+```
+
+Now, we also have labels for each of the datasets, which were generated independently of the batch correction. Let us have some visualization with these.
+
+
+```{r umaps labels, fig.height=8, fig.width=16}
+# For uncorrected data, let's make a combined object 
+uncor_df <- cbind.data.frame(umap1$data[,1:2], uncorrected[dimred_inds,])
+
+umap3 <- ggplot(uncor_df, aes(x = UMAP1, y = UMAP2)) +
+                geom_point(aes(color = label), alpha = 0.3, size = 0.4) + 
+                theme_bw() + theme(plot.title = element_text(hjust = 0.5)) + 
+                ggtitle('UMAP - uncorrected') +
+                guides(color = guide_legend(override.aes = list(alpha = 1, size = 1)))
+
+# For corrected data, let's make a combined object 
+cor_df <- cbind.data.frame(umap2$data[,1:2], corrected[dimred_inds,])
+
+umap4 <- ggplot(cor_df, aes(x = UMAP1, y = UMAP2)) +
+                geom_point(aes(color = label), alpha = 0.3, size = 0.4) + 
+                theme_bw() + theme(plot.title = element_text(hjust = 0.5)) + 
+                ggtitle('UMAP - corrected') +
+                guides(color = guide_legend(override.aes = list(alpha = 1, size = 1)))
+
+
+# Show plots
+cowplot::plot_grid(umap3, umap4)
+
+```
+
+```{r umaps labels split, fig.height=12, fig.width=16}
+# For uncorrected data, let's make a combined object 
+uncor_df <- cbind.data.frame(umap1$data[,1:2], uncorrected[dimred_inds,])
+
+umap5 <- umap3 + facet_wrap(~batch)
+
+# For corrected data, let's make a combined object 
+cor_df <- cbind.data.frame(umap2$data[,1:2], corrected[dimred_inds,])
+
+umap6 <- umap4 + facet_wrap(~batch)
+
+
+# Show plots
+cowplot::plot_grid(umap5, umap6, nrow = 2)
+
+```
+
+
+
+
+
+
+
