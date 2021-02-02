@@ -339,7 +339,7 @@ linear_shift <- function(df, markers = NULL, .keep = FALSE){
                 ~ dplyr::select_if(., colnames(.) %in% c(markers, non_markers))) %>%
     # Transform all data on those markers
     dplyr::mutate(dplyr::across(dplyr::all_of(markers),
-                     .fns = function(x) x + (0-min(x))))
+                     .fns = function(x) x + (0-quantile(x, 0.01))))
   return(transformed)
 }
 
