@@ -1,11 +1,12 @@
 ---
 title: "Batch correction of two-panel CyTOF data"
 author: "Christina Bligaard Pedersen"
-date: "January 27, 2021"
+date: "February 2, 2021"
 output: 
   prettydoc::html_pretty:
     theme: hpstr
     highlight: vignette
+    df_print: paged
 vignette: >
   %\VignetteIndexEntry{cyCombine}
   %\VignetteEngine{knitr::rmarkdown}
@@ -39,10 +40,15 @@ In this dataset, it seems reasonable to start by looking at the two panels.
 library(cyCombine)
 library(tidyverse)
 
+# Set a seed for reproducibility
+seed <- 124
+
+# Set a combined size for UMAPs
+umap_size = 50000
+
 ```
 
 ```{r panel reading, message=F, warning=F}
-
 # Panel 1 reading
 panel1 <- read_csv("dfci1/panel1.csv")
 panel1
@@ -56,7 +62,6 @@ panel2
 Now, we have the panels - so let us extract the markers and identify the overlap.
 
 ```{r panel overlap}
-
 # Extracting the markers
 markers1 <- panel1 %>%
   filter(Type != "none") %>%
@@ -117,78 +122,293 @@ dfci2 <- prepare_data(data_dir = "dfci2",
 
 #### Processing data - batch correction
 
-In this case, the dataset for each panel is, as mentioned, run in eight batches - this means that there are likely some batch effects to correct for within each panel as well. We take of this first, before we start integrating acorss panels!
+#### Panel 1 - batch correction
+
+In this case, the dataset for each panel is, as mentioned, run in eight batches - this means that there are likely some batch effects to correct for within each panel as well. We take of this first, before we start integrating across panels!
 
 
-
-```{r batch correction within panels, message=FALSE, warning=FALSE, error=FALSE, results='hide'}
-# Run batch correction
+```{r batch correction within panels 1, message=FALSE, warning=FALSE, error=FALSE, results='hide'}
+# Run batch correction for panel 1
 dfci1_bc <- dfci1 %>%
   batch_correct(covar = "condition",
                 xdim = 8,
                 ydim = 8,
                 norm_method = 'scale',
+                som_type = 'fsom',
                 markers = markers1)
+```
 
+<br>
+
+Let us have a quick look at some UMAPs to visualize the correction for each batch. We downsample so it is easier to see what is going on.
+
+```{r umaps 1, fig.height=8, fig.width=16}
+# Downsampling and making pre- and post-correction UMAPs for panel 1 data
+set.seed(seed)
+dfci1_sliced <- dfci1 %>%
+  dplyr::slice_sample(n = umap_size)
+
+dfci1_bc_sliced <- dfci1_sliced %>%
+  select(id) %>%
+  dplyr::left_join(dfci1_bc, by = "id")
+
+
+# UMAP plot uncorrected
+umap1 <- dfci1_sliced %>%
+  plot_dimred(name = "uncorrected (panel 1)", type = "umap", markers = markers1)
+
+# UMAP plot corrected
+umap2 <- dfci1_bc_sliced %>%
+  plot_dimred(name = "corrected (panel 1)", type = "umap", markers = markers1)
+
+# Show plots
+cowplot::plot_grid(umap1, umap2)
+```
+
+
+Now, let us view the expression distributions for all the markers in panel 1.
+
+```{r density plots 1, fig.height=12, fig.width=20, message=FALSE, warning=FALSE, error=FALSE, results='hide'}
+# Plot density before/after
+plot_density(uncorrected = dfci1,
+             corrected = dfci1_bc,
+             markers = markers1,
+             format = 1, ncol = 6)
+```
+
+Finally, we will evaluate the EMD reduction for the batch correction of panel 1. To do this, we first need to perform a clustering of the corrected set, and we will transfer the labels to the uncorrected set for direct comparison.
+
+```{r EMD 1, fig.height=5, fig.width=10, message=FALSE, warning=FALSE, error=FALSE, results='hide'}
+# Generate labels for EMD evaluation
+labels <- dfci1_bc %>%
+  create_som(seed = seed,
+                        som_type = 'fsom',
+                        xdim = 8,
+                        ydim = 8,
+                        markers = markers1)
+
+# Add labels to datasets
+dfci1_bc <- dfci1_bc %>%
+  dplyr::mutate(som = labels)
+celltype_col <- "som"
+
+dfci1 <- dfci1_bc %>%
+  dplyr::select(id, all_of(celltype_col)) %>%
+  dplyr::left_join(dfci1, by = "id")
+
+
+# Evaluate Earth Movers Distance
+emd_val1 <- dfci1 %>%
+  evaluate_emd(dfci1_bc, markers = markers1, cell_col = celltype_col)
+
+# Show plots
+cowplot::plot_grid(emd_val1$violin, emd_val1$scatterplot)
+```
+
+<br>
+
+#### Panel 2 - batch correction
+
+Now, it is time to do the same with the data from panel 2. First, we batch correct:
+
+```{r batch correction within panels 2, message=FALSE, warning=FALSE, error=FALSE, results='hide'}
+# Run batch correction for panel 2
 dfci2_bc <- dfci2 %>%
   batch_correct(covar = "condition",
                 xdim = 8,
                 ydim = 8,
                 norm_method = 'scale',
+                som_type = 'fsom',
                 markers = markers2)
 
 ```
 
 <br>
 
-Let us have a quick look at some UMAPs to visualize the correction for each batch. We will downsample to 2,000 cells from each sample so it is easier to see what is going on.
-
-```{r umaps 1, fig.height=8, fig.width=16}
-# Downsampling and making pre- and post-correction UMAPs for panel 1 data
-inds1 <- split(1:length(dfci1$batch), dfci1$batch)
-sample1 <- unlist(lapply(inds1, sample, 2000))
-
-plot1 <- plot_dimred(dfci1[sample1,], name = 'Uncorrected (Panel 1)', type = 'umap')
-plot2 <- plot_dimred(dfci1_bc[sample1,], name = 'Corrected (Panel 1)', type = 'umap')
-
-cowplot::plot_grid(plot1, plot2)
-```
-
+We look at the UMAPs.
 
 ```{r umaps 2, fig.height=8, fig.width=16}
 # Downsampling and making pre- and post-correction UMAPs for panel 2 data
-inds2 <- split(1:length(dfci2$batch), dfci2$batch)
-sample2 <- unlist(lapply(inds2, sample, 2000))
+set.seed(seed)
+dfci2_sliced <- dfci2 %>%
+  dplyr::slice_sample(n = umap_size)
 
-plot1 <- plot_dimred(dfci2[sample2,], name = 'Uncorrected (Panel 2)', type = 'umap')
-plot2 <- plot_dimred(dfci2_bc[sample2,], name = 'Corrected (Panel 2)', type = 'umap')
+dfci2_bc_sliced <- dfci2_sliced %>%
+  select(id) %>%
+  dplyr::left_join(dfci2_bc, by = "id")
 
-cowplot::plot_grid(plot1, plot2)
+
+# UMAP plot uncorrected
+umap1 <- dfci2_sliced %>%
+  plot_dimred(name = "uncorrected (panel 2)", type = "umap", markers = markers2)
+
+# UMAP plot corrected
+umap2 <- dfci2_bc_sliced %>%
+  plot_dimred(name = "corrected (panel 2)", type = "umap", markers = markers2)
+
+
+# Show plots
+cowplot::plot_grid(umap1, umap2)
+
+```
+
+And we take a look at the marker distributions for panel 2
+
+```{r density plots 2, fig.height=18, fig.width=20, message=FALSE, warning=FALSE, error=FALSE, results='hide'}
+# Plot density before/after
+plot_density(uncorrected = dfci2,
+             corrected = dfci2_bc,
+             markers = markers2,
+             format = 1, ncol = 5)
+```
+
+Lastly, we evaluate the EMD reduction for the batch correction of panel 2 in the same manner as presented above.
+
+```{r EMD 2, fig.height=5, fig.width=10, message=FALSE, warning=FALSE, error=FALSE, results='hide'}
+# Generate labels for EMD evaluation
+labels <- dfci2_bc %>%
+  create_som(seed = seed,
+                        som_type = 'fsom',
+                        xdim = 8,
+                        ydim = 8,
+                        markers = markers2)
+
+# Add labels
+dfci2_bc <- dfci2_bc %>%
+  dplyr::mutate(som = labels)
+celltype_col <- "som"
+
+dfci2 <- dfci2_bc %>%
+  dplyr::select(id, all_of(celltype_col)) %>%
+  dplyr::left_join(dfci2, by = "id")
+
+
+# Evaluate Earth Movers Distance
+emd_val2 <- dfci2 %>%
+  evaluate_emd(dfci2_bc, markers = markers2, cell_col = celltype_col)
+
+# Show plots
+cowplot::plot_grid(emd_val2$violin, emd_val2$scatterplot)
 ```
 
 <br>
 
-Based on the marker distributions after correction and the UMAPs, it looks like the batch effects within the data for each panel are minimzed. Now we can focus on the integration of the two sets. The first step here, is to batch correct the datasets based on the overlapping markers.
+For both panels, we find an EMD reduction of 0.67 when considering the batch corrections separately.
+
+<br>
+
+#### Combined batch correction
+
+Based on the marker distributions after correction and the UMAPs, it looks like the batch effects within the data for each panel are minimized. Now we can focus on the integration of the two sets. The first step here, is to batch correct the datasets based on the overlapping markers.
 
 
 ```{r co-correction, message=FALSE, warning=FALSE, error=FALSE, results='hide'}
 # Generate a combined tibble for the two datasets
-df <- rbind(dfci1_bc[,c(overlap_markers, 'sample')], 
-            dfci2_bc[,c(overlap_markers, 'sample')]) %>%
+df <- rbind(dfci1_bc[,c(overlap_markers, 'sample', 'condition')], 
+            dfci2_bc[,c(overlap_markers, 'sample', 'condition')]) %>%
   mutate('batch' = c(rep(1, nrow(dfci1_bc)), rep(2, nrow(dfci2_bc))),
          'id' = 1:(nrow(dfci1_bc)+nrow(dfci2_bc)))
 
+# Make sample names unique (some of the same samples are stained with panel 1 and panel 2)
+df$sample <- paste0(df$batch, '-', df$sample)
 
 
 # Batch correct based on overlapping markers
 co_corrected <- batch_correct(df,
-                              markers = overlap_markers)
+                              covar = "condition",
+                              xdim = 8,
+                              ydim = 8,
+                              norm_method = 'scale',
+                              markers = overlap_markers,
+                              som_type = 'fsom')
+```
+
+<br>
+
+Similarly to the corrections *within* each panel's data, we can now look at the UMAPs and marker distributions before and after correction - and we can also calculate the EMD reduction.
+
+```{r umaps 3, fig.height=8, fig.width=16}
+# Downsampling and making pre- and post-correction UMAPs for the combined data (on overlapping markers)
+set.seed(seed)
+df_sliced <- df %>%
+  dplyr::slice_sample(n = umap_size)
+
+co_corrected_sliced <- df_sliced %>%
+  select(id) %>%
+  dplyr::left_join(co_corrected, by = "id")
+
+
+# UMAP plot uncorrected
+umap1 <- df_sliced %>%
+  plot_dimred(name = "uncorrected (combined)", type = "umap", markers = overlap_markers)
+
+# UMAP plot corrected
+umap2 <- co_corrected_sliced %>%
+  plot_dimred(name = "corrected (combined)", type = "umap", markers = overlap_markers)
+
+
+# Show plots
+cowplot::plot_grid(umap1, umap2)
+```
+
+
+```{r density plots 3, fig.height=6, fig.width=20, message=FALSE, warning=FALSE, error=FALSE, results='hide'}
+# Plot density before/after
+plot_density(uncorrected = df,
+             corrected = co_corrected,
+             markers = overlap_markers,
+             format = 2, ncol = 5)
+```
+
+And the EMD reduction:
+
+```{r EMD 3, fig.height=5, fig.width=10, message=FALSE, warning=FALSE, error=FALSE, results='hide'}
+# Generate labels for EMD evaluation
+labels <- co_corrected %>%
+  create_som(seed = seed,
+                        som_type = 'fsom',
+                        xdim = 8,
+                        ydim = 8,
+                        markers = overlap_markers)
+
+# Add labels
+co_corrected <- co_corrected %>%
+  dplyr::mutate(som = labels)
+celltype_col <- "som"
+
+df <- co_corrected %>%
+  dplyr::select(id, all_of(celltype_col)) %>%
+  dplyr::left_join(df, by = "id")
+
+
+# Evaluate Earth Movers Distance
+emd_val_co <- df %>%
+  evaluate_emd(co_corrected, markers = overlap_markers, cell_col = celltype_col)
+
+# Show plots
+cowplot::plot_grid(emd_val_co$violin, emd_val_co$scatterplot)
+```
+
+For this correction, we obtain an EMD of 0.85.
 
 
 
+<br>
+
+
+#### Imputing non-overlapping markers
+
+Now that we have batch corrected the overlapping markers from the two panels, they are directly comparable. However, when limiting ourselves only to the overlapping set, we also remove all information contained in the non-overlapping markers. In this case, panel 1 contains 21 markers not found in panel 2 - and panel 2 has 19 markers not found in panel 1. These markers include CD16, which is important for NK cells and monocyte distinction and Granzyme A, which is important to deeply characterize cytotoxic T cells and NK cells. 
+
+We want to include these markers in our dataset, but because the non-overlapping markers were only measured on roughly half of the cells, we have to use imputation to provide a value for the other panel's cells.
+
+We start by defining the sets of non-overlapping markers and then add the values for these to the batch corrected values for the overlapping markers for each panel.
+
+
+```{r adding non-overlap to co-corrected}
 # Define the non-overlaping markers
-missing1 <- markers2[!markers2 %in% markers1]
-missing2 <- markers1[!markers1 %in% markers2]
+missing1 <- markers2[!markers2 %in% markers1] # 19 markers measured only in panel 2
+missing2 <- markers1[!markers1 %in% markers2] # 21 markers measured only in panel 1
 
 
 # Add non-overlapping markers back to df
@@ -199,8 +419,7 @@ co_corrected2 <- bind_cols(co_corrected[co_corrected$batch == 2,], dfci2_bc[,mis
 
 <br>
 
-This was the batch correction part - now time for the non-overlapping markers. We want to impute the values for the markers unique panel 2 for the panel 1 data - and vice versa.
-
+We are now ready to impute the values for the markers unique panel 2 for the panel 1 data - and vice versa.
 
 ```{r imputation}
 # Imputation for whole panels
@@ -217,32 +436,99 @@ final2 <- imputed$dataset2
 ```
 
 <br>
-Now, we are ready to use this combined dataset to answer the biological questions and make nice visualizations. Before finishing this vignette, let us also look at the distributions of the markers. 
+Now, we are ready to use this combined dataset to answer the biological questions and make nice visualizations.
+Let us look at *all* of the markers after batch corrections and imputation.
 
-First, we will view the data for each of the two panels only on the overlapping markers - *before* actually correcting these with cyCombine.
 
-
-```{r density plots 1, fig.height=6, fig.width=20, message=F, warning=F}
-plot_density(dfci1_bc, dfci2_bc, 
+```{r density plots final, fig.height=25, fig.width=20, message=F, warning=F}
+plot_density(final1, 
+             final2, 
              y = 'Type',
-             markers = overlap_markers, 
              dataset_names = paste('Panel', 1:2),
              ncol = 5)
+
+```
+
+This looks very nice in terms of obtaining comparable distributions between the cells originating from each panel.
+
+Let us make a UMAP for the combined set - based on all 55 markers (15 overlapping + 21 unique to panel 1 + 19 unique to panel 2). 
+
+```{r umap final, fig.height=8, fig.width=8, message=F, warning=F}
+# Combining dataset
+final <- rbind(final1,
+               final2)
+
+# Down-sampling for plot
+set.seed(seed)
+final_sliced <- final %>%
+  dplyr::slice_sample(n = umap_size)
+
+# UMAP plot corrected
+umap <- final_sliced %>%
+  cyCombine::plot_dimred(name = "corrected", 
+                         type = "umap", 
+                         markers = c(overlap_markers, missing1, missing2), 
+                         return_coord = T)
+
+umap$plot
+```
+
+After running this process, it is possible to perform any processing one finds relevant for the dataset. In this case, we proceeded to cluster the data using SOM and ConsensusClusterPlus on the following 20 markers: CD3, CD45RA, CD14, CD45RO, CD152, CD33, CD4, CD8, CD197, CD56, FoxP3, CD25, CD1c, CD1d, CD11c, CD16, CD34, CD11b, FCeR1a, XCL1
+
+The clusters were annotated manually based on the protein expression levels. Let us load these labels and add them to the UMAP.
+
+```{r label adding, fig.height=6, fig.width=9}
+# Load labels and add to final frame
+final$label <- readRDS('dfci/labels_combined.rds')
+
+# Slice to subset as generated above
+final_sliced <- final_sliced %>%
+  select(id) %>%
+  dplyr::left_join(final, by = "id")
+
+# Use UMAP coordinates determined above
+final_df <- cbind.data.frame(umap$dimred, 
+                             final_sliced)
+colnames(final_df)[1:2] <- paste0('UMAP', 1:2)
+
+ggplot(final_df, aes(x = UMAP1,
+                     y = UMAP2)) + 
+  geom_point(aes(color = label), 
+             alpha = 0.3, size = 0.4, shape = 1) + 
+  guides(color = guide_legend(override.aes = list(alpha = 1,
+                                                  size = 1))) + 
+  theme_bw() + theme(plot.title = element_text(hjust = 0.5)) + 
+  ggtitle(paste("UMAP - final"))
+
+
 ```
 
 <br>
 
-Finally, we will look at *all* of the markers after batch corrections and imputation.
+Finally, let us compare the cell type fractions between the data originally derived from each panel.
 
 
-```{r density plots 2, fig.height=25, fig.width=20, message=F, warning=F}
-plot_density(final1, final2, 
-             y = 'Type',
-             dataset_names = paste('Panel', 1:2),
-             ncol = 5)
+```{r cell type fractions, fig.height=4, fig.width=8}
+# Get a matrix of cluster counts - convert it to percentage
+counts <- table(final$batch, final$label)
+perc <- (counts/rowSums(counts))*100
+
+# Convert perc table into a dataframe for plotting
+df_perc <- cbind.data.frame(perc[1,], perc[2,], colnames(perc))
+colnames(df_perc) <- c('Batch1', 'Batch2', 'Population')
+df_perc$Population <- factor(df_perc$Population, levels = levels(final$label))
+
+# Make the plot
+ggplot(df_perc, aes_string(x = 'Batch1', y = 'Batch2')) +
+  geom_point(aes_string(color = 'Population')) +
+  theme_bw() + theme(plot.title = element_text(hjust = 0.5)) + 
+  ggtitle('Cluster percentages') +
+  xlab('Panel 1 (% of cells)') + ylab('Panel 2 (% of cells)')
 
 
+
+# Calculate the correlation
+cor(df_perc$Batch1, df_perc$Batch2, method = 'pearson')
 ```
-
 
 
