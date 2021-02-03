@@ -298,13 +298,13 @@ correct_data <- function(df,
       return(ComBat_output)
     }) %>%
     dplyr::ungroup() %>%
-    # Reduce all negative values to zero
-    dplyr::mutate_at(dplyr::vars(all_of(markers)),
-                     function(x) {
-                       x[x < 0] <- 0
-                       x[x > 30] <- 30
-                       return(x)
-                       }) %>%
+    # # Reduce all negative values to zero
+    # dplyr::mutate_at(dplyr::vars(all_of(markers)),
+    #                  function(x) {
+    #                    x[x < 0] <- 0
+    #                    x[x > 30] <- 30
+    #                    return(x)
+    #                    }) %>%
     dplyr::arrange(id) %>%
     select(id, everything())
   return(corrected_data)
