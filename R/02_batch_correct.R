@@ -145,7 +145,9 @@ create_som <- function(df,
     as.matrix() %>%
     kohonen::som(grid = kohonen::somgrid(xdim = xdim, ydim = ydim),
                  rlen = rlen,
-                 dist.fcts = "euclidean")$unit.classif
+                 dist.fcts = "euclidean")
+  
+  labels <- labels$unit.classif
 
   return(labels)
 }
