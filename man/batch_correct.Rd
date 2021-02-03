@@ -15,8 +15,7 @@ batch_correct(
   covar = NULL,
   markers = NULL,
   norm_method = "scale",
-  ties.method = "average",
-  som_type = "kohonen"
+  ties.method = "average"
 )
 }
 \arguments{
@@ -42,8 +41,6 @@ If NULL, no covar will be used}
 \item{norm_method}{Normalization method. Should be either 'rank', 'scale' or 'qnorm'. Default: 'scale'}
 
 \item{ties.method}{The method to handle ties, when using rank. Default: "average". See ?rank for other options.}
-
-\item{som_type}{The clustering method to use. Default: "kohonen" - running using kohonen Set to "fsom" to run with using FlowSOM}
 }
 \description{
 This is a wrapper function for the cyCombine batch correction workflow.

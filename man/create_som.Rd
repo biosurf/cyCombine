@@ -4,22 +4,12 @@
 \alias{create_som}
 \title{Create Self-Organizing Map}
 \usage{
-create_som(
-  df,
-  markers = NULL,
-  som_type = "kohonen",
-  seed = 473,
-  rlen = 10,
-  xdim = 8,
-  ydim = 8
-)
+create_som(df, markers = NULL, seed = 473, rlen = 10, xdim = 8, ydim = 8)
 }
 \arguments{
 \item{df}{tibble with expression values}
 
 \item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
-
-\item{som_type}{The clustering method to use. Default: "kohonen" - running using kohonen Set to "fsom" to run with using FlowSOM}
 
 \item{seed}{The seed to use when creating the SOM.}
 
