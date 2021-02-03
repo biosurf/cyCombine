@@ -119,7 +119,6 @@ quantile_norm <- function(df, markers = NULL){
 #' @param xdim The x-dimension size of the SOM.
 #' @param ydim The y-dimension size of the SOM.
 #' @param rlen Number of times the data is presented to the SOM network
-#' @param som_type The clustering method to use. Default: "kohonen" - running using kohonen Set to "fsom" to run with using FlowSOM
 #' @family batch
 #' @examples
 #' labels <- uncorrected %>%
@@ -128,14 +127,10 @@ quantile_norm <- function(df, markers = NULL){
 #' @return A vector of clustering labels
 create_som <- function(df,
                        markers = NULL,
-                       som_type = "kohonen",
                        seed = 473,
                        rlen = 10,
                        xdim = 8,
                        ydim = 8){
-  # Detect missing packages
-  if(som_type == "fsom") missing_package("FlowSOM", "Bioc") else missing_package("kohonen")
-
   if(is.null(markers)){
     # Get markers
     markers <- df %>%
@@ -148,10 +143,9 @@ create_som <- function(df,
   labels <- df %>%
     dplyr::select(markers) %>%
     as.matrix() %>%
-    purrr::when(som_type == "fsom" ~ FlowSOM::SOM(., xdim = xdim, ydim = ydim, rlen = rlen)$mapping[, 1],
-                TRUE ~ kohonen::som(., grid = kohonen::somgrid(xdim = xdim, ydim = ydim),
-                                       rlen = rlen,
-                                       dist.fcts = "euclidean")$unit.classif)
+    kohonen::som(grid = kohonen::somgrid(xdim = xdim, ydim = ydim),
+                 rlen = rlen,
+                 dist.fcts = "euclidean")$unit.classif
 
   return(labels)
 }
@@ -392,8 +386,7 @@ batch_correct <- function(df,
                           covar = NULL,
                           markers = NULL,
                           norm_method = 'scale',
-                          ties.method = "average",
-                          som_type = "kohonen"){
+                          ties.method = "average"){
   # A batch column is required
   check_colname(colnames(df), "batch", "df")
 
@@ -404,7 +397,6 @@ batch_correct <- function(df,
                 norm_method = norm_method,
                 ties.method = ties.method) %>%
       create_som(markers = markers,
-                 som_type = som_type,
                  rlen = rlen,
                  seed = seed,
                  xdim = xdim,
