@@ -187,13 +187,13 @@ spectral$label <- readRDS('303444_labels.rds')
 ```
 
 
-Let us - for a second focus on the spectral flow data. We are not too happy with the negative expression values, since they tend to have a very long, almost invisible tail of small values. It can be considered best to do something about this before going into batch correction.
+<!-- Let us - for a second focus on the spectral flow data. We are not too happy with the negative expression values, since they tend to have a very long, almost invisible tail of small values. It can be considered best to do something about this before going into batch correction. -->
 
-```{r loading spectral flow data 2, message=F, fig.height=25, fig.width=20}
-# Alternative We get rid of any negative values in the flow data using a linear shift - essentially these don't matter but it makes sense because cyCombine uses a cap of 0 for batch correction. We use a shit which results in the subtraction of 0 - the 1st percentile of the data from every value
-spectral <- linear_shift(spectral, .keep = T)
+<!-- ```{r loading spectral flow data 2, message=F, fig.height=25, fig.width=20} -->
+<!-- # Alternative We get rid of any negative values in the flow data using a linear shift - essentially these don't matter but it makes sense because cyCombine uses a cap of 0 for batch correction. We use a shit which results in the subtraction of 0 - the 1st percentile of the data from every value -->
+<!-- spectral <- linear_shift(spectral, .keep = T) -->
 
-```
+<!-- ``` -->
 
 <br>
 
@@ -265,7 +265,7 @@ corrected <- uncorrected %>%
                 ydim = 8,
                 norm_method = 'rank',
                 ties.method = 'average',
-                som_type = 'fsom')
+                rlen = 100)
 
 # Add labels back from uncorrected
 corrected$label <- uncorrected$label
@@ -283,10 +283,9 @@ We now evaluate the correction using EMD - first clustering and then evaluation 
 # Generate labels for EMD evaluation
 labels <- corrected %>%
   create_som(seed = 647,
-                    som_type = 'fsom',
-                    xdim = 8,
-                    ydim = 8,
-                    markers = get_markers(corrected))
+             xdim = 8,
+             ydim = 8,
+             markers = get_markers(corrected))
 
 # Add labels
 corrected <- corrected %>%
@@ -313,7 +312,7 @@ cowplot::plot_grid(emd$violin, emd$scatterplot)
 Now, let us look at some plots to visualize the correction. First, the marker distributions before and after:
 
 ```{r density plot, message=FALSE, fig.height=12, fig.width=16}
-plot_density(uncorrected, corrected, ncol = 4)
+plot_density(uncorrected, corrected, ncol = 4, xlims = c(-2, 9))
 
 ```
 

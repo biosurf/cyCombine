@@ -1,7 +1,7 @@
 ---
 title: "Integrating CITE-seq and CyTOF data"
 author: "Christina Bligaard Pedersen"
-date: "January 26, 2021"
+date: "February 3, 2021"
 output: 
   prettydoc::html_pretty:
     theme: hpstr
@@ -202,7 +202,8 @@ corrected <- uncorrected %>%
   batch_correct(xdim = 8,
                 ydim = 8,
                 norm_method = 'rank',
-                ties.method = 'average')
+                ties.method = 'average',
+                rlen = 100)
 
 # Add manually assigned labels back
 corrected$label <- uncorrected$label
@@ -218,8 +219,8 @@ corrected$label <- uncorrected$label
 We now evaluate the correction using EMD - each marker in each cluster is evaluated
 
 ```{r emd, message=FALSE, fig.height=6, fig.width=12}
-emd <- evaluate_emd(preprocessed = uncorrected,
-             corrected = corrected)
+emd <- evaluate_emd(uncorrected = uncorrected,
+                    corrected = corrected)
 
 cowplot::plot_grid(emd$violin, emd$scatterplot)
 ```

@@ -45,8 +45,7 @@ salvage_problematic <- function(df,
   # Get 5 x 5 SOM classes for each event - on overlapping markers
   som_classes <- overlapping_data %>%
     create_som(xdim = 5,
-               ydim = 5,
-               som_type = 'fsom')
+               ydim = 5)
 
   # Split SOM classes to each original dataset
   complete_obs_som <- som_classes[1:nrow(complete_obs)]
@@ -139,8 +138,7 @@ impute_across_panels <- function(dataset1,
   som_classes <- overlapping_data %>%
     create_som(markers = overlap_channels,
                xdim = 5,
-               ydim = 5,
-               som_type = 'fsom')
+               ydim = 5)
 
     # Split SOM classes to each original dataset
   dataset1_som <- som_classes[1:nrow(dataset1)]

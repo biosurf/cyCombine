@@ -1,7 +1,7 @@
 ---
 title: "Integrating paired flow cytometry and CyTOF data"
 author: "Christina Bligaard Pedersen"
-date: "January 27, 2021"
+date: "February 3, 2021"
 output: 
   prettydoc::html_pretty:
     theme: hpstr
@@ -79,9 +79,6 @@ flow <- prepare_data(data_dir = data_dir,
                          markers = flow_markers,
                          down_sample = FALSE)
 
-# We get rid of any negative values in the flow data using a linear shift - essentially these don't matter but it makes sense because cyCombine uses a cap of 0 for batch correction
-flow <- linear_shift(flow, .keep = T)
-
 ```
 
 
@@ -153,7 +150,8 @@ corrected <- uncorrected %>%
   batch_correct(xdim = 8,
                 ydim = 8,
                 norm_method = 'rank',
-                ties.method = 'average')
+                ties.method = 'average',
+                rlen = 100)
 
 ```
 
@@ -166,8 +164,8 @@ We now evaluate the correction using EMD - each marker is evaluated across all c
 ```{r global emd, message=FALSE, fig.height=6, fig.width=12}
 corrected$label <- uncorrected$label <- 1
 
-emd <- evaluate_emd(preprocessed = uncorrected,
-             corrected = corrected)
+emd <- evaluate_emd(uncorrected = uncorrected,
+                    corrected = corrected)
 
 cowplot::plot_grid(emd$violin, emd$scatterplot)
 
@@ -175,8 +173,8 @@ cowplot::plot_grid(emd$violin, emd$scatterplot)
 
 Let us look at some plots to visualize the correction. First, the marker distributions before and after:
 
-```{r density plot, message=FALSE, fig.height=8, fig.width=16}
-plot_density(uncorrected, corrected, ncol = 4)
+```{r density plot, message=FALSE, fig.height=6, fig.width=16}
+plot_density(uncorrected, corrected, ncol = 4, xlims = c(-3,10))
 
 ```
 
@@ -260,7 +258,7 @@ round((count_table/rowSums(count_table)) * 100, 2)
 
 ```
 
-Here, it is seen that the sample cell type fractions correlate nicely with the counterpart from the other technology. However, we do have some clusters, e.g. cluster 9, where the fractions are consistently larger for one technology.
+Here, it is seen that the sample cell type fractions correlate nicely with the counterpart from the other technology. However, we do have some clusters, e.g. cluster 1, where the fractions tend to be larger for one technology.
 
 <br>
 

@@ -10,7 +10,7 @@ plot_density(
   markers = NULL,
   filename = NULL,
   y = "batch",
-  xlim = 10,
+  xlims = c(-1, 10),
   dataset_names = NULL,
   ncol = 6,
   format = 1
@@ -27,7 +27,7 @@ plot_density(
 
 \item{y}{The column to stack densities with. Default: "batch". If set to "Type", the dataset_names will be used to stack densities.}
 
-\item{xlim}{The limit of the x axis}
+\item{xlims}{The limits of the x axis as a vector}
 
 \item{dataset_names}{Change the names of the datasets from Uncorrected and Corrected to something else. Format: c("Uncorrected", "Corrected")}
 

@@ -1,7 +1,7 @@
 ---
 title: "Batch correction of CyTOF data"
 author: "Christina Bligaard Pedersen"
-date: "January 27, 2021"
+date: "February 2, 2021"
 output: 
   prettydoc::html_pretty:
     theme: hpstr
@@ -38,7 +38,7 @@ We start by loading some packages.
 ```{r libraries, results = 'hide', warning=FALSE, message=FALSE}
 library(cyCombine)
 library(tidyverse)
-library(Seurat)
+library(Rphenograph)
 
 ```
 
@@ -47,7 +47,7 @@ library(Seurat)
 
 We are now ready to load the CyTOF data. We have set up a panel file in csv format, so the correct information is extractable from there. Let us have a look at the contents:
 
-```{r loading flow data 1, warning=FALSE, message=FALSE}
+```{r loading data 1, warning=FALSE, message=FALSE}
 # Directory with raw .fcs files
 data_dir <- "dfci1"
 
@@ -168,5 +168,26 @@ cowplot::plot_grid(plot1, plot2)
 
 Based on the marker distributions after correction and the UMAPs, it looks like the batch effects are eliminated. We can now address our biological questions.
 
+One example could be to cluster the dataset. Here, we will display the results of Phenograph clustering. Actually, I will compare Phenograph run for all eight batches *with* and *without* batch correction using the same set of markers.
 
 <br>
+
+```{r phenograph, results = 'hide', warning=FALSE, message=FALSE}
+# Define the markers to use for clustering
+cl_markers <- c('CD3', 'CD45RA', 'CD14', 'CD45RO', 'CD152', 'CD33', 'CD4', 'CD8', 'CD197', 'CD56', 'FoxP3', 'CD25')
+
+# Run Phenograph (slow step ~4.5 hours for each dataset)
+pheno_uncor <- Rphenograph(data = dfci[,cl_markers])
+pheno_cor <- Rphenograph(data = corrected[,cl_markers])
+```
+
+```{r phenograph n_cl}
+cat(paste0('According to Phenograph, there are ', length(unique(pheno_uncor[[2]]$membership)), ' clusters in the combined, uncorrected dataset.\n'))
+
+cat(paste0('According to Phenograph, there are ', length(unique(pheno_cor[[2]]$membership)), ' clusters in the combined, batch corrected dataset.\n'))
+```
+
+The fact that fewer clusters are found after batch correction illustrates that we have a more well-combined dataset, in which the chance of having smaller batch-specific clusters is minimized.
+
+Now, one would normally proceed to labeling these clusters and looking for differential abundance between experimental conditions and so on. We will leave it here for now.
+

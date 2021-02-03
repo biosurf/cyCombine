@@ -1,11 +1,12 @@
 ---
 title: "Integrating spectral flow and CyTOF data"
 author: "Christina Bligaard Pedersen"
-date: "January 27, 2021"
+date: "February 3, 2021"
 output: 
   prettydoc::html_pretty:
     theme: hpstr
     highlight: vignette
+    df_print: paged
 vignette: >
   %\VignetteIndexEntry{cyCombine}
   %\VignetteEngine{knitr::rmarkdown}
@@ -78,10 +79,6 @@ spectral <- prepare_data(data_dir = data_dir,
                          markers = sfc_markers,
                          down_sample = FALSE)
 
-
-# We get rid of any negative values in the flow data using a linear shift - essentially these don't matter but it makes sense because cyCombine uses a cap of 0 for batch correction
-spectral <- linear_shift(spectral, .keep = T)
-
 ```
 
 <br>
@@ -138,7 +135,8 @@ corrected <- uncorrected %>%
   batch_correct(xdim = 8,
                 ydim = 8,
                 norm_method = 'rank',
-                ties.method = 'average')
+                ties.method = 'average',
+                rlen = 100)
 
 ```
 
@@ -152,8 +150,8 @@ We now evaluate the correction using EMD - each marker is evaluated across all c
 ```{r global emd, message=FALSE, fig.height=6, fig.width=12}
 corrected$label <- uncorrected$label <- 1 # We set all labels to 1 in order to evaluate globally
 
-emd <- evaluate_emd(preprocessed = uncorrected,
-             corrected = corrected)
+emd <- evaluate_emd(uncorrected = uncorrected,
+                    corrected = corrected)
 
 cowplot::plot_grid(emd$violin, emd$scatterplot)
 
