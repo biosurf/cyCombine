@@ -15,7 +15,7 @@
 #' @param markers Character vector with the markers to plot
 #' @param filename Output figure filename. If NULL plots are returned
 #' @param y The column to stack densities with. Default: "batch". If set to "Type", the dataset_names will be used to stack densities.
-#' @param xlim The limit of the x axis
+#' @param xlims The limits of the x axis as a vector
 #' @param dataset_names Change the names of the datasets from Uncorrected and Corrected to something else. Format: c("Uncorrected", "Corrected")
 #' @param ncol Number of density plots in a single row of plots. Default: 6
 #' @family plot
@@ -28,7 +28,7 @@ plot_density <- function(uncorrected,
                          markers = NULL,
                          filename = NULL,
                          y = "batch",
-                         xlim = 10,
+                         xlims = c(-1,10),
                          dataset_names = NULL,
                          ncol = 6,
                          format = 1) {
@@ -82,7 +82,7 @@ plot_density <- function(uncorrected,
       p[[c]] <- df %>%
         ggplot(aes_string(x = markers[c], y = 'batch')) +
         ggridges::geom_density_ridges(aes(color = .data$Type, fill = .data$Type), alpha = 0.4) +
-        coord_cartesian(xlim = c(-1, xlim)) +
+        coord_cartesian(xlim = xlims) +
         labs(y = y) +
         theme_bw()
     }
@@ -97,7 +97,7 @@ plot_density <- function(uncorrected,
       p[[c]] <- df %>%
         ggplot(aes_string(x = markers[c], y = 'Type')) +
         ggridges::geom_density_ridges(aes(color = batch, fill = batch), alpha = 0.4) +
-        coord_cartesian(xlim = c(-1, xlim)) +
+        coord_cartesian(xlim = xlims) +
         labs(y = y) +
         theme_bw()
     }

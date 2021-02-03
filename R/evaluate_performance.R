@@ -41,6 +41,11 @@ compute_emd <- function(df,
     dplyr::pull(cell_col) %>%
     unique() %>%
     sort()
+  
+  # Define limits for binning
+  lower <- floor(min(df[,markers])) - binSize
+  upper <- ceiling(max(df[,markers])) + binSize
+  binLims <- c(lower, upper)
 
   # Create list of distribution matrices
   distr <- list()
@@ -54,7 +59,8 @@ compute_emd <- function(df,
         dplyr::select(all_of(markers)) %>%
         apply(2, function(x) {
           # Bin data
-          bins <- seq(-10, 30, by = binSize)
+          bins <- seq(binLims[1], binLims[2], by = binSize)
+          # bins <- seq(-10, 30, by = binSize)
           if (length(x) == 0) {
             rep(0, times = length(bins) - 1)
           }else{
@@ -98,12 +104,14 @@ compute_emd <- function(df,
 #' @inheritParams compute_emd
 #' @param uncorrected Dataframe of uncorrected data
 #' @param corrected Dataframe of corrected data
+#' @param binSize The size of bins to use when binning data
 #' @param plots If TRUE, a violin and scatter plot of the emds will be returned
 #' @family emd
 #' @export
 evaluate_emd <- function(uncorrected,
                          corrected,
                          binSize = 0.1,
+                         binLims = F,
                          cell_col = "label",
                          batch_col = "batch",
                          markers = NULL,
@@ -125,7 +133,7 @@ evaluate_emd <- function(uncorrected,
     as.character()
   uncorrected[[cell_col]] <- uncorrected[[cell_col]] %>%
     as.character()
-
+  
   message("Computing EMD for corrected data..")
   emd_corrected <- corrected %>%
     dplyr::arrange(id) %>%
