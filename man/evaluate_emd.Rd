@@ -8,7 +8,6 @@ evaluate_emd(
   uncorrected,
   corrected,
   binSize = 0.1,
-  binLims = F,
   cell_col = "label",
   batch_col = "batch",
   markers = NULL,
