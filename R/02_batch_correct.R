@@ -244,7 +244,7 @@ correct_data <- function(df,
     df$covar <- as.factor(covar)
     covar <- "covar"
   }
-
+  
   corrected_data <- df %>%
     dplyr::group_by(.data[[label]]) %>%
     # Correct (modify) each label group with ComBat
@@ -300,13 +300,15 @@ correct_data <- function(df,
       return(ComBat_output)
     }) %>%
     dplyr::ungroup() %>%
-    # # Reduce all negative values to zero
-    # dplyr::mutate_at(dplyr::vars(all_of(markers)),
-    #                  function(x) {
-    #                    x[x < 0] <- 0
-    #                    x[x > 30] <- 30
-    #                    return(x)
-    #                    }) %>%
+    # Cap values to range of input data
+    dplyr::mutate_at(dplyr::vars(all_of(markers)),
+                     function(.) {
+                       min <- min(df[[substitute(.)]])
+                       max <- max(df[[substitute(.)]])
+                       . <- ifelse(. < min, min, .)
+                       . <- ifelse(. > max, max, .)
+                       return(.)
+                       }) %>%
     dplyr::arrange(id) %>%
     select(id, everything())
   return(corrected_data)
