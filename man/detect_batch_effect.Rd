@@ -8,7 +8,6 @@ detect_batch_effect(
   df,
   out_dir,
   downsample = NULL,
-  som_type = "fsom",
   norm_method = "scale",
   xdim = 8,
   ydim = 8,
@@ -25,8 +24,6 @@ detect_batch_effect(
 \item{out_dir}{Directory for plot output}
 
 \item{downsample}{Number of cells to include in detection. If not specified all cells will be used. One should be careful with the downsampling here as too strong downsampling leads to spurious results.}
-
-\item{som_type}{Type of SOM calculation (options = 'fsom' and 'kohonen')}
 
 \item{norm_method}{Normalization methods (options = 'scale' and 'rank')}
 

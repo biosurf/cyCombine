@@ -182,7 +182,6 @@ detect_batch_effect_express <- function(df,
 #'
 #' @param df Tibble containing the expression data and batch information. See prepare_data.
 #' @param downsample Number of cells to include in detection. If not specified all cells will be used. One should be careful with the downsampling here as too strong downsampling leads to spurious results.
-#' @param som_type Type of SOM calculation (options = 'fsom' and 'kohonen')
 #' @param norm_method Normalization methods (options = 'scale' and 'rank')
 #' @param xdim Grid size in x-axis for SOM (default = 8)
 #' @param ydim Grid size in y-axis for SOM (default = 8)
@@ -200,7 +199,6 @@ detect_batch_effect_express <- function(df,
 detect_batch_effect <- function(df,
                                 out_dir,
                                 downsample = NULL,
-                                som_type = "fsom",
                                 norm_method = "scale",
                                 xdim = 8,
                                 ydim = 8,
@@ -241,7 +239,6 @@ detect_batch_effect <- function(df,
       cyCombine::normalize(markers = markers,
                            norm_method = norm_method) %>%
       cyCombine::create_som(markers = markers,
-                            som_type = som_type,
                             seed = seed,
                             xdim = xdim,
                             ydim = ydim)

@@ -1,11 +1,12 @@
 ---
 title: "Integrating paired flow cytometry and CyTOF data"
 author: "Christina Bligaard Pedersen"
-date: "February 3, 2021"
+date: "February 4, 2021"
 output: 
   prettydoc::html_pretty:
     theme: hpstr
     highlight: vignette
+    df_print: paged
 vignette: >
   %\VignetteIndexEntry{cyCombine}
   %\VignetteEngine{knitr::rmarkdown}
