@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-**This vignette will demonstrate a general use-case of cyCombine.**
+**This vignette will demonstrate a general use-case of cyCombine**
 
 Alongside a directory of FCS files, a metadata and a panel file are assumed present.
 The metadata is in this example assumed to have the following columns:
@@ -193,7 +193,7 @@ corrected <- batch_correct(
   covar = "condition",
   markers = markers,
   norm_method = "scale", # "rank" is recommended when combining data with heavy batch effects
-  som_type = "fsom" # "kohonen" is recommended when using rank normalization
+  rlen = 10 # Higher values are recommended when using rank normalization and 10 does not appear to perform well
 )
 
 # Save result
@@ -219,7 +219,7 @@ labels <- uncorrected %>%
             norm_method = "rank", # "scale" is recommended in cases with light batch effects (e.g. when combining similar data)
             ties.method = "average") %>% # Can also be minimum
   create_som(markers = markers,
-             som_type = "kohonen", # Consider using som_type = "fsom" with norm_method = "scale", when combining similar data
+             rlen = 10, # If results are not convincing, consider using a higher value (e.g. 100)
              seed = 101,
              xdim = 8,
              ydim = 8)
@@ -258,7 +258,7 @@ library(tidyverse)
 # Re-run clustering on corrected data
 labels <- corrected %>% 
   create_som(markers = markers,
-             som_type = "fsom")
+             rlen = 10)
 uncorrected$label <- corrected$label <- labels
 
 # Evaluate EMD

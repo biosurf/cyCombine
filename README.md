@@ -119,8 +119,8 @@ saveRDS(uncorrected, file = "_data/cycombine_raw_uncorrected.RDS")
 # Run batch correction
 corrected <- uncorrected %>%
   batch_correct(markers = markers,
-                norm_method = "scale",
-                som_type = "fsom", # Anything else to use Kohonen clustering method
+                norm_method = "scale", # "rank" is recommended when combining data with heavy batch effects
+                rlen = 10, # Consider a larger value, if results are not convincing (e.g. 100)
                 covar = "condition")
 saveRDS(corrected, file = "_data/cycombine_raw_corrected.RDS")
 ```
@@ -157,7 +157,8 @@ saveRDS(uncorrected, file = "_data/cycombine_raw_uncorrected.RDS")
 labels <- uncorrected %>%
   normalize(markers = markers,
             norm_method = "scale") %>%
-  create_fsom(markers = markers) # Alternatively, use create_som() for Kohonen clustering method
+  create_som(markers = markers,
+             rlen = 10)
 
 corrected <- uncorrected %>%
   correct_data(label = labels,
