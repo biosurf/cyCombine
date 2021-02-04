@@ -1,7 +1,7 @@
 ---
 title: "Batch correction of two-panel CyTOF data"
 author: "Christina Bligaard Pedersen"
-date: "February 2, 2021"
+date: "February 4, 2021"
 output: 
   prettydoc::html_pretty:
     theme: hpstr
@@ -134,7 +134,6 @@ dfci1_bc <- dfci1 %>%
                 xdim = 8,
                 ydim = 8,
                 norm_method = 'scale',
-                som_type = 'fsom',
                 markers = markers1)
 ```
 
@@ -182,10 +181,9 @@ Finally, we will evaluate the EMD reduction for the batch correction of panel 1.
 # Generate labels for EMD evaluation
 labels <- dfci1_bc %>%
   create_som(seed = seed,
-                        som_type = 'fsom',
-                        xdim = 8,
-                        ydim = 8,
-                        markers = markers1)
+             xdim = 8,
+             ydim = 8,
+             markers = markers1)
 
 # Add labels to datasets
 dfci1_bc <- dfci1_bc %>%
@@ -218,7 +216,6 @@ dfci2_bc <- dfci2 %>%
                 xdim = 8,
                 ydim = 8,
                 norm_method = 'scale',
-                som_type = 'fsom',
                 markers = markers2)
 
 ```
@@ -268,10 +265,9 @@ Lastly, we evaluate the EMD reduction for the batch correction of panel 2 in the
 # Generate labels for EMD evaluation
 labels <- dfci2_bc %>%
   create_som(seed = seed,
-                        som_type = 'fsom',
-                        xdim = 8,
-                        ydim = 8,
-                        markers = markers2)
+             xdim = 8,
+             ydim = 8,
+             markers = markers2)
 
 # Add labels
 dfci2_bc <- dfci2_bc %>%
@@ -293,7 +289,7 @@ cowplot::plot_grid(emd_val2$violin, emd_val2$scatterplot)
 
 <br>
 
-For both panels, we find an EMD reduction of 0.67 when considering the batch corrections separately.
+For both panels, we find EMD reductions of 0.67 and 0.66, respectively, when considering the batch corrections separately.
 
 <br>
 
@@ -319,8 +315,7 @@ co_corrected <- batch_correct(df,
                               xdim = 8,
                               ydim = 8,
                               norm_method = 'scale',
-                              markers = overlap_markers,
-                              som_type = 'fsom')
+                              markers = overlap_markers)
 ```
 
 <br>
@@ -366,10 +361,9 @@ And the EMD reduction:
 # Generate labels for EMD evaluation
 labels <- co_corrected %>%
   create_som(seed = seed,
-                        som_type = 'fsom',
-                        xdim = 8,
-                        ydim = 8,
-                        markers = overlap_markers)
+             xdim = 8,
+             ydim = 8,
+             markers = overlap_markers)
 
 # Add labels
 co_corrected <- co_corrected %>%
@@ -389,7 +383,7 @@ emd_val_co <- df %>%
 cowplot::plot_grid(emd_val_co$violin, emd_val_co$scatterplot)
 ```
 
-For this correction, we obtain an EMD of 0.85.
+For this correction, we obtain an EMD of 0.86.
 
 
 

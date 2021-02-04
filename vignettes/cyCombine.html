@@ -12,7 +12,7 @@
 
 <meta name="author" content="Søren Helweg Dam" />
 
-<meta name="date" content="2021-01-27" />
+<meta name="date" content="2021-02-04" />
 
 <title>cyCombine</title>
 
@@ -179,14 +179,14 @@ code span.er { color: #a61717; background-color: #e3d2d2; }
 <div class="header-title-wrap">
 <h1 class="title toc-ignore entry-title">cyCombine</h1>
 <h3 class="author">Søren Helweg Dam</h3>
-<h3 class="date">January 27, 2021</h3>
+<h3 class="date">February 4, 2021</h3>
 </div><!-- /.header-title-wrap -->
 </header>
 
 
 <div class="entry-content">
 
-<p><strong>This vignette will demonstrate a general use-case of cyCombine.</strong></p>
+<p><strong>This vignette will demonstrate a general use-case of cyCombine</strong></p>
 <p>Alongside a directory of FCS files, a metadata and a panel file are assumed present. The metadata is in this example assumed to have the following columns:</p>
 <table>
 <thead>
@@ -217,8 +217,8 @@ code span.er { color: #a61717; background-color: #e3d2d2; }
 <div id="prepare-data" class="section level3">
 <h3>Prepare data</h3>
 <p>First, the FCS files are converted into a work-able <em>tibble</em>.</p>
-<div id="the-recommended-method" class="section level4">
-<h4>The recommended method</h4>
+<div id="the-recommended-workflow" class="section level4">
+<h4>The recommended workflow</h4>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a><span class="co"># Load packages</span></span>
 <span id="cb1-2"><a href="#cb1-2"></a><span class="kw">library</span>(cyCombine)</span>
 <span id="cb1-3"><a href="#cb1-3"></a><span class="kw">library</span>(tidyverse)</span>
@@ -249,9 +249,9 @@ code span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb1-28"><a href="#cb1-28"></a><span class="kw">saveRDS</span>(uncorrected, <span class="dt">file =</span> <span class="kw">file.path</span>(data_dir, <span class="st">&quot;uncorrected.RDS&quot;</span>))</span></code></pre></div>
 <p><br></p>
 </div>
-<div id="modular-method" class="section level4">
-<h4>Modular method</h4>
-<p>In case you want more control, you can adjust any step of this approach. Feel free to skip this segment, if the method above worked for you.</p>
+<div id="modular-workflow" class="section level4">
+<h4>Modular workflow</h4>
+<p>In case you want more control, you can adjust any step of this approach. Feel free to skip this segment, if the method above worked just fine for you.</p>
 <p>This example will include all possible input parameters to give an overview of what can be modified.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a><span class="co"># Load packages</span></span>
 <span id="cb2-2"><a href="#cb2-2"></a><span class="kw">library</span>(cyCombine)</span>
@@ -344,8 +344,8 @@ saveRDS(uncorrected, file = "data/uncorrected.RDS")
 </div>
 <div id="batch-correct" class="section level3">
 <h3>Batch correct</h3>
-<div id="the-recommended-method-1" class="section level4">
-<h4>The recommended method</h4>
+<div id="the-recommended-workflow-1" class="section level4">
+<h4>The recommended workflow</h4>
 <p>Skip this segment if you are interested in more modularity</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a><span class="co"># Load packages</span></span>
 <span id="cb3-2"><a href="#cb3-2"></a><span class="kw">library</span>(cyCombine)</span>
@@ -361,14 +361,14 @@ saveRDS(uncorrected, file = "data/uncorrected.RDS")
 <span id="cb3-12"><a href="#cb3-12"></a>  <span class="dt">covar =</span> <span class="st">&quot;condition&quot;</span>,</span>
 <span id="cb3-13"><a href="#cb3-13"></a>  <span class="dt">markers =</span> markers,</span>
 <span id="cb3-14"><a href="#cb3-14"></a>  <span class="dt">norm_method =</span> <span class="st">&quot;scale&quot;</span>, <span class="co"># &quot;rank&quot; is recommended when combining data with heavy batch effects</span></span>
-<span id="cb3-15"><a href="#cb3-15"></a>  <span class="dt">som_type =</span> <span class="st">&quot;fsom&quot;</span> <span class="co"># &quot;kohonen&quot; is recommended when combining distinct data with heavy batch effects</span></span>
+<span id="cb3-15"><a href="#cb3-15"></a>  <span class="dt">rlen =</span> <span class="dv">10</span> <span class="co"># Higher values are recommended when using rank normalization and 10 does not appear to perform well</span></span>
 <span id="cb3-16"><a href="#cb3-16"></a>)</span>
 <span id="cb3-17"><a href="#cb3-17"></a></span>
 <span id="cb3-18"><a href="#cb3-18"></a><span class="co"># Save result</span></span>
 <span id="cb3-19"><a href="#cb3-19"></a><span class="kw">saveRDS</span>(corrected, <span class="kw">file.path</span>(data_dir, <span class="st">&quot;corrected.RDS&quot;</span>))</span></code></pre></div>
 <p><br></p>
 </div>
-<div id="modular-method-1" class="section level4">
+<div id="modular-method" class="section level4">
 <h4>Modular method</h4>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a><span class="co"># Load packages</span></span>
 <span id="cb4-2"><a href="#cb4-2"></a><span class="kw">library</span>(cyCombine)</span>
@@ -384,7 +384,7 @@ saveRDS(uncorrected, file = "data/uncorrected.RDS")
 <span id="cb4-12"><a href="#cb4-12"></a>            <span class="dt">norm_method =</span> <span class="st">&quot;rank&quot;</span>, <span class="co"># &quot;scale&quot; is recommended in cases with light batch effects (e.g. when combining similar data)</span></span>
 <span id="cb4-13"><a href="#cb4-13"></a>            <span class="dt">ties.method =</span> <span class="st">&quot;average&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span><span class="co"># Can also be minimum</span></span>
 <span id="cb4-14"><a href="#cb4-14"></a><span class="st">  </span><span class="kw">create_som</span>(<span class="dt">markers =</span> markers,</span>
-<span id="cb4-15"><a href="#cb4-15"></a>             <span class="dt">som_type =</span> <span class="st">&quot;kohonen&quot;</span>, <span class="co"># Consider using som_type = &quot;fsom&quot; with norm_method = &quot;scale&quot;, when combining similar data</span></span>
+<span id="cb4-15"><a href="#cb4-15"></a>             <span class="dt">rlen =</span> <span class="dv">10</span>, <span class="co"># If results are not convincing, consider using a higher value (e.g. 100)</span></span>
 <span id="cb4-16"><a href="#cb4-16"></a>             <span class="dt">seed =</span> <span class="dv">101</span>,</span>
 <span id="cb4-17"><a href="#cb4-17"></a>             <span class="dt">xdim =</span> <span class="dv">8</span>,</span>
 <span id="cb4-18"><a href="#cb4-18"></a>             <span class="dt">ydim =</span> <span class="dv">8</span>)</span>
@@ -419,7 +419,7 @@ saveRDS(uncorrected, file = "data/uncorrected.RDS")
 <span id="cb5-11"><a href="#cb5-11"></a><span class="co"># Re-run clustering on corrected data</span></span>
 <span id="cb5-12"><a href="#cb5-12"></a>labels &lt;-<span class="st"> </span>corrected <span class="op">%&gt;%</span><span class="st"> </span></span>
 <span id="cb5-13"><a href="#cb5-13"></a><span class="st">  </span><span class="kw">create_som</span>(<span class="dt">markers =</span> markers,</span>
-<span id="cb5-14"><a href="#cb5-14"></a>             <span class="dt">som_type =</span> <span class="st">&quot;fsom&quot;</span>)</span>
+<span id="cb5-14"><a href="#cb5-14"></a>             <span class="dt">rlen =</span> <span class="dv">10</span>)</span>
 <span id="cb5-15"><a href="#cb5-15"></a>uncorrected<span class="op">$</span>label &lt;-<span class="st"> </span>corrected<span class="op">$</span>label &lt;-<span class="st"> </span>labels</span>
 <span id="cb5-16"><a href="#cb5-16"></a></span>
 <span id="cb5-17"><a href="#cb5-17"></a><span class="co"># Evaluate EMD</span></span>
