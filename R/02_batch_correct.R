@@ -146,7 +146,7 @@ create_som <- function(df,
     kohonen::som(grid = kohonen::somgrid(xdim = xdim, ydim = ydim),
                  rlen = rlen,
                  dist.fcts = "euclidean")
-  
+
   labels <- labels$unit.classif
 
   return(labels)
@@ -244,7 +244,7 @@ correct_data <- function(df,
     df$covar <- as.factor(covar)
     covar <- "covar"
   }
-  
+
   corrected_data <- df %>%
     dplyr::group_by(.data[[label]]) %>%
     # Correct (modify) each label group with ComBat
@@ -301,14 +301,14 @@ correct_data <- function(df,
     }) %>%
     dplyr::ungroup() %>%
     # Cap values to range of input data
-    dplyr::mutate_at(dplyr::vars(all_of(markers)),
-                     function(.) {
-                       min <- min(df[[substitute(.)]])
-                       max <- max(df[[substitute(.)]])
-                       . <- ifelse(. < min, min, .)
-                       . <- ifelse(. > max, max, .)
-                       return(.)
-                       }) %>%
+    dplyr::mutate(dplyr::across(dplyr::all_of(markers),
+                     function(x) {
+                       min <- min(df[[dplyr::cur_column()]])
+                       max <- max(df[[dplyr::cur_column()]])
+                       x <- ifelse(x < min, min, x)
+                       x <- ifelse(x > max, max, x)
+                       return(x)
+                       })) %>%
     dplyr::arrange(id) %>%
     select(id, everything())
   return(corrected_data)
