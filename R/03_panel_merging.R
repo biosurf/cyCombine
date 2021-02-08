@@ -84,8 +84,9 @@ salvage_problematic <- function(df,
     }
   }
 
-  # Fix values below 0
-  imputed[imputed < 0] <- 0
+  # Fix values outside input range (per marker) - should this be per som node?
+  imputed[imputed < min(complete_obs[,channel])] <- min(complete_obs[,channel])
+  imputed[imputed > max(complete_obs[,channel])] <- max(complete_obs[,channel])
 
   # Put the values back in the dataset
   df[df$batch %in% correct_batches, channel] <- imputed
@@ -184,8 +185,11 @@ impute_across_panels <- function(dataset1,
       }
     }
 
-    # Fix values below 0
-    imputed[imputed < 0] <- 0
+    # Fix values outside input range (per marker) - should this be per som node?
+    for (m in impute_channels) {
+      imputed[,m][imputed[,m] < min(complete_obs[,m])] <- min(complete_obs[,m])
+      imputed[,m][imputed[,m] > max(complete_obs[,m])] <- max(complete_obs[,m])
+    }
 
     # Add new columns to impute_for
     impute_for[,impute_channels] <- imputed
