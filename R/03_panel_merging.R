@@ -77,16 +77,16 @@ salvage_problematic <- function(df,
         pull(channel) %>%
         sample(size = sum(impute_obs_som==s), replace = T) + rnorm(sum(impute_obs_som==s), 0, dens$bw)
 
+      # Fix values outside input range (per marker) - should this be per som node?
+      imputed[which(impute_obs_som==s)][imputed[which(impute_obs_som==s)] < min(complete_obs[which(impute_obs_som==s),channel])] <- min(complete_obs[which(impute_obs_som==s),channel])
+      imputed[which(impute_obs_som==s)][imputed[which(impute_obs_som==s)] > max(complete_obs[which(impute_obs_som==s),channel])] <- max(complete_obs[which(impute_obs_som==s),channel])
+
     } else {
 
       imputed[which(impute_obs_som==s)] <- NA
       warning('Be aware that a cluster contains cells primarily from the dataset you wish to impute for. As a result, imputations were not made for those cells.')
     }
   }
-
-  # Fix values outside input range (per marker) - should this be per som node?
-  imputed[imputed < min(complete_obs[,channel])] <- min(complete_obs[,channel])
-  imputed[imputed > max(complete_obs[,channel])] <- max(complete_obs[,channel])
 
   # Put the values back in the dataset
   df[df$batch %in% correct_batches, channel] <- imputed
@@ -178,6 +178,13 @@ impute_across_panels <- function(dataset1,
           select(all_of(impute_channels)) %>%
           sample_n(size = sum(impute_obs_som==s), replace = T) %>%
           as.matrix() + sapply(impute_channels, function(ch) {rnorm(length(which(impute_obs_som==s)), 0, dens[ch])})
+
+        # Fix values outside input range (per marker)
+        for (m in impute_channels) {
+          imputed[which(impute_obs_som==s),m][imputed[which(impute_obs_som==s),m] < min(complete_obs[which(impute_obs_som==s),m])] <- min(complete_obs[which(impute_obs_som==s),m])
+          imputed[which(impute_obs_som==s),m][imputed[which(impute_obs_som==s),m] > max(complete_obs[which(impute_obs_som==s),m])] <- max(complete_obs[which(impute_obs_som==s),m])
+        }
+
       } else {
 
         imputed[which(impute_obs_som==s),impute_channels] <- NA
@@ -185,11 +192,7 @@ impute_across_panels <- function(dataset1,
       }
     }
 
-    # Fix values outside input range (per marker) - should this be per som node?
-    for (m in impute_channels) {
-      imputed[,m][imputed[,m] < min(complete_obs[,m])] <- min(complete_obs[,m])
-      imputed[,m][imputed[,m] > max(complete_obs[,m])] <- max(complete_obs[,m])
-    }
+
 
     # Add new columns to impute_for
     impute_for[,impute_channels] <- imputed

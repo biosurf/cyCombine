@@ -19,7 +19,10 @@
 #' df_normed <- df %>%
 #'   normalize()
 #' @export
-normalize <- function(df, markers = NULL, norm_method = "scale", ties.method = "min"){
+normalize <- function(df,
+                      markers = NULL,
+                      norm_method = "scale",
+                      ties.method = "average"){
 
   # Remove case-sensitivity
   norm_method <- norm_method %>% stringr::str_to_lower()
@@ -293,22 +296,22 @@ correct_data <- function(df,
         tibble::as_tibble() %>%
         dplyr::mutate(batch = df$batch,
                       sample = df$sample,
-                      id = df$id)
+                      id = df$id) %>%
+        # Cap values to range of input data
+        dplyr::mutate(dplyr::across(dplyr::all_of(markers),
+                                    function(x) {
+                                      min <- min(df[[dplyr::cur_column()]])
+                                      max <- max(df[[dplyr::cur_column()]])
+                                      x <- ifelse(x < min, min, x)
+                                      x <- ifelse(x > max, max, x)
+                                      return(x)
+                                    })) %>%
       # Only add covar column, if it is not null
       if(!is.null(covar)) ComBat_output[[covar]] <- df[[covar]]
 
       return(ComBat_output)
     }) %>%
     dplyr::ungroup() %>%
-    # Cap values to range of input data
-    dplyr::mutate(dplyr::across(dplyr::all_of(markers),
-                     function(x) {
-                       min <- min(df[[dplyr::cur_column()]])
-                       max <- max(df[[dplyr::cur_column()]])
-                       x <- ifelse(x < min, min, x)
-                       x <- ifelse(x > max, max, x)
-                       return(x)
-                       })) %>%
     dplyr::arrange(id) %>%
     select(id, everything())
   return(corrected_data)
@@ -350,13 +353,15 @@ correct_data_alt <- function(df,
     dplyr::mutate(batch = df$batch,
                   sample = df$sample,
                   id = df$id) %>%
-    # Reduce all negative values to zero
-    dplyr::mutate_at(dplyr::vars(all_of(markers)),
-                     function(x) {
-                       x[x < 0] <- 0
-                       x[x > 30] <- 30
-                       return(x)
-                     }) %>%
+    # Cap values to range of input data
+    dplyr::mutate(dplyr::across(dplyr::all_of(markers),
+                                function(x) {
+                                  min <- min(df[[dplyr::cur_column()]])
+                                  max <- max(df[[dplyr::cur_column()]])
+                                  x <- ifelse(x < min, min, x)
+                                  x <- ifelse(x > max, max, x)
+                                  return(x)
+                                })) %>%
     select(id, everything())
   return(corrected_data)
 }

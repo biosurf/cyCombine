@@ -4,7 +4,7 @@
 \alias{normalize}
 \title{Batch-wise normalization of data}
 \usage{
-normalize(df, markers = NULL, norm_method = "scale", ties.method = "min")
+normalize(df, markers = NULL, norm_method = "scale", ties.method = "average")
 }
 \arguments{
 \item{df}{tibble with expression values}
