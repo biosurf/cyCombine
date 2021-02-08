@@ -305,7 +305,7 @@ correct_data <- function(df,
                                       x <- ifelse(x < min, min, x)
                                       x <- ifelse(x > max, max, x)
                                       return(x)
-                                    })) %>%
+                                    }))
       # Only add covar column, if it is not null
       if(!is.null(covar)) ComBat_output[[covar]] <- df[[covar]]
 
