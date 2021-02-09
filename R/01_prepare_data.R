@@ -141,7 +141,7 @@ convert_flowset <- function(flowset,
       metadata[[filename_col]] <- paste0(metadata[[filename_col]], ".fcs")
     }
     # Remove files from metadata
-    metadata <- metadata[metadata[[filename_col]] %in% files, ]
+    metadata <- metadata[match(files, metadata[[filename_col]]),]
     # Get sample ids
     if (is.null(sample_ids)){
       sample_ids <- metadata[[filename_col]] %>%
