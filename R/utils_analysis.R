@@ -46,7 +46,7 @@ run_analysis <- function(tool,
                          md = NULL,
                          panel = NULL,
                          markers = NULL,
-                         celltype_col = NULL,
+                         celltype_col = "label",
                          segment = "",
                          binSize = 0.1,
                          rlen = 10,
@@ -144,14 +144,13 @@ run_analysis <- function(tool,
   # Evaluate ----
   if(any(segment %in% c("", "emd"))){
 
-
     if(is.null(celltype_col)){
       # Cluster and add labels
       if (file.exists(paste0(projdir, "_som.RDS")) & !restart){
         message("Loading SOMgrid..")
         labels <- readRDS(paste0(projdir, "_som.RDS"))
         # labels <- som_$unit.classif
-      }else{
+      } else{
         labels <- corrected %>%
           cyCombine::create_som(seed = seed,
                                 rlen = rlen,
@@ -164,7 +163,7 @@ run_analysis <- function(tool,
       corrected <- corrected %>%
         dplyr::mutate(som = labels)
       celltype_col <- "som"
-    }
+    } else if (celltype_col %!in% colnames(corrected)) stop(paste0("Column '", celltype_col, "' was not found in 'Corrected'. Please set 'celltype_col' to NULL or a column containing the celltypes or cluster labels."))
     message("Adding labels to data..")
 
     if(celltype_col %!in% colnames(uncorrected)){

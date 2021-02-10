@@ -17,7 +17,7 @@ run_analysis(
   md = NULL,
   panel = NULL,
   markers = NULL,
-  celltype_col = NULL,
+  celltype_col = "label",
   segment = "",
   binSize = 0.1,
   rlen = 10,
@@ -49,7 +49,7 @@ run_analysis(
 
 \item{markers}{Optional: Manually define markers to use in plots and performance metrics}
 
-\item{celltype_col}{Optional: If the cell types are know, specify which column they are defined in}
+\item{celltype_col}{Optional: If the cell types are known, specify which column they are defined in. If NULL, a clustering will be run.}
 
 \item{segment}{Optional: Run only a specific segment of the analysis. Options include: "emd", "density", "umap"}
 
