@@ -1,7 +1,7 @@
 ---
 title: "Batch correction of two-panel CyTOF data"
 author: "Christina Bligaard Pedersen"
-date: "February 4, 2021"
+date: "February 9, 2021"
 output: 
   prettydoc::html_pretty:
     theme: hpstr
@@ -289,7 +289,7 @@ cowplot::plot_grid(emd_val2$violin, emd_val2$scatterplot)
 
 <br>
 
-For both panels, we find EMD reductions of 0.67 and 0.66, respectively, when considering the batch corrections separately.
+For both panels, we find EMD reductions of 0.68 and 0.67, respectively, when considering the batch corrections separately.
 
 <br>
 
@@ -383,7 +383,7 @@ emd_val_co <- df %>%
 cowplot::plot_grid(emd_val_co$violin, emd_val_co$scatterplot)
 ```
 
-For this correction, we obtain an EMD of 0.86.
+For this correction, we obtain an EMD of 0.85.
 
 
 
