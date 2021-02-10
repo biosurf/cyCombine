@@ -18,7 +18,7 @@
 #' @param md Optional: Metadata filename. Currently not useful
 #' @param panel Optional: If given, it will be used to define markers. Otherwise the function \code{\link{get_markers}} will be used
 #' @param markers Optional: Manually define markers to use in plots and performance metrics
-#' @param celltype_col Optional: If the cell types are know, specify which column they are defined in
+#' @param celltype_col Optional: If the cell types are known, specify which column they are defined in. If NULL, a clustering will be run.
 #' @param segment Optional: Run only a specific segment of the analysis. Options include: "emd", "density", "umap"
 #' @param gridsize The gridsize to use when clustering. Only used if no celltype_col is given
 #' @param seed The seed to use when creating the UMAP
@@ -46,7 +46,7 @@ run_analysis <- function(tool,
                          md = NULL,
                          panel = NULL,
                          markers = NULL,
-                         celltype_col = "label",
+                         celltype_col = NULL,
                          segment = "",
                          binSize = 0.1,
                          rlen = 10,

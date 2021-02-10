@@ -17,7 +17,7 @@ run_analysis(
   md = NULL,
   panel = NULL,
   markers = NULL,
-  celltype_col = "label",
+  celltype_col = NULL,
   segment = "",
   binSize = 0.1,
   rlen = 10,
