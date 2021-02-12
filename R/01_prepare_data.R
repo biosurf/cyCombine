@@ -277,6 +277,7 @@ fcs_sample <- function(flowframe, sample, nrows, seed = 473){
 #' @param df The tibble to transform
 #' @param markers The markers to transform on
 #' @param cofactor The cofactor to use when transforming
+#' @param derand Derandomize. Should be TRUE for CyTOF data, otherwise FALSE.
 #' @param .keep Keep all channels. If FALSE, channels that are not transformed are removed
 #' @importFrom knitr combine_words
 #' @family dataprep
@@ -284,7 +285,11 @@ fcs_sample <- function(flowframe, sample, nrows, seed = 473){
 #' uncorrected <- df %>%
 #'   transform_asinh(markers = markers)
 #' @export
-transform_asinh <- function(df, markers = NULL, cofactor = 5, .keep = FALSE){
+transform_asinh <- function(df,
+                            markers = NULL,
+                            cofactor = 5,
+                            derand = TRUE,
+                            .keep = FALSE){
   if(is.null(markers)){
     markers <- df %>%
       cyCombine::get_markers()
@@ -304,7 +309,9 @@ transform_asinh <- function(df, markers = NULL, cofactor = 5, .keep = FALSE){
                 ~ dplyr::select_if(., colnames(.) %in% c(markers, non_markers))) %>%
     # Transform all data on those markers
     dplyr::mutate(dplyr::across(dplyr::all_of(markers),
-                     .fns = function(x) asinh(ceiling(x)/cofactor)))
+                     .fns = function(x){
+                       if(derand) asinh(ceiling(x)/cofactor) else asinh(x/cofactor)
+                     }))
   return(transformed)
 }
 
@@ -384,6 +391,7 @@ prepare_data <- function(data_dir = NULL,
                          panel_channel = "fcs_colname",
                          panel_antigen = "antigen",
                          cofactor = 5,
+                         derand = TRUE,
                          .keep = FALSE){
 
   # Stop if no data is given
@@ -420,6 +428,7 @@ prepare_data <- function(data_dir = NULL,
     # Transform dataset with asinh
     cyCombine::transform_asinh(markers = markers,
                                cofactor = cofactor,
+                               derand = derand,
                                .keep = .keep)
   message("Done!")
   return(fcs_data)

@@ -21,6 +21,7 @@ prepare_data(
   panel_channel = "fcs_colname",
   panel_antigen = "antigen",
   cofactor = 5,
+  derand = TRUE,
   .keep = FALSE
 )
 }
@@ -56,6 +57,8 @@ prepare_data(
 \item{panel_antigen}{Optional: Only used if panel is given. It is the column name in the panel data.frame that contains the antigen names}
 
 \item{cofactor}{The cofactor to use when transforming}
+
+\item{derand}{Derandomize. Should be TRUE for CyTOF data, otherwise FALSE.}
 
 \item{.keep}{Keep all channels. If FALSE, channels that are not transformed are removed}
 }
