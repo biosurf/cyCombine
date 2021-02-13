@@ -20,7 +20,10 @@ salvage_problematic <- function(df,
                                 correct_batches,
                                 channel,
                                 sample_size = NULL,
-                                exclude = NULL) {
+                                exclude = NULL,
+                                xdim = 8,
+                                ydim = 8,
+                                seed = 482) {
 
   message(paste('Started imputation for', channel, 'in batch(es)', paste(correct_batches, collapse = ', ')))
 
@@ -44,8 +47,9 @@ salvage_problematic <- function(df,
 
   # Get 5 x 5 SOM classes for each event - on overlapping markers
   som_classes <- overlapping_data %>%
-    create_som(xdim = 5,
-               ydim = 5)
+    create_som(xdim = xdim,
+               ydim = ydim,
+               seed = seed)
 
   # Split SOM classes to each original dataset
   complete_obs_som <- som_classes[1:nrow(complete_obs)]
@@ -57,7 +61,7 @@ salvage_problematic <- function(df,
   # For each missing event in each cluster, impute values based on density draws in respective cluster
   # (here represented by random sample and addition of a number with mean 0 and bandwidth sd)
 
-  print('Performing density draws')
+  cat('Performing density draws.\n')
 
   imputed <- rep(0, length(impute_obs_som))
 
@@ -73,6 +77,7 @@ salvage_problematic <- function(df,
         density()
 
       # For each missing event in each cluster, impute values based on density draws in respective cluster (here represented by random sample and addition of a number with mean 0 and bandwidth sd)
+      set.seed(seed)
       imputed[which(impute_obs_som==s)] <- complete_obs[which(complete_obs_som==s),] %>%
         pull(channel) %>%
         sample(size = sum(impute_obs_som==s), replace = T) + rnorm(sum(impute_obs_som==s), 0, dens$bw)
@@ -115,7 +120,10 @@ impute_across_panels <- function(dataset1,
                                  dataset2,
                                  overlap_channels,
                                  impute_channels1,
-                                 impute_channels2) {
+                                 impute_channels2,
+                                 xdim = 8,
+                                 ydim = 8,
+                                 seed = 482) {
 
 
   # Checking colnames
@@ -138,8 +146,9 @@ impute_across_panels <- function(dataset1,
 
   som_classes <- overlapping_data %>%
     create_som(markers = overlap_channels,
-               xdim = 5,
-               ydim = 5)
+               xdim = xdim,
+               ydim = ydim,
+               seed = seed)
 
     # Split SOM classes to each original dataset
   dataset1_som <- som_classes[1:nrow(dataset1)]
@@ -162,7 +171,7 @@ impute_across_panels <- function(dataset1,
 
 
     # For each missing event in each cluster, impute values based on density draws in the same cluster
-    print(paste0('Performing density draws for dataset', i))
+    cat(paste0('Performing density draws for dataset', i, '.\n'))
     imputed <- matrix(nrow=nrow(impute_for), ncol=length(impute_channels), dimnames = list("rn"=NULL, "cn"=impute_channels))
 
     for (s in sort(unique(impute_obs_som))) {
@@ -174,6 +183,7 @@ impute_across_panels <- function(dataset1,
         dens <- apply(complete_obs[which(complete_obs_som==s), impute_channels], 2, function(x) {density(x)$bw})
 
         # Performing the imputation
+        set.seed(seed)
         imputed[which(impute_obs_som==s),] <- complete_obs[which(complete_obs_som==s),] %>%
           select(all_of(impute_channels)) %>%
           sample_n(size = sum(impute_obs_som==s), replace = T) %>%
