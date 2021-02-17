@@ -1,5 +1,5 @@
 ---
-title: "Performance banchmarking"
+title: "Performance benchmarking"
 author: "Christina Bligaard Pedersen"
 date: "February 17, 2021"
 output: 
@@ -15,32 +15,29 @@ vignette: >
 This vignette will demonstrate the performance benchmarking applied in the cyCombine article. 
 
 
-<!-- ```{r setup, include = FALSE} -->
-<!-- knitr::opts_chunk$set( -->
-<!--   strip.white = T, comment = "" -->
-<!-- ) -->
-
-<!-- knitr::opts_knit$set(root.dir = '/home/projects/dp_immunoth/people/s153398/cyCombine/_data/') -->
-
-<!-- ``` -->
-
 <br>
 
 
-### How to run each tool
-To be continued.
+## Performance metrics - discussion
+In the cyCombine article, the Earth Mover's Distance (EMD) reduction is used as the most important performance metric. As with most metrics this has both advantages and disadvantages. 
+
+As mentioned in the article, the EMD was used to compare the distribution of each marker within SOM nodes across batches. The metric relies on binning of values in bins at 0.1-increments (default) and computes the EMD for every marker for each pairwise batch comparison. This means that if you have seven batches and 15 markers, you have 21 * 15 = 315 EMD calculations *per SOM node*. Now, this notion of calculation per-SOM node is one to discuss: If you calculate the EMD globally, across all cells, you essentially assume that the distribution of cell types is also the same between batches - i.e. that you have an equal fraction of CD8+ cells in each batch. This may not hold true. Instead, when clustering (in this case by the use of a SOM) is applied, you avoid such assumptions. We use a relatively large SOM of 8x8 = 64 nodes, so we are likely to obtain over-clustering of the dataset in question. This is done to compare only highly similar cells when the EMDs are calculated. 
+
+In practice, we perform the SOM clustering on the *corrected* data, no matter the batch correction tool. The idea behind this is that batch effects should be removed after correction allowing for more correct clustering. The assigned SOM node for each cell is then transferred from the corrected data to the *uncorrected* data allowing for direct comparison of single cells before and after batch correction. 
+
+This however has some implications for the analysis, including the fact that the EMD values for an *uncorrected* data set will vary between batch correction methods. Depending on the correction cells may get clustered differently, leading to different EMD computations in uncorrected data.
 
 
-### Performance metrics - discussion
-In the cyCombine article, the Earth Mover's Distance (EMD) reduction is used as the most important perfomance metric. As with most metrics this has both advantages and disadvantages. 
+Why do we do this? Because the clustering of uncorrected data might not be 'correct' - and while we make the assumption that scaling/ranking is necessary to align populations, not all the tested tools apply such measures.
 
-As mentioned in the article, the EMD was used to compare the distribution of each marker within SOM nodes across batches. The metric relies on binning of values in bins at 0.1-increments (default) and computes the EMD for every marker for each pairwise batch comparison. This means that if you have seven batches and 15 markers, you have 21 * 15 = 315 EMD calculations **per SOM node**. Now, this notion of calculation per-SOM node is one to discuss: If you calculate the EMD globally, across all cells, you essentially assume that the distribution of cell types is also the same between batches - i.e. that you have an equal fraction of CD8+ cells in each batch. This may not hold true. Instead, when clustering (in this case by the use of a SOM) is applied, you avoid such assumptions. We use a relatively large SOM of 8x8 = 64 nodes, so we are likely to obtain over-clustering of the dataset in question. This is done to compare only highly similar cells when the EMDs are calculated. 
-
-In practice, we perform the SOM clustering on the **corrected** data, no matter the batch correction tool. The idea behind this is that batch effects should be removed after correction allowing for more correct clustering. The assigned SOM node for each cell is then transferred from the corrected data to the **uncorrected** data allowing for direct comparison of single cells before and after batch correction. 
-
-This however has some implications for the analysis, including the fact that the EMD values for an **uncorrected** data set will vary between batch correction methods. Depending on the correction cells may get clustered differently, leading to different EMD computations in uncorrected data.
+Another approach could be to use pre-defined cell labels for each cell instead of a SOM clustering and then quantify the batch effect with EMD calculations within these cell groups. This strongly relies on the user to come up with a robust labeling before the testing and can also be considered biased. However, once labels are in place, the solution is quick to implement and also lowers the computational run time.
 
 
 
+<br>
 
+## Benchmarking: CytoNorm data
+```{r child="benchmarking/cytonorm_data.Rmd"}
+
+```
 

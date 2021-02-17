@@ -1,7 +1,7 @@
 ---
 title: "Integrating CITE-seq and CyTOF data"
 author: "Christina Bligaard Pedersen"
-date: "February 4, 2021"
+date: "February 17, 2021"
 output: 
   prettydoc::html_pretty:
     theme: hpstr

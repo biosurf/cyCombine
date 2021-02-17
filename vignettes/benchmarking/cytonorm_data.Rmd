@@ -1,0 +1,133 @@
+---
+title: "CytoNorm data"
+author: "Christina Bligaard Pedersen"
+date: "February 17, 2021"
+output: 
+  prettydoc::html_pretty:
+    theme: hpstr
+    highlight: vignette
+vignette: >
+  %\VignetteIndexEntry{cyCombine}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  strip.white = T, comment = ""
+)
+
+knitr::opts_knit$set(root.dir = '/home/projects/dp_immunoth/people/s153398/cyCombine/')
+
+```
+
+
+### Loading data
+
+```{r packages, results = 'hide', warning=FALSE, message=FALSE}
+# Load packages
+library(cyCombine)
+library(tidyverse)
+```
+
+
+```{r loading data, results = 'hide', warning=FALSE, message=FALSE}
+# Specify data location
+data_dir <- "cytonorm/data"
+
+# Define markers
+markers <- file.path(data_dir, "panel_cytonorm.xlsx") %>% 
+  readxl::read_xlsx() %>% 
+  dplyr::filter(marker_class != "none") %>% 
+  dplyr::pull(antigen) %>% 
+  stringr::str_remove_all("^\\d+[A-Za-z]+_") %>%
+  stringr::str_remove_all("[ _-]")
+
+# Compile fcs files and preprocess
+uncorrected <- prepare_data(data_dir = data_dir,
+                            metadata = "cytonorm_cohort.xlsx",
+                            filename_col = "FCS_name",
+                            batch_ids = "Batch",
+                            condition = "Set",
+                            sample_ids = "FCS_name",
+                            markers = markers,
+                            down_sample = FALSE,
+                            cofactor = 5,
+                            derand = TRUE)
+
+# Subsetting to singlet cells - commented out, as they don't do it in the original paper
+# uncorrected <- uncorrected %>% dplyr::filter(singlet)
+
+# Change sample IDs to those in the metadata file
+meta <- readxl::read_xlsx(paste0(data_dir, "/cytonorm_cohort.xlsx"))
+uncorrected$sample <- meta[["Sample ID"]][match(uncorrected$sample, meta$FCS_name)]
+
+```
+
+
+### cyCombine
+
+```{r cyCombine, fig.height=5, fig.width=10, message=FALSE, warning=FALSE, error=FALSE, results='hide'}
+# Run batch correction
+corrected <- uncorrected %>%
+  batch_correct(markers = markers,
+                rlen = 10,
+                norm_method = 'scale',
+                covar = "condition")
+
+# Cluster and add labels
+labels <- corrected %>%
+          cyCombine::create_som(rlen = 10,
+                                xdim = 8,
+                                ydim = 8,
+                                markers = markers)
+# Add labels
+corrected <- corrected %>%
+  dplyr::mutate(som = labels)
+
+celltype_col <- "som"
+
+# Transfer labels to uncorrected data
+uncorrected <- corrected %>%
+  dplyr::select(id, all_of(celltype_col)) %>%
+  dplyr::left_join(uncorrected, by = "id")
+
+# Evaluation using EMD
+emd_val <- uncorrected %>%
+      cyCombine::evaluate_emd(corrected,
+                              binSize = 0.1,
+                              markers = markers,
+                              cell_col = celltype_col)
+
+# Show plots
+cowplot::plot_grid(emd_val$violin, emd_val$scatterplot)
+```
+
+
+### iMUBAC
+
+```{r iMUBAC}
+
+```
+
+
+### CytoNorm
+
+```{r CytoNorm}
+library(CytoNorm)
+
+```
+
+
+### CytofRUV
+
+```{r CytofRUV}
+
+```
+
+
+### CytofBatchAdjust
+
+```{r CytofBatchAdjust}
+
+```

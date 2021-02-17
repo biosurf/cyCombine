@@ -1,7 +1,7 @@
 ---
 title: "Integrating CITE-seq, spectral flow and CyTOF data"
 author: "Christina Bligaard Pedersen"
-date: "February 4, 2021"
+date: "February 17, 2021"
 output: 
   prettydoc::html_pretty:
     theme: hpstr
@@ -173,6 +173,7 @@ spectral <- prepare_data(data_dir = data_dir,
                          condition = "Set",
                          sample_ids = "Patient id",
                          cofactor = 6000,
+                         derand = FALSE,
                          markers = sfc_markers,
                          down_sample = FALSE)
 
@@ -266,6 +267,9 @@ corrected <- uncorrected %>%
                 norm_method = 'rank',
                 ties.method = 'average',
                 rlen = 100)
+
+# Save SOMs from uncorrected, normalized data
+uncor_som <- corrected$label
 
 # Add labels back from uncorrected
 corrected$label <- uncorrected$label

@@ -32,7 +32,7 @@ Imagine that you have run an expensive and time-consuming cytometry experiment. 
 In any case, you really wish that you could correct this marker in this single batch. This is because you need the marker for clustering - and if it's non-sensical in one batch it could ruin the whole analysis plan. Enter cyCombine! In particular the `salvage_problematic` function, which allows imputation of a single marker in user-specified batches. The function uses the information found in all other markers in the combined dataset to determine the most likely value for the single marker. This vignette will demonstrate how.
 
 
-This is data from a study of CLL patients and healthy donors at the Dana-Farber Cancer Institute (DFCI). The protein expression was quantified using mass cytometry for 136 samples (20 healthy donors). 
+This is data from a study of CLL patients and healthy donors at the Dana-Farber Cancer Institute (DFCI). The protein expression was quantified using mass cytometry for 126 samples (20 healthy donors). 
 
 
 <br>
@@ -54,7 +54,7 @@ We are now ready to load the CyTOF data. We have set up a panel file in csv form
 
 ```{r loading flow data 1, warning=FALSE, message=FALSE}
 # Directory with raw .fcs files
-data_dir <- "dfci1"
+data_dir <- "dfci1_2"
 
 # Panel and reading data
 panel <- read_csv(paste0(data_dir, "/panel1.csv"))
