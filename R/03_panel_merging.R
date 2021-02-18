@@ -45,7 +45,7 @@ salvage_problematic <- function(df,
                             impute_for[,!colnames(impute_for) %in% c("batch", "sample", "id", exclude)])
 
 
-  # Get 5 x 5 SOM classes for each event - on overlapping markers
+  # Get SOM classes for each event - on overlapping markers
   som_classes <- overlapping_data %>%
     create_som(xdim = xdim,
                ydim = ydim,
@@ -71,7 +71,6 @@ salvage_problematic <- function(df,
     if (sum(complete_obs_som==s) >= 50) {
 
       # Estimate the density per marker that needs imputation
-
       dens <- complete_obs[which(complete_obs_som==s),] %>%
         pull(channel) %>%
         density()
@@ -82,7 +81,7 @@ salvage_problematic <- function(df,
         pull(channel) %>%
         sample(size = sum(impute_obs_som==s), replace = T) + rnorm(sum(impute_obs_som==s), 0, dens$bw)
 
-      # Fix values outside input range (per marker) - should this be per som node?
+      # Fix values outside input range (per marker) - per SOM node
       imputed[which(impute_obs_som==s)][imputed[which(impute_obs_som==s)] < min(complete_obs[which(impute_obs_som==s),channel])] <- min(complete_obs[which(impute_obs_som==s),channel])
       imputed[which(impute_obs_som==s)][imputed[which(impute_obs_som==s)] > max(complete_obs[which(impute_obs_som==s),channel])] <- max(complete_obs[which(impute_obs_som==s),channel])
 
@@ -185,14 +184,14 @@ impute_across_panels <- function(dataset1,
         # Performing the imputation
         set.seed(seed)
         imputed[which(impute_obs_som==s),] <- complete_obs[which(complete_obs_som==s),] %>%
-          select(all_of(impute_channels)) %>%
-          sample_n(size = sum(impute_obs_som==s), replace = T) %>%
-          as.matrix() + sapply(impute_channels, function(ch) {rnorm(length(which(impute_obs_som==s)), 0, dens[ch])})
+          dplyr::select(all_of(impute_channels)) %>%
+          dplyr::sample_n(size = sum(impute_obs_som==s), replace = T) %>%
+          as.matrix() + sapply(impute_channels, function(ch) {rnorm(sum(impute_obs_som==s), 0, dens[ch])})
 
         # Fix values outside input range (per marker)
         for (m in impute_channels) {
-          imputed[which(impute_obs_som==s),m][imputed[which(impute_obs_som==s),m] < min(complete_obs[which(impute_obs_som==s),m])] <- min(complete_obs[which(impute_obs_som==s),m])
-          imputed[which(impute_obs_som==s),m][imputed[which(impute_obs_som==s),m] > max(complete_obs[which(impute_obs_som==s),m])] <- max(complete_obs[which(impute_obs_som==s),m])
+          imputed[which(impute_obs_som==s),m][imputed[which(impute_obs_som==s),m] < min(complete_obs[which(complete_obs_som==s),m])] <- min(complete_obs[which(complete_obs_som==s),m])
+          imputed[which(impute_obs_som==s),m][imputed[which(impute_obs_som==s),m] > max(complete_obs[which(complete_obs_som==s),m])] <- max(complete_obs[which(complete_obs_som==s),m])
         }
 
       } else {
@@ -208,7 +207,7 @@ impute_across_panels <- function(dataset1,
     impute_for[,impute_channels] <- imputed
 
     impute_for <- impute_for %>%
-      relocate(c(batch, sample, id), .after = all_of(impute_channels))
+      dplyr::relocate(c(batch, sample, id), .after = all_of(impute_channels))
 
     imputed_dfs[[paste0('dataset', i)]] <- impute_for
   }
