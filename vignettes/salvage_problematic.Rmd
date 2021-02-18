@@ -121,6 +121,4 @@ plot_density(dfci, imputed, ncol = 4)
 <br>
 
 
-Notice how it is only the expression of XCL1 in the single batch, batch 1, which has changed compared to the raw data. This is excatly what we wanted. Furthermore, look how nicely the distribution of the marker corresponds to those in the other seven batches.
-
-Next, one might go on to correct another marker - perhaps TBet for batches 6 and 7 could do with some correction? But then again, batch correction will likely be able to salvage those.
+Notice how it is only the expression of XCL1 in the single batch, batch 1, which has changed compared to the raw data. This is exactly what we wanted. Furthermore, look how nicely the distribution of the marker corresponds to those in the other six batches.
