@@ -1,7 +1,7 @@
 ---
 title: "Integrating spectral flow and CyTOF data"
 author: "Christina Bligaard Pedersen"
-date: "February 4, 2021"
+date: "February 17, 2021"
 output: 
   prettydoc::html_pretty:
     theme: hpstr
@@ -28,9 +28,10 @@ knitr::opts_knit$set(root.dir = '/home/projects/dp_immunoth/people/s134891/cycom
 
 First, let us present the two datasets we will integrate:
 
-As an example of spectral flow cytometry data, we will use the dataset from [Park et al. (2020)](https://doi.org/10.1002/cyto.a.24213). The data is based on human PBMCs, and contains four samples, which we downloaded and pre-gated to live single cells.
+As an example of spectral flow cytometry data, we will use the dataset from [Park et al. (2020)](https://doi.org/10.1002/cyto.a.24213). The data is based on healthy donor PBMCs, and contains four samples, which were frozen and thawed, stained with 40 different antibodies in one panel, and analysed using a 5-laser full spectrum flow cytometer (Cytek Biosciences Aurora). We downloaded these from FlowRepository (ID: FR-FCM-Z2QV) and pre-gated to live single cells in FlowJo version 10 (Tree Star Inc). Singlets and non-debris were identified using forward and side-scatter. Dead cells were excluded using live/dead stains. Data from these gates were then exported in FCS format.
 
 For the CyTOF data, we use the data from a single healthy donor processed at the Human Immune Monitoring Center. The sample was derived from FlowRepository https://flowrepository.org/id/FR-FCM-ZYAJ and pre-gated to live intact singlets. The data was subsequently manually gated to populations of interest. 
+
 
 
 We start by loading some packages
@@ -38,7 +39,6 @@ We start by loading some packages
 ```{r libraries, results = 'hide', warning=FALSE, message=FALSE}
 library(cyCombine)
 library(tidyverse)
-library(Seurat)
 
 ```
 
@@ -76,6 +76,7 @@ spectral <- prepare_data(data_dir = data_dir,
                          batch_ids = "Batch",
                          condition = "Set",
                          cofactor = 6000,
+                         derand = FALSE,
                          markers = sfc_markers,
                          down_sample = FALSE)
 

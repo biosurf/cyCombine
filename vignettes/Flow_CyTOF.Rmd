@@ -1,7 +1,7 @@
 ---
 title: "Integrating paired flow cytometry and CyTOF data"
 author: "Christina Bligaard Pedersen"
-date: "February 4, 2021"
+date: "February 17, 2021"
 output: 
   prettydoc::html_pretty:
     theme: hpstr
@@ -33,6 +33,9 @@ These datasets are from the article by [Oetjen et al. (2018)](https://doi.org/10
 
 We downloaded the FCS files for the 8 CyTOF samples and the T cell flow cytometry panel (the 8 paired donors) from FlowRepository (FR-FCM-ZYQ9, FR-FCM-ZYQB). Both datasets were pre-gated to live, intact singlet cells and exported as FCS files.
 
+The flow cytometry dataset consists of 23 bone marrow aspirates from healthy donors, which were frozen and thawed, stained with a total of 47 different antibodies across 5 panels and analyzed using a 5-laser flow cytometer (BD Biosciences LSRFortessa). Pre-processing was done in FlowJo version 10 (Tree Star Inc). Singlets and non-debris were identified using forward and side-scatter. Dead cells were excluded using live/dead stains.
+
+
 <br>
 
 #### Preparing data
@@ -42,7 +45,6 @@ We start by loading some packages.
 ```{r libraries, results = 'hide', warning=FALSE, message=FALSE}
 library(cyCombine)
 library(tidyverse)
-library(Seurat)
 
 ```
 
@@ -72,13 +74,14 @@ flow_markers <- flow_panel %>%
   str_remove_all("[ _-]")
 
 flow <- prepare_data(data_dir = data_dir,
-                         metadata = "metadata.xlsx",
-                         filename_col = "FileName_T",
-                         batch_ids = "Batch",
-                         cofactor = 150,
-                         sample_ids = 'SampleID',
-                         markers = flow_markers,
-                         down_sample = FALSE)
+                     metadata = "metadata.xlsx",
+                     filename_col = "FileName_T",
+                     batch_ids = "Batch",
+                     cofactor = 150,
+                     derand = FALSE,
+                     sample_ids = 'SampleID',
+                     markers = flow_markers,
+                     down_sample = FALSE)
 
 ```
 

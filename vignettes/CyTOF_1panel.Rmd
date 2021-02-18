@@ -1,7 +1,7 @@
 ---
 title: "Batch correction of CyTOF data"
 author: "Christina Bligaard Pedersen"
-date: "February 2, 2021"
+date: "February 18, 2021"
 output: 
   prettydoc::html_pretty:
     theme: hpstr
@@ -12,7 +12,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-This vignette will demonstrate the batch correction of a CyTOF set consisting of 136 samples in eight batches using cyCombine.
+This vignette will demonstrate the batch correction of a CyTOF set consisting of 126 samples in seven batches using cyCombine.
 
 
 ```{r setup, include = FALSE}
@@ -26,7 +26,7 @@ knitr::opts_knit$set(root.dir = '/home/projects/dp_immunoth/people/s153398/cyCom
 
 
 <br>
-This is data from a study of CLL patients and healthy donors at the Dana-Farber Cancer Institute (DFCI). The protein expression was quantified using mass cytometry for 136 samples (20 healthy donors). The data was run in eight batches, with batch 8 being run around a half year later than the other seven batches. 
+This is data from a study of CLL patients and healthy donors at the Dana-Farber Cancer Institute (DFCI). The protein expression was quantified using mass cytometry for 126 samples (20 healthy donors). The data was run in seven batches.
 
 
 <br>
@@ -49,7 +49,7 @@ We are now ready to load the CyTOF data. We have set up a panel file in csv form
 
 ```{r loading data 1, warning=FALSE, message=FALSE}
 # Directory with raw .fcs files
-data_dir <- "dfci1"
+data_dir <- "dfci1_2"
 
 # Panel and reading data
 panel <- read_csv(paste0(data_dir, "/panel1.csv"))
@@ -76,6 +76,7 @@ dfci <- prepare_data(data_dir = data_dir,
                      batch_ids = "Batch",
                      condition = "Set",
                      markers = markers,
+                     derand = TRUE,
                      down_sample = FALSE)
 
 
@@ -107,7 +108,7 @@ When looking at XCL1, we clearly observe the batch effect indicated before - bat
 
 <br>
 
-Now for the final plot - a multidimensional scaling (MDS) plot. This form of dimensionality reduction can be used to detect outlier batches (or samples) based on the median marker expression per *sample*. Each dot corresponds to a sample - and the colors represent batches. If there are no batch effects, the pattern would be random - and though it can be hard to judge, here we will notice how the purple batch 7 samples almost exclusively appear in the top part of the plot. Meanwhile, the pink batch 8 samples lump around (2,0).
+Now for the final plot - a multidimensional scaling (MDS) plot. This form of dimensionality reduction can be used to detect outlier batches (or samples) based on the median marker expression per *sample*. Each dot corresponds to a sample - and the colors represent batches. If there are no batch effects, the pattern would be random - and though it can be hard to judge, here we will notice how the pink and puråle batches 6 and 7 samples almost exclusively appear in the top part of the plot.
 In other words, it looks a bit like batch effects!
 
 ![](images/MDS_per_batch.png)
@@ -168,26 +169,26 @@ cowplot::plot_grid(plot1, plot2)
 
 Based on the marker distributions after correction and the UMAPs, it looks like the batch effects are eliminated. We can now address our biological questions.
 
-One example could be to cluster the dataset. Here, we will display the results of Phenograph clustering. Actually, I will compare Phenograph run for all eight batches *with* and *without* batch correction using the same set of markers.
+<!-- One example could be to cluster the dataset. Here, we will display the results of Phenograph clustering. Actually, I will compare Phenograph run for all seven batches *with* and *without* batch correction using the same set of markers. -->
 
-<br>
+<!-- <br> -->
 
-```{r phenograph, results = 'hide', warning=FALSE, message=FALSE}
-# Define the markers to use for clustering
-cl_markers <- c('CD3', 'CD45RA', 'CD14', 'CD45RO', 'CD152', 'CD33', 'CD4', 'CD8', 'CD197', 'CD56', 'FoxP3', 'CD25')
+<!-- ```{r phenograph, results = 'hide', warning=FALSE, message=FALSE} -->
+<!-- # Define the markers to use for clustering -->
+<!-- cl_markers <- c('CD3', 'CD45RA', 'CD14', 'CD45RO', 'CD152', 'CD33', 'CD4', 'CD8', 'CD197', 'CD56', 'FoxP3', 'CD25') -->
 
-# Run Phenograph (slow step ~4.5 hours for each dataset)
-pheno_uncor <- Rphenograph(data = dfci[,cl_markers])
-pheno_cor <- Rphenograph(data = corrected[,cl_markers])
-```
+<!-- # Run Phenograph (slow step ~4.5 hours for each dataset) -->
+<!-- pheno_uncor <- Rphenograph(data = dfci[,cl_markers]) -->
+<!-- pheno_cor <- Rphenograph(data = corrected[,cl_markers]) -->
+<!-- ``` -->
 
-```{r phenograph n_cl}
-cat(paste0('According to Phenograph, there are ', length(unique(pheno_uncor[[2]]$membership)), ' clusters in the combined, uncorrected dataset.\n'))
+<!-- ```{r phenograph n_cl} -->
+<!-- cat(paste0('According to Phenograph, there are ', length(unique(pheno_uncor[[2]]$membership)), ' clusters in the combined, uncorrected dataset.\n')) -->
 
-cat(paste0('According to Phenograph, there are ', length(unique(pheno_cor[[2]]$membership)), ' clusters in the combined, batch corrected dataset.\n'))
-```
+<!-- cat(paste0('According to Phenograph, there are ', length(unique(pheno_cor[[2]]$membership)), ' clusters in the combined, batch corrected dataset.\n')) -->
+<!-- ``` -->
 
-The fact that fewer clusters are found after batch correction illustrates that we have a more well-combined dataset, in which the chance of having smaller batch-specific clusters is minimized.
+<!-- The fact that fewer clusters are found after batch correction illustrates that we have a more well-combined dataset, in which the chance of having smaller batch-specific clusters is minimized. -->
 
-Now, one would normally proceed to labeling these clusters and looking for differential abundance between experimental conditions and so on. We will leave it here for now.
+<!-- Now, one would normally proceed to labeling these clusters and looking for differential abundance between experimental conditions and so on. We will leave it here for now. -->
 
