@@ -153,12 +153,13 @@ plot_dimred <- function(df,
 
   Batch <- df$batch %>%
     as.factor()
-  df <- df %>%
-    dplyr::select(dplyr::all_of(markers))
+  # df <- df %>%
+    # dplyr::select(dplyr::all_of(markers))
 
   if (type == "pca") {
     # Run PCA
     pca <- df %>%
+      dplyr::select(dplyr::all_of(markers)) %>%
       stats::prcomp(scale. = TRUE, center = TRUE)
 
     # Make dataframe with output
@@ -175,6 +176,7 @@ plot_dimred <- function(df,
     # Run UMAP
     set.seed(seed)
     umap <- df %>%
+      dplyr::select(dplyr::all_of(markers)) %>%
       uwot::umap(n_neighbors = 15, min_dist = 0.2, metric = "euclidean")
 
     # Make dataframe with output
