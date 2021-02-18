@@ -31,8 +31,17 @@ Imagine that you have run an expensive and time-consuming cytometry experiment. 
 
 In any case, you really wish that you could correct this marker in this single batch. This is because you need the marker for clustering - and if it's non-sensical in one batch it could ruin the whole analysis plan. Enter cyCombine! In particular the `salvage_problematic` function, which allows imputation of a single marker in user-specified batches. The function uses the information found in all other markers in the combined dataset to determine the most likely value for the single marker. This vignette will demonstrate how.
 
+But first, we will discuss when using this function is a good idea as opposed to just relying on batch correction. 
 
-This is data from a study of CLL patients and healthy donors at the Dana-Farber Cancer Institute (DFCI). The protein expression was quantified using mass cytometry for 126 samples (20 healthy donors). 
+
+### Discussion of imputation
+In some experiments with mis-stained channels, the analyst may be faced with the dilemma of whether to use batch correction or imputation. The answer will depend on the individual case, but in general, if we consider a problem similar to the one presented for XCL1 in panel 1 of the DFCI data (below), it becomes a question of whether one believes that the channel is simply over-stained, but with a direct correlation between measurements and actual expression, or if there is no relation between the two. In the first case, batch correction is the answer, as it represents the most data-preserving approach. However, if the data cannot be trusted it is better to rely on imputation.
+
+Another case could be that a marker was completely left out - maybe there was no more left - or maybe it was forgotten during staining. In that case, the answer is imputation since there is no signal in the raw dataset to rely on for batch correction. But if the problem is due to using a different antibody lot with a markedly different signal or perhaps a different concentration, it is likely that batch correction would suffice. The same holds for cases with higher background in some batches.
+
+
+### Imputation example
+This is data from a study of CLL patients and healthy donors at the Dana-Farber Cancer Institute (DFCI). The protein expression was quantified using mass cytometry for 126 samples (20 healthy donors). In this dataset, the XCL1 staining was very strong for batch 1 compared to the other six batches. The signal is so much stronger that imputation seems like a relevant solution.
 
 
 <br>
@@ -114,4 +123,4 @@ plot_density(dfci, imputed, ncol = 4)
 
 Notice how it is only the expression of XCL1 in the single batch, batch 1, which has changed compared to the raw data. This is excatly what we wanted. Furthermore, look how nicely the distribution of the marker corresponds to those in the other seven batches.
 
-Next, one might go on to correct another marker - perhaps TBet for batches 6 and 7 could do with some correction? 
+Next, one might go on to correct another marker - perhaps TBet for batches 6 and 7 could do with some correction? But then again, batch correction will likely be able to salvage those.

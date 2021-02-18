@@ -1,7 +1,7 @@
 ---
 title: "Detection of batch effects in cytometry data"
 author: "Christina Bligaard Pedersen"
-date: "January 27, 2021"
+date: "February 18, 2021"
 output: 
   prettydoc::html_pretty:
     theme: hpstr
@@ -27,8 +27,7 @@ knitr::opts_knit$set(root.dir = '/home/projects/dp_immunoth/people/s153398/cyCom
 For an introduction to the `detect_batch_effect_express` function, please refer to the [one-panel CyTOF example](https://htmlpreview.github.io/?https://github.com/shdam/cyCombine/blob/master/vignettes/CyTOF_1panel.html).
 
 <br>
-The function will be demonstrated using data from a study of CLL patients and healthy donors at the Dana-Farber Cancer Institute (DFCI). The protein expression was quantified using mass cytometry for 117 samples (20 healthy donors). The data was run in eight batches, with batch 8 being run around a half year later than the other seven batches. 
-
+The function will be demonstrated using data from a study of CLL patients and healthy donors at the Dana-Farber Cancer Institute (DFCI). The protein expression was quantified using mass cytometry for 109 samples (20 healthy donors). The data was run in seven batches.
 
 <br>
 
@@ -49,7 +48,7 @@ We are now ready to load the CyTOF data. We have set up a panel file in csv form
 
 ```{r loading data 1, warning=FALSE, message=FALSE}
 # Directory with raw .fcs files
-data_dir <- "dfci2"
+data_dir <- "dfci2_2"
 
 # Panel and reading data
 panel <- read_csv(paste0(data_dir, "/panel2.csv"))
@@ -58,7 +57,7 @@ panel <- read_csv(paste0(data_dir, "/panel2.csv"))
 
 <br>
 
-We then progress with reading the CyTOF dataset and converting it to a tibble format, which is easy to process. We use cofactor = 5 (default) in this case.
+We then progress with reading the CyTOF dataset and converting it to a tibble format, which is easy to process. We use cofactor = 5 (default) and derandomization (default) in this case.
 
 
 ```{r loading data 2}
@@ -74,6 +73,7 @@ dfci <- prepare_data(data_dir = data_dir,
                      filename_col = "FCS_name",
                      batch_ids = "Batch",
                      condition = "Set",
+                     derand = TRUE,
                      markers = markers,
                      down_sample = FALSE)
 
@@ -96,7 +96,7 @@ detect_batch_effect(dfci,
 ```
 <br>
 
-In the printed output, we get some pointers to potential problems with batch effects. It points to 8 markers, which seem affected by batch effects. Furthermore, it also performs a clustering (SOM) and identifies that one of the obtained clusters has a significant under-representation in batch 8. This cluster appears to be a NK cell cluster. 
+In the printed output, we get some pointers to potential problems with batch effects. It points to three markers, which seem affected by batch effects. Furthermore, it also performs a clustering (SOM) and identifies that one of the obtained clusters has a significant over-representation in batch 2. This cluster appears to be a CD16+ NK cell cluster. 
 
 
 Additionally, the function provides a lot of UMAP plots, which are saved in the directory specified by `out_dir`. The first plot is the UMAP_batches_labels plot, which shows a UMAP for up to 50,000 cells across the batches in the dataset. One UMAP is colored by batch - another by SOM node (=cluster). While this might be tricky to decipher, it can be a good starting point for understanding the potential batch effects. It further generates the same UMAP colored by each protein marker in the dataset. 

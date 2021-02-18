@@ -26,7 +26,7 @@ knitr::opts_knit$set(root.dir = '/home/projects/dp_immunoth/people/s153398/cyCom
 
 <br>
 
-This is data from a study of CLL patients and healthy donors at the Dana-Farber Cancer Institute (DFCI). Protein expression was quantified using two different panels of proteins with an overlap. The data generated with each panel was processed in eight batches. The data is B-cell depleted.
+This is data from a study of CLL patients and healthy donors at the Dana-Farber Cancer Institute (DFCI). Protein expression was quantified using two different panels of proteins with an overlap. The data generated with each panel was processed in seven batches. The data is B-cell depleted.
 
 <br>
 
@@ -41,7 +41,7 @@ library(cyCombine)
 library(tidyverse)
 
 # Set a seed for reproducibility
-seed <- 124
+seed <- 628
 
 # Set a combined size for UMAPs
 umap_size = 50000
@@ -50,11 +50,11 @@ umap_size = 50000
 
 ```{r panel reading, message=F, warning=F}
 # Panel 1 reading
-panel1 <- read_csv("dfci1/panel1.csv")
+panel1 <- read_csv("dfci1_2/panel1.csv")
 panel1
 
 # Panel 2 reading
-panel2 <- read_csv("dfci2/panel2.csv")
+panel2 <- read_csv("dfci2_2/panel2.csv")
 panel2
 
 ```
@@ -90,17 +90,18 @@ The workflow presented in this vignette can be visualized with the following sch
 
 <br>
 
-We are now ready to load the CyTOF data. We convert it to a tibble format, which is easy to process. We use cofactor = 5 (default) for asinh-transformation.
+We are now ready to load the CyTOF data. We convert it to a tibble format, which is easy to process. We use derandomization and cofactor = 5 (default) for asinh-transformation.
 
 
 ```{r loading cytof data 1}
 # Preparing the expression data
-dfci1 <- prepare_data(data_dir = "dfci1",
-                      metadata = "dfci1/metadata.csv",
+dfci1 <- prepare_data(data_dir = "dfci1_2",
+                      metadata = "dfci1_2/metadata.csv",
                       filename_col = "FCS_name",
                       batch_ids = "Batch",
                       condition = "Set",
                       markers = markers1,
+                      derand = TRUE,
                       down_sample = FALSE)
 
 ```
@@ -108,12 +109,13 @@ dfci1 <- prepare_data(data_dir = "dfci1",
 
 ```{r loading cytof data 2}
 # Preparing the expression data
-dfci2 <- prepare_data(data_dir = "dfci2",
-                      metadata = "dfci2/metadata.csv",
+dfci2 <- prepare_data(data_dir = "dfci2_2",
+                      metadata = "dfci2_2/metadata.csv",
                       filename_col = "FCS_name",
                       batch_ids = "Batch",
                       condition = "Set",
                       markers = markers2,
+                      derand = TRUE,
                       down_sample = FALSE)
 
 ```
@@ -135,6 +137,8 @@ dfci1_bc <- dfci1 %>%
                 ydim = 8,
                 norm_method = 'scale',
                 markers = markers1)
+
+dfci1_bc_som <- dfci1_bc$label
 ```
 
 <br>
@@ -218,6 +222,7 @@ dfci2_bc <- dfci2 %>%
                 norm_method = 'scale',
                 markers = markers2)
 
+dfci2_bc_som <- dfci2_bc$label
 ```
 
 <br>
@@ -289,7 +294,7 @@ cowplot::plot_grid(emd_val2$violin, emd_val2$scatterplot)
 
 <br>
 
-For both panels, we find EMD reductions of 0.68 and 0.67, respectively, when considering the batch corrections separately.
+For both panels, we find EMD reductions of 0.67 and 0.65, respectively, when considering the batch corrections separately.
 
 <br>
 
@@ -316,6 +321,8 @@ co_corrected <- batch_correct(df,
                               ydim = 8,
                               norm_method = 'scale',
                               markers = overlap_markers)
+
+co_corrected_som <- co_corrected$label
 ```
 
 <br>
@@ -467,62 +474,64 @@ umap <- final_sliced %>%
 umap$plot
 ```
 
-After running this process, it is possible to perform any processing one finds relevant for the dataset. In this case, we proceeded to cluster the data using SOM and ConsensusClusterPlus on the following 20 markers: CD3, CD45RA, CD14, CD45RO, CD152, CD33, CD4, CD8, CD197, CD56, FoxP3, CD25, CD1c, CD1d, CD11c, CD16, CD34, CD11b, FCeR1a, XCL1
+After running this process, it is possible to perform any processing one finds relevant for the dataset. The next step could be to perform clustering on the lineage markers and then performing differential abundance testing.
 
-The clusters were annotated manually based on the protein expression levels. Let us load these labels and add them to the UMAP.
+<!-- After running this process, it is possible to perform any processing one finds relevant for the dataset. In this case, we proceeded to cluster the data using SOM and ConsensusClusterPlus on the following 20 markers: CD3, CD45RA, CD14, CD45RO, CD152, CD33, CD4, CD8, CD197, CD56, FoxP3, CD25, CD1c, CD1d, CD11c, CD16, CD34, CD11b, FCeR1a, XCL1 -->
 
-```{r label adding, fig.height=6, fig.width=9}
-# Load labels and add to final frame
-final$label <- readRDS('dfci/labels_combined.rds')
+<!-- The clusters were annotated manually based on the protein expression levels. Let us load these labels and add them to the UMAP. -->
 
-# Slice to subset as generated above
-final_sliced <- final_sliced %>%
-  select(id) %>%
-  dplyr::left_join(final, by = "id")
+<!-- ```{r label adding, fig.height=6, fig.width=9} -->
+<!-- # Load labels and add to final frame -->
+<!-- final$label <- readRDS('dfci/labels_combined.rds') -->
 
-# Use UMAP coordinates determined above
-final_df <- cbind.data.frame(umap$dimred, 
-                             final_sliced)
-colnames(final_df)[1:2] <- paste0('UMAP', 1:2)
+<!-- # Slice to subset as generated above -->
+<!-- final_sliced <- final_sliced %>% -->
+<!--   select(id) %>% -->
+<!--   dplyr::left_join(final, by = "id") -->
 
-ggplot(final_df, aes(x = UMAP1,
-                     y = UMAP2)) + 
-  geom_point(aes(color = label), 
-             alpha = 0.3, size = 0.4, shape = 1) + 
-  guides(color = guide_legend(override.aes = list(alpha = 1,
-                                                  size = 1))) + 
-  theme_bw() + theme(plot.title = element_text(hjust = 0.5)) + 
-  ggtitle(paste("UMAP - final"))
+<!-- # Use UMAP coordinates determined above -->
+<!-- final_df <- cbind.data.frame(umap$dimred,  -->
+<!--                              final_sliced) -->
+<!-- colnames(final_df)[1:2] <- paste0('UMAP', 1:2) -->
 
-
-```
-
-<br>
-
-Finally, let us compare the cell type fractions between the data originally derived from each panel.
+<!-- ggplot(final_df, aes(x = UMAP1, -->
+<!--                      y = UMAP2)) +  -->
+<!--   geom_point(aes(color = label),  -->
+<!--              alpha = 0.3, size = 0.4, shape = 1) +  -->
+<!--   guides(color = guide_legend(override.aes = list(alpha = 1, -->
+<!--                                                   size = 1))) +  -->
+<!--   theme_bw() + theme(plot.title = element_text(hjust = 0.5)) +  -->
+<!--   ggtitle(paste("UMAP - final")) -->
 
 
-```{r cell type fractions, fig.height=4, fig.width=8}
-# Get a matrix of cluster counts - convert it to percentage
-counts <- table(final$batch, final$label)
-perc <- (counts/rowSums(counts))*100
+<!-- ``` -->
 
-# Convert perc table into a dataframe for plotting
-df_perc <- cbind.data.frame(perc[1,], perc[2,], colnames(perc))
-colnames(df_perc) <- c('Batch1', 'Batch2', 'Population')
-df_perc$Population <- factor(df_perc$Population, levels = levels(final$label))
+<!-- <br> -->
 
-# Make the plot
-ggplot(df_perc, aes_string(x = 'Batch1', y = 'Batch2')) +
-  geom_point(aes_string(color = 'Population')) +
-  theme_bw() + theme(plot.title = element_text(hjust = 0.5)) + 
-  ggtitle('Cluster percentages') +
-  xlab('Panel 1 (% of cells)') + ylab('Panel 2 (% of cells)')
+<!-- Finally, let us compare the cell type fractions between the data originally derived from each panel. -->
 
 
+<!-- ```{r cell type fractions, fig.height=4, fig.width=8} -->
+<!-- # Get a matrix of cluster counts - convert it to percentage -->
+<!-- counts <- table(final$batch, final$label) -->
+<!-- perc <- (counts/rowSums(counts))*100 -->
 
-# Calculate the correlation
-cor(df_perc$Batch1, df_perc$Batch2, method = 'pearson')
-```
+<!-- # Convert perc table into a dataframe for plotting -->
+<!-- df_perc <- cbind.data.frame(perc[1,], perc[2,], colnames(perc)) -->
+<!-- colnames(df_perc) <- c('Batch1', 'Batch2', 'Population') -->
+<!-- df_perc$Population <- factor(df_perc$Population, levels = levels(final$label)) -->
+
+<!-- # Make the plot -->
+<!-- ggplot(df_perc, aes_string(x = 'Batch1', y = 'Batch2')) + -->
+<!--   geom_point(aes_string(color = 'Population')) + -->
+<!--   theme_bw() + theme(plot.title = element_text(hjust = 0.5)) +  -->
+<!--   ggtitle('Cluster percentages') + -->
+<!--   xlab('Panel 1 (% of cells)') + ylab('Panel 2 (% of cells)') -->
+
+
+
+<!-- # Calculate the correlation -->
+<!-- cor(df_perc$Batch1, df_perc$Batch2, method = 'pearson') -->
+<!-- ``` -->
 
 
