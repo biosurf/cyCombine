@@ -82,8 +82,8 @@ salvage_problematic <- function(df,
         sample(size = sum(impute_obs_som==s), replace = T) + rnorm(sum(impute_obs_som==s), 0, dens$bw)
 
       # Fix values outside input range (per marker) - per SOM node
-      imputed[which(impute_obs_som==s)][imputed[which(impute_obs_som==s)] < min(complete_obs[which(impute_obs_som==s),channel])] <- min(complete_obs[which(impute_obs_som==s),channel])
-      imputed[which(impute_obs_som==s)][imputed[which(impute_obs_som==s)] > max(complete_obs[which(impute_obs_som==s),channel])] <- max(complete_obs[which(impute_obs_som==s),channel])
+      imputed[which(impute_obs_som==s)][imputed[which(impute_obs_som==s)] < min(complete_obs[which(complete_obs_som==s),channel])] <- min(complete_obs[which(complete_obs_som==s),channel])
+      imputed[which(impute_obs_som==s)][imputed[which(impute_obs_som==s)] > max(complete_obs[which(complete_obs_som==s),channel])] <- max(complete_obs[which(complete_obs_som==s),channel])
 
     } else {
 
