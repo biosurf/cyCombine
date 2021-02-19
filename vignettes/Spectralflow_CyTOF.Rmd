@@ -1,7 +1,7 @@
 ---
 title: "Integrating spectral flow and CyTOF data"
 author: "Christina Bligaard Pedersen"
-date: "February 17, 2021"
+date: "February 19, 2021"
 output: 
   prettydoc::html_pretty:
     theme: hpstr
@@ -13,7 +13,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-This vignette will demonstrate the integration of spectral flow cytometry and CyTOF protein expression measurements using cyCombine.
+This vignette will demonstrate the integration of spectral flow cytometry (SFC) and CyTOF protein expression measurements using cyCombine.
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
@@ -26,12 +26,20 @@ knitr::opts_knit$set(root.dir = '/home/projects/dp_immunoth/people/s134891/cycom
 
 <br>
 
-First, let us present the two datasets we will integrate:
+In this vignette, we will perform two separate integrations. One will rely on the paired CITE-seq/CyTOF dataset from [Ferrer-Font et al. (2020)](https://doi.org/10.1002/cyto.a.24016) and the other will compare two distinct datasets - the spectral flow cytometry data fra [Park et al. (2020)](https://doi.org/10.1002/cyto.a.24213) and CyTOF data from the Human Immune Monitoring Center, Stanford.
 
-As an example of spectral flow cytometry data, we will use the dataset from [Park et al. (2020)](https://doi.org/10.1002/cyto.a.24213). The data is based on healthy donor PBMCs, and contains four samples, which were frozen and thawed, stained with 40 different antibodies in one panel, and analysed using a 5-laser full spectrum flow cytometer (Cytek Biosciences Aurora). We downloaded these from FlowRepository (ID: FR-FCM-Z2QV) and pre-gated to live single cells in FlowJo version 10 (Tree Star Inc). Singlets and non-debris were identified using forward and side-scatter. Dead cells were excluded using live/dead stains. Data from these gates were then exported in FCS format.
+<br>
 
-For the CyTOF data, we use the data from a single healthy donor processed at the Human Immune Monitoring Center. The sample was derived from FlowRepository https://flowrepository.org/id/FR-FCM-ZYAJ and pre-gated to live intact singlets. The data was subsequently manually gated to populations of interest. 
+## Paired dataset
 
+The dataset we will use for this demonstration originates from [Ferrer-Font et al. (2020)](https://doi.org/10.1002/cyto.a.24016), who studied the comparability of CyTOF and SFC data. They used splenocytes from the same samples which had been quantified using the two technologies and were able to conclude that the results were indeed very similar. However, this analysis was carried out by analyzing the sets separately. Here, we would like to demonstrate the *direct* integration of the sets.
+
+According to the article, the SFC panel of this study contained 21 protein markers, and the CyTOF panel comprised 36 markers. 20 of these were overlapping. A total of five samples are included for each technology, and they are stored at FlowRepository (ID: [FR-FCM-Z2GZ](https://flowrepository.org/id/FR-FCM-Z2GZ)) or [GitHub](https://github.com/SameOldSamOld/CyTOFAuroraComparison). All files were downsampled to 19,858 cells in the analysis of the article and the uploaded FCS files. We downloaded these and relied on one of the GitHub scripts for accurate mapping of channels and markers.
+
+
+In the original study, they focused on 11 immune cell populations, which were manually gated. Some of these assignments overlap - i.e. T cells were considered as a combined population and after gating on CD4/CD8. The included populations were "T cells", "CD4 T cells", "CD8 T cells", "DN T cells", "B cells", "NK cells", "Monocytes", "DCs", "DC1s", "DC2s", and "Neutrophils". However, the authors have not shared the cell labels in their FCS files, so we replicated their gating to the best of our ability. 
+
+It was already established that the frequencies of these populations correlated nicely between the two technologies, however the article also states that they were unable to overlay the two data types due to the different data structures of the platforms. With this in mind, we enter the path of cyCombine.
 
 
 We start by loading some packages
@@ -52,6 +60,206 @@ We are now ready to load the spectral flow data. We have set up a panel file in 
 
 ```{r loading spectral flow data 1, paged.print = T, message=F, warning=F}
 # Directory with raw .fcs files
+data_dir <- "FR-FCM-Z2GZ/SFC/"
+
+# Panel and reading data
+sfc_panel <- read_csv(paste0(data_dir, "/panel_sfc.csv"))
+sfc_panel
+
+```
+
+<br>
+We then progress with reading the spectral flow dataset and converting it to a tibble format, which is easy to process. We use cofactor = 6000 for spectral flow data asinh-transformation as suggested by the original study. Because the FCS files do not contain the marker descriptions we specify these based on the `sfc_panel` object we prepared.
+
+```{r loading spectral flow data 2}
+# Extract the markers to keep
+sfc_markers <- sfc_panel %>% 
+  dplyr::filter(Type != "none") %>% 
+  pull(Marker) %>% 
+  str_remove_all("[ _-]")
+
+# Read fcs files and convert to tibble
+spectral <- prepare_data(data_dir = data_dir,
+                         metadata = paste0(data_dir, "../metadata.xlsx"),
+                         sample_ids = 'SampleID',
+                         filename_col = "FileName",
+                         batch_ids = "Batch",
+                         cofactor = 6000,
+                         derand = FALSE,
+                         markers = sfc_markers,
+                         down_sample = FALSE,
+                         panel = sfc_panel,
+                         panel_channel = 'Channel',
+                         panel_antigen = 'Marker')
+
+```
+
+
+
+
+##### CyTOF
+We are now ready to load the CyTOF data. Once again, let us have a look at the panel - we also need it here to make our file reading a bit easier.
+
+```{r loading cytof data 1, paged.print = T, message=F, warning=F}
+# Directory with raw .fcs files
+data_dir <- "FR-FCM-Z2GZ/CyTOF/"
+
+# Panel and reading data
+cytof_panel <- read_csv(paste0(data_dir, "/panel_cytof.csv"))
+cytof_panel
+
+```
+
+<br>
+
+And then for the FCS reading and conversion to tibble format. We will employ derandomization and asinh-trasnformation with cofactor = 5.
+
+```{r loading cytof data 2}
+# Extract the markers to keep
+cytof_markers <- cytof_panel %>% 
+  dplyr::filter(Type != "none") %>% 
+  pull(Marker) %>% 
+  str_remove_all("[ _-]")
+
+# Read fcs files and convert to tibble
+cytof <- prepare_data(data_dir = data_dir,
+                      metadata = paste0(data_dir, "../metadata.xlsx"),
+                      sample_ids = 'SampleID',
+                      filename_col = "FileName",
+                      batch_ids = "Batch",
+                      cofactor = 5,
+                      derand = TRUE,
+                      markers = cytof_markers,
+                      down_sample = FALSE,
+                      panel = cytof_panel,
+                      panel_channel = 'Channel',
+                      panel_antigen = 'Marker')
+
+```
+
+
+
+
+
+
+#### Processing datasets - batch correction
+
+Next, we need to figure out which markers to use when integrating the two datasets. From the publication, we know that the overlap is 20 markers - let's verify that to make sure naming matches 1:1.
+
+```{r overlapping markers}
+intersect(sfc_markers, cytof_markers)
+
+```
+
+<br>
+
+Now, we are ready to combine the two datasets on the overlapping columns.
+
+```{r combine sets}
+# Get overlapping column names
+overlap_cols <- intersect(colnames(spectral), colnames(cytof))
+
+# Make one tibble
+uncorrected <- bind_rows(cytof[,overlap_cols], spectral[,overlap_cols]) %>%
+  mutate(id = 1:(nrow(cytof)+nrow(spectral)))
+
+```
+
+And now, batch correction can be performed with cyCombine. We use rank for normalization and rlen = 100 because these are data from two different technologies.
+
+```{r batch correction, message=FALSE, warning=FALSE, error=FALSE, results='hide'}
+# Run batch correction 
+corrected <- uncorrected %>%
+  batch_correct(xdim = 8,
+                ydim = 8,
+                norm_method = 'rank',
+                ties.method = 'average',
+                rlen = 100)
+
+```
+
+<br>
+
+
+#### Evaluating performance
+
+We now evaluate the correction using EMD - each marker is evaluated across all cells. Should we maybe do the gating???
+
+```{r global emd, message=FALSE, fig.height=6, fig.width=12}
+corrected$label <- uncorrected$label <- 1 # We set all labels to 1 in order to evaluate globally
+
+emd <- evaluate_emd(uncorrected = uncorrected,
+                    corrected = corrected)
+
+cowplot::plot_grid(emd$violin, emd$scatterplot)
+
+```
+<br>
+
+
+Finally, let us look at some plots to visualize the correction. First, the marker distributions before and after:
+
+```{r density plot, message=FALSE, fig.height=20, fig.width=16}
+plot_density(uncorrected, corrected, ncol = 4)
+
+```
+
+Finally, some UMAPs to visualize the correction. I will downsample to 10,000 cells from each dataset so it is easier to see what is going on.
+
+```{r umaps, fig.height=8, fig.width=16}
+
+inds <- split(1:length(uncorrected$batch), uncorrected$batch)
+sample <- unlist(lapply(inds, sample, 10000))
+
+plot1 <- plot_dimred(uncorrected[sample,], name = 'Uncorrected', type = 'umap')
+plot2 <- plot_dimred(corrected[sample,], name = 'Corrected', type = 'umap')
+
+cowplot::plot_grid(plot1, plot2)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+<br><br>
+
+## Distinct datasets
+
+First, let us present the two datasets we will integrate:
+
+As an example of spectral flow cytometry data, we will use the dataset from [Park et al. (2020)](https://doi.org/10.1002/cyto.a.24213). The data is based on healthy donor PBMCs, and contains four samples, which were frozen and thawed, stained with 40 different antibodies in one panel, and analysed using a 5-laser full spectrum flow cytometer (Cytek Biosciences Aurora). We downloaded these from FlowRepository (ID: FR-FCM-Z2QV) and pre-gated to live single cells in FlowJo version 10 (Tree Star Inc). Singlets and non-debris were identified using forward and side-scatter. Dead cells were excluded using live/dead stains. Data from these gates were then exported in FCS format.
+
+For the CyTOF data, we use the data from a single healthy donor processed at the Human Immune Monitoring Center, Stanford. The sample was derived from FlowRepository https://flowrepository.org/id/FR-FCM-ZYAJ and pre-gated to live intact singlets. The data was subsequently manually gated to populations of interest. 
+
+
+
+We start by loading some packages-
+
+```{r libraries 2, results = 'hide', warning=FALSE, message=FALSE, eval=F}
+library(cyCombine)
+library(tidyverse)
+
+```
+
+
+<br>
+
+
+#### Loading data
+##### Spectral flow cytometry data
+We are now ready to load the spectral flow data. We have set up a panel file in csv format, so the correct information is extractable from there. Let us have a look at the contents:
+
+```{r loading spectral flow data 1_2, paged.print = T, message=F, warning=F}
+# Directory with raw .fcs files
 data_dir <- "Park_et_al_2020_Live+/"
 
 # Panel and reading data
@@ -64,7 +272,7 @@ sfc_panel
 We then progress with reading the spectral flow dataset and converting it to a tibble format, which is easy to process. We use cofactor = 6000 for spectral flow data asinh-transformation. This looks reasonable in terms of separating negative and positive peaks in the data, and it was further recommended by [Ferrer-Font et al. (2020)](https://doi.org/10.1002/cyto.a.24016).
 
 
-```{r loading spectral flow data 2}
+```{r loading spectral flow data 2_2}
 sfc_markers <- sfc_panel %>% 
   filter(Type != "none") %>% 
   pull(Marker) %>% 
@@ -88,7 +296,7 @@ spectral <- prepare_data(data_dir = data_dir,
 ##### Mass cytometry data
 Then it is time to read the CyTOF data. In this case, it's already in a tibble format - but refer to `prepare_data` as shown above, for this.
 
-```{r cytof read}
+```{r cytof read 2}
 ### Get HIMC cytof data for one sample
 load('Sample001_pregated.Rdata')
 
@@ -105,7 +313,7 @@ Here, it is important to keep a couple of things in mind.
 
 First, be careful with protein names - i.e. CD197 and CCR7 are actually the same protein, but each name is relatively commonly used. Make sure to correct the column names in either set, so it matches the other, i.e. using `colnames(cytof)[colnames(cytof)=='CD197'] <- 'CCR7'`. In this example, there are a total of 26 overlapping markers between the two datasets. 
 
-```{r overlapping markers}
+```{r overlapping markers 2}
 colnames(cytof)[colnames(cytof)=='CD197'] <- 'CCR7'
 colnames(cytof)[colnames(cytof)=='CD8a'] <- 'CD8'
 
@@ -118,7 +326,7 @@ intersect(sfc_markers, cytof_markers)
 
 Now, we are ready to combine the two datasets on the overlapping columns.
 
-```{r combine sets}
+```{r combine sets 2}
 # Get overlapping column names
 overlap_cols <- intersect(colnames(spectral), colnames(cytof))
 
@@ -130,7 +338,7 @@ uncorrected <- bind_rows(cytof[,overlap_cols], spectral[,overlap_cols]) %>%
 
 And now, batch correction can be performed with cyCombine.
 
-```{r batch correction, message=FALSE, warning=FALSE, error=FALSE, results='hide'}
+```{r batch correction 2, message=FALSE, warning=FALSE, error=FALSE, results='hide'}
 # Run batch correction
 corrected <- uncorrected %>%
   batch_correct(xdim = 8,
@@ -148,7 +356,7 @@ corrected <- uncorrected %>%
 
 We now evaluate the correction using EMD - each marker is evaluated across all cells.
 
-```{r global emd, message=FALSE, fig.height=6, fig.width=12}
+```{r global emd 2, message=FALSE, fig.height=6, fig.width=12}
 corrected$label <- uncorrected$label <- 1 # We set all labels to 1 in order to evaluate globally
 
 emd <- evaluate_emd(uncorrected = uncorrected,
@@ -162,14 +370,14 @@ cowplot::plot_grid(emd$violin, emd$scatterplot)
 
 Finally, let us look at some plots to visualize the correction. First, the marker distributions before and after:
 
-```{r density plot, message=FALSE, fig.height=16, fig.width=16}
+```{r density plot 2, message=FALSE, fig.height=16, fig.width=16}
 plot_density(uncorrected, corrected, ncol = 4)
 
 ```
 
 Finally, some UMAPs to visualize the correction. I will downsample to 10,000 cells from each dataset so it is easier to see what is going on.
 
-```{r umaps, fig.height=8, fig.width=16}
+```{r umaps 2, fig.height=8, fig.width=16}
 
 inds <- split(1:length(uncorrected$batch), uncorrected$batch)
 sample <- unlist(lapply(inds, sample, 10000))
@@ -189,7 +397,7 @@ Now, we could say that the integration is done. We have an strong idea about whi
 
 We will impute all the markers missing in either dataset first.
 
-```{r imputing markers}
+```{r imputing markers 2}
 # Get the dataset-unique markers
 spectral_unique <- sfc_markers[!sfc_markers %in% overlap_cols]
 cytof_unique <- cytof_markers[!cytof_markers %in% overlap_cols]
