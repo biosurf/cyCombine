@@ -16,7 +16,7 @@ This vignette will demonstrate the integration of CITE-seq, spectral flow cytome
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
-  strip.white = T, comment = ""
+  strip.white = T, comment = "", tidy.opts=list(width.cutoff=60),tidy=T
 )
 
 knitr::opts_knit$set(root.dir = '/home/projects/dp_immunoth/people/s134891/cycombine/citeseq_cytof/10k_v3')
@@ -385,7 +385,7 @@ ggplot(cytof_sliced, aes(x = UMAP1, y = UMAP2)) +
   geom_point(aes(color = label), alpha = 0.3, size = 0.4) +
   theme_bw() + theme(plot.title = element_text(hjust = 0.5)) +
   scale_color_manual(values = color_clusters) + 
-  guides(colour = guide_legend(override.aes = list(alpha = 1)))
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size = 1)))
 
 ```
 
