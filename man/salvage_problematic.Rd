@@ -9,7 +9,10 @@ salvage_problematic(
   correct_batches,
   channel,
   sample_size = NULL,
-  exclude = NULL
+  exclude = NULL,
+  xdim = 8,
+  ydim = 8,
+  seed = 482
 )
 }
 \arguments{

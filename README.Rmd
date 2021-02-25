@@ -52,7 +52,7 @@ renv::init()
 # To ensure Rstudio looks up BioConductor packages run:
 setRepositories(ind = c(1:6, 8))
 # Then install package with
-devtools::install_github("shdam/cyCombine")
+devtools::install_github("biosurf/cyCombine")
 ```
 
 ## Install as cloned repository
@@ -60,7 +60,7 @@ devtools::install_github("shdam/cyCombine")
 ### 1. Clone repository
 ```{sh, eval = FALSE}
 # In terminal at desired directory
-git clone git@github.com:shdam/cyCombine.git
+git clone git@github.com:biosurf/cyCombine.git
 ```
 
 ### 2. Install dependencies
@@ -99,7 +99,7 @@ markers <- c("CD20", "CD3", "CD27", "CD45RA", "CD279", "CD5", "CD19", "CD14", "C
 # Compile fcs files, down-sample, and preprocess
 uncorrected <- prepare_data(data_dir = data_dir,
                              markers = markers,
-                             metadata = paste0(data_dir, "/metadata.xlsx"), # Can also be .csv file or data.frame object
+                             metadata = file.path(data_dir, "metadata.xlsx"), # Can also be .csv file or data.frame object
                              sample_ids = NULL,
                              batch_ids = "Batch",
                              filename_col = "FCS_name",
@@ -134,7 +134,7 @@ markers <- c("CD20", "CD3", "CD27", "CD45RA", "CD279", "CD5", "CD19", "CD14", "C
 flowset <- compile_fcs(data_dir = data_dir,
                    pattern = "\\.fcs")
 
-df <- convert_flowset(metadata = paste0(data_dir, "/metadata.xlsx"),
+df <- convert_flowset(metadata = file.path(data_dir, "metadata.xlsx"),
                       sample_ids = NULL,
                       batch_ids = "Batch",
                       filename_col = "FCS_name",
