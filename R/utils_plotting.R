@@ -105,11 +105,21 @@ plot_density <- function(uncorrected,
     height_factor <- 2
   }
 
-
+  # Extract the legend from one of the plots
+  legend <- cowplot::get_legend(
+    # create some space to the left of the legend
+    p[[1]] + theme(legend.box.margin = margin(0, 0, 0, 12))
+  )
+  
+  # Make a shared legend
+  for (i in 1:length(p)) {
+    p[[i]] <- p[[i]] + theme(legend.position="none")
+  }
+  
   if (!is.null(filename)) {
-    cowplot::save_plot(filename, cowplot::plot_grid(plotlist = p, ncol = ncol), base_width = 28, base_height = length(markers)/height_factor)
+    cowplot::save_plot(filename, cowplot::plot_grid(cowplot::plot_grid(plotlist = p, ncol = ncol), legend, rel_widths = c(2*ncol,1)), base_width = 20, base_height = length(markers)/height_factor)
   } else {
-    return(cowplot::plot_grid(plotlist = p, ncol = ncol))
+    return(cowplot::plot_grid(cowplot::plot_grid(plotlist = p, ncol = ncol), legend, rel_widths = c(2*ncol,1)))
   }
 }
 
