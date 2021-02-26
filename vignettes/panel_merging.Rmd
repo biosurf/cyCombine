@@ -85,7 +85,7 @@ As a result, comparing cyCombine and CyTOFmerge directly would not be fair, as t
 
 <br>
 
-We should also mention CytoBackBone by [Pereira et al. (2019)](https://doi.org/10.1093/bioinformatics/btz212), which also uses nearest-neighbor imputation. An interesting notion of acceptable neighbors is applied to avoid spurious imputations based on very distinct cells. Furthermore, they provide a very interesting test case, in which a healthy donor sample was stained with five combinations of the same set of 35 markers, which we will focus on in the next section.
+We must also mention CytoBackBone by [Pereira et al. (2019)](https://doi.org/10.1093/bioinformatics/btz212), which also uses nearest-neighbor imputation. An interesting notion of acceptable neighbors is applied to avoid spurious imputations based on very distinct cells. This is analogous to cyCombine's lack of imputation in cases where a SOM node contains no/very few cells from one of the datasets. Furthermore, they provide a very interesting test case, in which a healthy donor sample was stained with five combinations of the same set of 35 markers, which we will focus on in the next section. This work also tested the impact of the size of the set of overlapping markers using more than 65,000 different combinations, showing that the larger the overlap, the better the imputation quality.
 
 <br>
 
@@ -101,10 +101,10 @@ For combining and integrating datasets, approaches like QFMatch by [Orlova et al
 
 #### Mini-benchmark
 
-Along with the CytoBackBone publication, a dataset from a healthy donor was published (FlowRepository ID: [FR-FCM-ZYV2](http://flowrepository.org/id/FR-FCM-ZYV2)). This donor was stained with five different panels, four of which were subsets of the full panel (#E). We downloaded the five pregated files from the repository and now we will read them and perform panel merging.
+Along with the CytoBackBone publication, a whole blood dataset from a healthy donor was published (FlowRepository ID: [FR-FCM-ZYV2](http://flowrepository.org/id/FR-FCM-ZYV2)). This donor was stained with five different panels, four of which were subsets of the full panel (#E). We downloaded the five pregated files from the repository and now we will read them and perform panel merging.
 
 Panel #A and #B together have all the 35 markers included in panel #E, with an overlap of 16 markers. Similarly, panel #C and #D together have all the 35 markers included in panel #E, with an overlap of the same 16 markers. These 16 markers are, as would be a recommended choice, some of the key lineage markers:
-CD1c, CD3, CD4, CD8a, CD11c, CD14, CD16, CD19, CD32, CD64, CD66, CD86, CD123, CD141, Granzyme B, and HLA-DR. In the original article, they conduct an analysis regarding the importance of each backbone marker, in which markers are ranked based on their relative importance. We will not conduct a similar analysis, but instead focus on comparing cyCombine and CytoBackBone.
+CD1c, CD3, CD4, CD8a, CD11c, CD14, CD16, CD19, CD32, CD64, CD66, CD86, CD123, CD141, Granzyme B, and HLA-DR. In the original article, they conduct an analysis regarding the importance of each backbone marker, in which markers are ranked based on their relative importance (CD3 and CD66 being the most important). We will not conduct a similar analysis, but instead focus on comparing cyCombine and CytoBackBone.
 
 ```{r libraries, results = 'hide', warning=FALSE, message=FALSE}
 library(cyCombine)
@@ -135,13 +135,14 @@ overlap_AB <- intersect(get_markers(panel_A), get_markers(panel_B))
 missing_A <- get_markers(panel_B)[!(get_markers(panel_B) %in% overlap_AB)]
 missing_B <- get_markers(panel_A)[!(get_markers(panel_A) %in% overlap_AB)]
 
-# Perform imputations
+# Perform imputations (and measure runtime)
+start_time_cC <- Sys.time()
 panel_AB <- impute_across_panels(dataset1 = panel_A,
                                  dataset2 = panel_B,
                                  overlap_channels = overlap_AB,
                                  impute_channels1 = missing_A,
                                  impute_channels2 = missing_B)
-
+end_time_cC <- Sys.time()
 
 # Combine the dataframes for each set
 panel_AB <- rbind(panel_AB$dataset1, panel_AB$dataset2)
@@ -175,7 +176,7 @@ panel_CD <- rbind(panel_CD$dataset1, panel_CD$dataset2)
 Now that both sets of panel pairs have been integated, we can compare the Earth Mover's Distance to panel E which contained the full set of markers. First, we will look at the densities of each marker - both for the overlapping channels and the imputed ones.
 
 
-```{r panel A+B evaluation, results='hide', message=F, warning=F, fig.height=18, fig.width=14}
+```{r panel density evaluation, results='hide', message=F, warning=F, fig.height=24, fig.width=20}
 # And let's look at the marker density of A+B and C+D relative to the full panel (E)
 plot_density(uncorrected = panel_E,
              corrected = rbind(panel_AB[,colnames(panel_E)], panel_CD[,colnames(panel_E)]), 
@@ -188,7 +189,7 @@ plot_density(uncorrected = panel_E,
 Overall, this looks quite good. Even looking at a marker like CD3, which was a part of all five panels, the distributions are not completely identical, so it would be a hard requirement to impose on imputations. Now, we will use the Earth Mover's Distance (EMD) to look at the imputations more quantitatively. 
 
 
-```{r cycombine evaluation, results='hide', message=F, warning=F, fig.width=16, fig.height=5}
+```{r cycombine evaluation, results='hide', message=F, warning=F, fig.width=20, fig.height=7}
 # Combine all datasets
 combined <- rbind(panel_AB[,colnames(panel_E)], panel_CD[,colnames(panel_E)], panel_E)
 
@@ -196,14 +197,109 @@ combined <- rbind(panel_AB[,colnames(panel_E)], panel_CD[,colnames(panel_E)], pa
 emd_all <- compute_emd(df = combined, 
                        cell_col = 'sample')[[1]]
 
-boxplot(emd_all, main = 'EMD for all markers (cyCombine)', ylab = 'EMD', col = c('#F8766D', '#619CFF')[as.numeric(names(emd_all) %in% overlap_AB)+1])
+boxplot(emd_all, main = 'EMD for all markers (cyCombine)', ylab = 'EMD', col = c('#F8766D', '#619CFF')[as.numeric(names(emd_all) %in% overlap_AB)+1], ylim = c(0,5))
 legend("topright", legend = c('Overlap', 'Imputed'), col = c('#619CFF', '#F8766D'), pch = 15, cex = 2, bty = 'n')
 ```
 
 
-Now, we better compare ourselves to the performance of CytoBackBone...
+
+<br>
+
+Now, we compare these results to those of CytoBackBone. In this process, we aim to apply the exact approach presented in the CytoBackBone GitHub and consequently, we load the files again to make sure we are not adding any bias to the analysis.
 
 
+```{r load cytobackbone}
+# Load package
+library(CytoBackBone) # v. 1.0.0
+
+# Import of FCS files (includes asinh-tranformation)
+panel_A_CBB <- import.FCS(paste0(data_dir, "/HEA_profile#A_pregated.fcs"))
+panel_B_CBB <- import.FCS(paste0(data_dir, "/HEA_profile#B_pregated.fcs"))
+panel_C_CBB <- import.FCS(paste0(data_dir, "/HEA_profile#C_pregated.fcs"))
+panel_D_CBB <- import.FCS(paste0(data_dir, "/HEA_profile#D_pregated.fcs"))
+panel_E_CBB <- import.FCS(paste0(data_dir, "/HEA_profile#E_pregated.fcs"))
+```
+
+<br> 
+
+Now that the files are loaded, we are ready to perform the integration with CytoBackBone. Here, we choose to use the normalization of the tool and a threshold of 3, which is a relatively high threshold meaning that more cells will be included in the integrated set.
+
+```{r cytobackbone merging}
+# Merging of cytometry profiles using CytoBackBone 
+# Panels A + B (measuring runtime)
+start_time_CBB <- Sys.time()
+panel_AB_CBB <- CytoBackBone::merge(FCS1 = panel_A_CBB,
+                                    FCS2 = panel_B_CBB,
+                                    BBmarkers = overlap_AB,
+                                    th = 3,
+                                    leftout = T, 
+                                    normalize = T)
+end_time_CBB <- Sys.time()
+
+# Panels C + D
+panel_CD_CBB <- CytoBackBone::merge(FCS1 = panel_C_CBB,
+                                    FCS2 = panel_D_CBB,
+                                    BBmarkers = overlap_CD,
+                                    th = 3,
+                                    leftout = T, 
+                                    normalize = T)
+
+```
+
+In the case of panels A + B, we observe that 155,459 cells are part of the integrated set. For C + D, that number is 141,026. Using cyCombine, *all* cells were actually integrated resulting in 322,209 and 304,662 cells in the merged sets, respectively. This can be an important factor in downstream analysis, especially considering the potential loss of statistical power by having few cells in your dataset.
+
+
+
+We will now look at the density plots for CytoBackBone.
+
+```{r panel density evaluation 2, results='hide', message=F, warning=F, fig.height=24, fig.width=20}
+# And let's look at the marker density of A+B and C+D relative to the full panel (E)
+# First, we extract the marker expression values
+panel_E_CBB_exp <- as.data.frame(panel_E_CBB@intensities); colnames(panel_E_CBB_exp) <- panel_E_CBB@markers; panel_E_CBB_exp$batch = 'E'
+panel_AB_CBB_exp <- as.data.frame(panel_AB_CBB$merged@intensities); colnames(panel_AB_CBB_exp) <- panel_AB_CBB$merged@markers; panel_AB_CBB_exp$batch = 'A+B'
+panel_CD_CBB_exp <- as.data.frame(panel_CD_CBB$merged@intensities); colnames(panel_CD_CBB_exp) <- panel_CD_CBB$merged@markers; panel_CD_CBB_exp$batch = 'C+D'
+
+plot_density(uncorrected = panel_E_CBB_exp,
+             corrected = rbind(panel_AB_CBB_exp[,colnames(panel_E_CBB_exp)], panel_CD_CBB_exp[,colnames(panel_E_CBB_exp)]), 
+             dataset_names = c('Panel E', 'Panel A+B and C+D'),
+             ncol = 5)
+
+```
+
+
+Again, we will use the Earth Mover's Distance (EMD) to look at the imputations more quantitatively. 
+
+```{r cytobackbone evaluation, results='hide', message=F, warning=F, fig.width=20, fig.height=7}
+# Combine all datasets
+combined_CBB <- rbind(panel_AB_CBB_exp[,colnames(panel_E_CBB_exp)], panel_CD_CBB_exp[,colnames(panel_E_CBB_exp)], panel_E_CBB_exp)
+combined_CBB$sample <- '1'
+
+# EMD calculations for all batches - here we perform these globally, since the datasets are from the same healthy donor sample
+emd_all_CBB <- compute_emd(df = combined_CBB, 
+                           cell_col = 'sample')[[1]]
+
+boxplot(emd_all_CBB, main = 'EMD for all markers (CytoBackBone)', ylab = 'EMD', col = c('#F8766D', '#619CFF')[as.numeric(names(emd_all_CBB) %in% overlap_AB)+1], ylim = c(0,5))
+legend("topright", legend = c('Overlap', 'Imputed'), col = c('#619CFF', '#F8766D'), pch = 15, cex = 2, bty = 'n')
+```
+
+Since the CytoBackBone function does not maintain the information about which panel, which cell originally came from after merging, there is no way to obtain all five EMD values. However, we will still compare the EMD boxplots directly. The EMD ranges are similar - i.e. both tools seem to be most challenged with markers such as CXCR4 and MIP1b. 
+
+
+A final comparison is the runtime. Here we do a small comparison of cyCombine and CytoBackBone on a machine with 40 cores and 100 gb memory:
+
+```{r runtime}
+# Runtime for cyCombine on panels A + B
+end_time_cC - start_time_cC
+
+# Runtime for CytoBackBone on panels A + B
+end_time_CBB - start_time_CBB
+```
+
+While neither of these runtimes are terrible, it is worth considering that cyCombine is a lot faster. 
+
+<br> 
+
+In conclusion, the two tools have very similar performance in terms of the global distributions as seen from both the EMD calculations and the density plots. However, cyCombine integrates more cells and has a shorter runtime.
 
 
 
