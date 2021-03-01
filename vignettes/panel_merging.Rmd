@@ -117,11 +117,11 @@ library(tidyverse)
 data_dir <- 'FR-FCM-ZYV2/'
 
 # Load five panels' data - here we assume no substantial batch effects between the five samples
-panel_A <- prepare_data(data_dir = data_dir, pattern = '#A', down_sample = F, batch_ids = 'A', sample_ids = 1)
-panel_B <- prepare_data(data_dir = data_dir, pattern = '#B', down_sample = F, batch_ids = 'B', sample_ids = 1)
-panel_C <- prepare_data(data_dir = data_dir, pattern = '#C', down_sample = F, batch_ids = 'C', sample_ids = 1)
-panel_D <- prepare_data(data_dir = data_dir, pattern = '#D', down_sample = F, batch_ids = 'D', sample_ids = 1)
-panel_E <- prepare_data(data_dir = data_dir, pattern = '#E', down_sample = F, batch_ids = 'E', sample_ids = 1)
+panel_A <- prepare_data(data_dir = data_dir, pattern = '#A', down_sample = F, batch_ids = 'A')
+panel_B <- prepare_data(data_dir = data_dir, pattern = '#B', down_sample = F, batch_ids = 'B')
+panel_C <- prepare_data(data_dir = data_dir, pattern = '#C', down_sample = F, batch_ids = 'C')
+panel_D <- prepare_data(data_dir = data_dir, pattern = '#D', down_sample = F, batch_ids = 'D')
+panel_E <- prepare_data(data_dir = data_dir, pattern = '#E', down_sample = F, batch_ids = 'E')
 ```
 
 We will do panel merging with two panels at a time. 

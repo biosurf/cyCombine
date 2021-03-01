@@ -42,7 +42,10 @@ detect_batch_effect(
 \item{name}{Name of dataset - used for plot titles}
 }
 \description{
-Full function for detection of batch effects using cluster proportions
+This function is used for batch effect detection in multidimensional datasets.
+The function applies a SOM-based clustering to a dataset in order to compare not only marker expression differences across batches,
+but also the cluster percentages in each batch to detect possible populations which are over-/under-represented in a single batch.
+This is coupled with UMAP plots to assist the interpretation of the results.
 }
 \examples{
 detect_batch_effect(df = exprs)

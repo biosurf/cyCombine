@@ -14,7 +14,14 @@ detect_batch_effect_express(df, out_dir, downsample = NULL, seed = 472)
 \item{downsample}{Number of cells to include in detection. If not specified all cells will be used.}
 }
 \description{
-Quicker function for detection of batch effects
+This function can be used to check if a dataset contains batch effects.
+The function employs three different approaches to detect the effects:
+\enumerate{
+\item The Earth Mover's Distance per marker when comparing each batch-batch pair.
+\item Density plots per marker, per batch for visual inspection.
+\item A MultiDimensional Scaling plot based on the median marker expression per sample.
+It can apply downsampling for a quicker analysis of larger datasets.
+}
 }
 \examples{
 detect_batch_effect_express(df = exprs, out_dir = '/my/cycombine/dir/')

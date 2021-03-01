@@ -3,7 +3,12 @@
 
 #' Quicker function for detection of batch effects
 #'
-#'
+#' This function can be used to check if a dataset contains batch effects. 
+#'   The function employs three different approaches to detect the effects: 
+#'   1. The Earth Mover's Distance per marker when comparing each batch-batch pair. 
+#'   2. Density plots per marker, per batch for visual inspection.
+#'   3. A MultiDimensional Scaling plot based on the median marker expression per sample.
+#'   It can apply downsampling for a quicker analysis of larger datasets.
 #'
 #' @importFrom readxl read_xlsx
 #' @importFrom readr read_csv
@@ -178,7 +183,10 @@ detect_batch_effect_express <- function(df,
 
 #' Full function for detection of batch effects using cluster proportions
 #'
-#'
+#' This function is used for batch effect detection in multidimensional datasets.
+#'   The function applies a SOM-based clustering to a dataset in order to compare not only marker expression differences across batches,
+#'   but also the cluster percentages in each batch to detect possible populations which are over-/under-represented in a single batch. 
+#'   This is coupled with UMAP plots to assist the interpretation of the results.
 #'
 #' @param df Tibble containing the expression data and batch information. See prepare_data.
 #' @param downsample Number of cells to include in detection. If not specified all cells will be used. One should be careful with the downsampling here as too strong downsampling leads to spurious results.
