@@ -106,6 +106,7 @@ compute_emd <- function(df,
 #' @param corrected Dataframe of corrected data
 #' @param binSize The size of bins to use when binning data
 #' @param plots If TRUE, a violin and scatter plot of the emds will be returned
+#' @param filter_limit Limit for EMD removal (Removing EMDs that are below filter_limit in both before and after correction)
 #' @family emd
 #' @export
 evaluate_emd <- function(uncorrected,
