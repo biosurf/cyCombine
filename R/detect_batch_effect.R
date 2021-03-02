@@ -15,8 +15,10 @@
 #' @importFrom magrittr %>%
 #' @importFrom flowCore read.flowSet fsApply
 #' @param df Tibble containing the expression data and batch information. See prepare_data.
-#' @param downsample Number of cells to include in detection. If not specified all cells will be used.
 #' @param out_dir Directory for plot output
+#' @param batch_col Name of column containing batch information
+#' @param downsample Number of cells to include in detection. If not specified all cells will be used.
+#' @param seed Random seed for reproducibility
 #' @family detect_batch_effect
 #' @examples
 #' detect_batch_effect_express(df = exprs, out_dir = '/my/cycombine/dir/')
@@ -24,14 +26,20 @@
 #' @export
 detect_batch_effect_express <- function(df,
                                         out_dir,
+                                        batch_col = "batch",
                                         downsample = NULL,
                                         seed = 472) {
 
   missing_package("stats")
   missing_package("Matrix")
   message('Starting the quick(er) detection of batch effects.')
-
-
+  
+  # Check batch_col and rename if necessary
+  check_colname(colnames(df), batch_col, location = "df")
+  if (batch_col != 'batch') {
+    df$batch <- df[, batch_col]
+  }
+  
   # This works without clustering the data, so we set all labels to 1
   df$label <- 1
 
@@ -216,9 +224,14 @@ detect_batch_effect <- function(df,
                                 label_col = "label",
                                 name = 'raw data') {
 
-  check_colname(colnames(df), batch_col, location = "df")
   missing_package("outliers")
-
+  
+  # Check batch_col and rename if necessary
+  check_colname(colnames(df), batch_col, location = "df")
+  if (batch_col != 'batch') {
+    df$batch <- df[, batch_col]
+  }
+  
   # Check out dir
   if (is.null(out_dir)) {
     stop('Error! Please speicify output directory.')
