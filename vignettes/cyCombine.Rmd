@@ -1,5 +1,5 @@
 ---
-title: "cyCombine"
+title: "Reference manual"
 author: "Søren Helweg Dam"
 date: "February 4, 2021"
 output: 
@@ -7,10 +7,13 @@ output:
     theme: hpstr
     highlight: vignette
 vignette: >
-  %\VignetteIndexEntry{cyCombine}
+  %\VignetteIndexEntry{Reference manual}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+
+This vignette will demonstrate a general use-case of cyCombine.
+
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
@@ -18,7 +21,6 @@ knitr::opts_chunk$set(
 )
 ```
 
-**This vignette will demonstrate a general use-case of cyCombine**
 
 Alongside a directory of FCS files, a metadata and a panel file are assumed present.
 The metadata is in this example assumed to have the following columns:
@@ -102,7 +104,7 @@ markers <- panel %>%
 # Read FCS files
 flowset <- compile_fcs(
   data_dir = data_dir,
-  pattern = "\\.fsc" # Read all FCS files
+  pattern = "\\.fcs" # Read all FCS files
 )
 
 # Convert flowset to tibble
@@ -237,11 +239,13 @@ corrected <- correct_data(
 saveRDS(corrected, file.path(data_dir, "corrected.RDS"))
 ```
 
+<br>
+
 ### Evaluate performance using Earth Mover's Distance
 
 The EMD reduction is implemented as the performance metric; EMDs were computed for both the uncorrected and corrected data, removing those values where both had an EMD < 2.
 
-$$Reduction = \frac{\sum{EMDs_{before}} - \sum{EMDs_{after}}}{\sum{EMDs_{before}}}$$
+$$Reduction = \frac{\sum{EMD_{before}} - \sum{EMD_{after}}}{\sum{EMD_{before}}}$$
 
 
 ```{r, eval=FALSE}
@@ -275,6 +279,7 @@ emd$scatter
 
 ```
 
+<br>
 
 ### Create UMAPs and density plots
 

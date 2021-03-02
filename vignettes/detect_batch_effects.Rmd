@@ -1,41 +1,26 @@
 ---
-title: "Detection of batch effects in cytometry data"
+title: "Detection of batch effects"
 author: "Christina Bligaard Pedersen"
-date: "February 18, 2021"
+date: "March 2, 2021"
 output: 
   prettydoc::html_pretty:
     theme: hpstr
     highlight: vignette
 vignette: >
-  %\VignetteIndexEntry{cyCombine}
+  %\VignetteIndexEntry{Detection of batch effects}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-This vignette will demonstrate the use of the `detect_batch_effect` function of cyCombine.
-
-
-```{r setup, include = FALSE}
-knitr::opts_chunk$set(
-  strip.white = T, comment = ""
-)
-
-knitr::opts_knit$set(root.dir = '/home/projects/dp_immunoth/people/s153398/cyCombine/_data/')
-
-```
-
-For an introduction to the `detect_batch_effect_express` function, please refer to the [one-panel CyTOF example](https://htmlpreview.github.io/?https://github.com/shdam/cyCombine/blob/master/vignettes/CyTOF_1panel.html).
-
-<br>
-The function will be demonstrated using data from a study of CLL patients and healthy donors at the Dana-Farber Cancer Institute (DFCI). The protein expression was quantified using mass cytometry for 109 samples (20 healthy donors). The data was run in seven batches.
+This vignette will introduce the use of the batch effect detection module of cyCombine. For demonstrated use cases, see our [online vignettes](https://biosurf.org/cyCombine).
 
 <br>
 
-#### Pre-processing data
+### Pre-processing data
 
-We start by loading some packages.
+First, packages must be loaded.
 
-```{r libraries, results = 'hide', warning=FALSE, message=FALSE}
+```{r libraries, eval=FALSE}
 library(cyCombine)
 library(tidyverse)
 
@@ -44,36 +29,31 @@ library(tidyverse)
 
 <br>
 
+Then, it is possible to load the cytometry data - we suggest using the cyCombine package, but the batch detection functions work on all data frames. 
+
 We are now ready to load the CyTOF data. We have set up a panel file in csv format, so the correct information is extractable from there.
 
-```{r loading data 1, warning=FALSE, message=FALSE}
+```{r loading data, eval=FALSE}
 # Directory with raw .fcs files
-data_dir <- "dfci2_2"
+data_dir <- "~/data"
 
-# Panel and reading data
-panel <- read_csv(paste0(data_dir, "/panel2.csv"))
+# Reading the panel from a CSV
+panel <- read_csv(paste0(data_dir, "/panel.csv"))
 
-```
-
-<br>
-
-We then progress with reading the CyTOF dataset and converting it to a tibble format, which is easy to process. We use cofactor = 5 (default) and derandomization (default) in this case.
-
-
-```{r loading data 2}
 # Extracting the markers
 markers <- panel %>%
   filter(Type != "none") %>%
   pull(Marker) %>%
   str_remove_all("[ _-]")
 
-# Preparing the expression data
-dfci <- prepare_data(data_dir = data_dir,
+# Reading cytometry data and converting to tibble
+expr <- prepare_data(data_dir = data_dir,
                      metadata = paste0(data_dir, "/metadata.csv"),
                      filename_col = "FCS_name",
                      batch_ids = "Batch",
                      condition = "Set",
                      derand = TRUE,
+                     cofactor = 5,
                      markers = markers,
                      down_sample = FALSE)
 
@@ -81,31 +61,43 @@ dfci <- prepare_data(data_dir = data_dir,
 
 <br>
 
-#### Checking for batch effects
-In some experiments one may already know that batch effects exist. Maybe a marker was clearly overstained in one batch or a different antibody for the same protein was used in some batches. However, sometimes it is not known if batch effects - beyond those accounted for by bead normalization - are present. Such hidden technical variation can, depending on its severity, be detrimental to a biological analysis. 
+If loading mass cytometry (CyTOF) data, we suggest using derandomization and cofactor = 5 (default). For flow cytometry data, a cofactor of 150 is usually suitable, and for spectral flow cytometry, we recommend using cofactor = 6000.
 
-Accordingly, one should always inspect their data for batch effects before proceeding to clustering and other analysis steps. Here, we will see what can be learned from cyCombine's `detect_batch_effect` function.
 
-```{r detect batch effects}
-detect_batch_effect(dfci,
+<br><br>
+
+### Checking for batch effects
+Now for inspection of the data. We have two different functions: `detect_batch_effect_express` and `detect_batch_effect`. See the [online vignette](https://biosurf.org/cyCombine_detect_batch_effects.html) for a thorough discussion regarding these. Here, we just demonstrate how they are run.
+
+<br>
+
+#### detect_batch_effect_express
+Here, we demonstrate how to use the `detect_batch_effect_express` function.
+
+
+```{r detect batch effects express, eval=FALSE}
+detect_batch_effect_express(df = expr,
+                            batch_col = 'batch',
+                            downsample = 10000, 
+                            out_dir = paste0(data_dir, '/batch_effect_check'))
+```
+<br>
+
+This function prints some diagnostics to the screen and provides three plots to the directory specified by `out_dir`. An MDS plot, a set of density plots (per-marker, per-batch), and a plot showing the batch-batch Earth Mover's Distances per-marker. 
+
+<br><br>
+
+#### detect_batch_effect
+Here, we demonstrate how to use the `detect_batch_effect` function.
+
+```{r detect batch effects, eval=FALSE}
+detect_batch_effect(df = expr,
                     batch_col = 'batch',
                     out_dir = paste0(data_dir, '/batch_effect_check'), 
                     seed = 434,
-                    name = 'DFCI panel 2 data')
+                    name = 'CyTOF data')
 
 ```
 <br>
 
-In the printed output, we get some pointers to potential problems with batch effects. It points to three markers, which seem affected by batch effects. Furthermore, it also performs a clustering (SOM) and identifies that one of the obtained clusters has a significant over-representation in batch 2. This cluster appears to be a CD16+ NK cell cluster. 
-
-
-Additionally, the function provides a lot of UMAP plots, which are saved in the directory specified by `out_dir`. The first plot is the UMAP_batches_labels plot, which shows a UMAP for up to 50,000 cells across the batches in the dataset. One UMAP is colored by batch - another by SOM node (=cluster). While this might be tricky to decipher, it can be a good starting point for understanding the potential batch effects. It further generates the same UMAP colored by each protein marker in the dataset. 
-
-![](images/UMAP_batches_labels.png)
-![](images/UMAP_batches_labelsCD56.png)
-
-![](images/UMAP_batches_labelsCD16.png)
-
-It is recommended to also call the `detect_batch_effect_express` function to invesigate the output of that function and relate it to the results generated here.
-<br>
-
+This function prints some diagnostics to the screen and also provides UMAP plots, which are saved in the directory specified by `out_dir`. These plots should assist in detecting potential batch effects.

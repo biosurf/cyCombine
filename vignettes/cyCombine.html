@@ -14,7 +14,7 @@
 
 <meta name="date" content="2021-02-04" />
 
-<title>cyCombine</title>
+<title>Reference manual</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -177,7 +177,7 @@ code span.er { color: #a61717; background-color: #e3d2d2; }
 <article class="hentry">
 <header class="header-title">
 <div class="header-title-wrap">
-<h1 class="title toc-ignore entry-title">cyCombine</h1>
+<h1 class="title toc-ignore entry-title">Reference manual</h1>
 <h3 class="author">Søren Helweg Dam</h3>
 <h3 class="date">February 4, 2021</h3>
 </div><!-- /.header-title-wrap -->
@@ -186,7 +186,7 @@ code span.er { color: #a61717; background-color: #e3d2d2; }
 
 <div class="entry-content">
 
-<p><strong>This vignette will demonstrate a general use-case of cyCombine</strong></p>
+<p>This vignette will demonstrate a general use-case of cyCombine.</p>
 <p>Alongside a directory of FCS files, a metadata and a panel file are assumed present. The metadata is in this example assumed to have the following columns:</p>
 <table>
 <thead>
@@ -272,7 +272,7 @@ code span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb2-17"><a href="#cb2-17"></a><span class="co"># Read FCS files</span></span>
 <span id="cb2-18"><a href="#cb2-18"></a>flowset &lt;-<span class="st"> </span><span class="kw">compile_fcs</span>(</span>
 <span id="cb2-19"><a href="#cb2-19"></a>  <span class="dt">data_dir =</span> data_dir,</span>
-<span id="cb2-20"><a href="#cb2-20"></a>  <span class="dt">pattern =</span> <span class="st">&quot;</span><span class="ch">\\</span><span class="st">.fsc&quot;</span> <span class="co"># Read all FCS files</span></span>
+<span id="cb2-20"><a href="#cb2-20"></a>  <span class="dt">pattern =</span> <span class="st">&quot;</span><span class="ch">\\</span><span class="st">.fcs&quot;</span> <span class="co"># Read all FCS files</span></span>
 <span id="cb2-21"><a href="#cb2-21"></a>)</span>
 <span id="cb2-22"><a href="#cb2-22"></a></span>
 <span id="cb2-23"><a href="#cb2-23"></a><span class="co"># Convert flowset to tibble</span></span>
@@ -400,12 +400,13 @@ saveRDS(uncorrected, file = "data/uncorrected.RDS")
 <span id="cb4-28"><a href="#cb4-28"></a></span>
 <span id="cb4-29"><a href="#cb4-29"></a><span class="co"># Save result</span></span>
 <span id="cb4-30"><a href="#cb4-30"></a><span class="kw">saveRDS</span>(corrected, <span class="kw">file.path</span>(data_dir, <span class="st">&quot;corrected.RDS&quot;</span>))</span></code></pre></div>
+<p><br></p>
 </div>
 </div>
 <div id="evaluate-performance-using-earth-movers-distance" class="section level3">
 <h3>Evaluate performance using Earth Mover’s Distance</h3>
 <p>The EMD reduction is implemented as the performance metric; EMDs were computed for both the uncorrected and corrected data, removing those values where both had an EMD &lt; 2.</p>
-<p><span class="math display">\[Reduction = \frac{\sum{EMDs_{before}} - \sum{EMDs_{after}}}{\sum{EMDs_{before}}}\]</span></p>
+<p><span class="math display">\[Reduction = \frac{\sum{EMD_{before}} - \sum{EMD_{after}}}{\sum{EMD_{before}}}\]</span></p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a><span class="co"># Load packages</span></span>
 <span id="cb5-2"><a href="#cb5-2"></a><span class="kw">library</span>(cyCombine)</span>
 <span id="cb5-3"><a href="#cb5-3"></a><span class="kw">library</span>(tidyverse)</span>
@@ -433,6 +434,7 @@ saveRDS(uncorrected, file = "data/uncorrected.RDS")
 <span id="cb5-25"><a href="#cb5-25"></a></span>
 <span id="cb5-26"><a href="#cb5-26"></a><span class="co"># Scatter plot</span></span>
 <span id="cb5-27"><a href="#cb5-27"></a>emd<span class="op">$</span>scatter</span></code></pre></div>
+<p><br></p>
 </div>
 <div id="create-umaps-and-density-plots" class="section level3">
 <h3>Create UMAPs and density plots</h3>
