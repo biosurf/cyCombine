@@ -4,12 +4,25 @@
 \alias{compile_fcs}
 \title{Compile all .fcs files in a directory to a flowset}
 \usage{
-compile_fcs(data_dir, pattern = "\\\\.fcs")
+compile_fcs(
+  data_dir,
+  pattern = "\\\\.fcs",
+  column.pattern = NULL,
+  invert.pattern = FALSE
+)
 }
 \arguments{
 \item{data_dir}{Directory containing the .fcs files}
 
 \item{pattern}{The pattern to use to find the files in the folder}
+
+\item{column.pattern}{An optional regular expression defining parameters we
+should keep when loading the file. The default is NULL.}
+
+\item{invert.pattern}{logical. By default, \code{FALSE}. If \code{TRUE},
+inverts the regular expression specified in \code{column.pattern}. This is
+useful for indicating the channel names that we do not want to read. If
+\code{column.pattern} is set to \code{NULL}, this argument is ignored.}
 }
 \description{
 A simple function to compile a directory of FCS files into a flowSet object using flowCore::read.flowSet().

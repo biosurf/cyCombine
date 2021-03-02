@@ -13,12 +13,15 @@
 #' @importFrom flowCore read.flowSet fsApply
 #' @param data_dir Directory containing the .fcs files
 #' @param pattern The pattern to use to find the files in the folder
+#' @inheritParams flowCore::read.FCS
 #' @family dataprep
 #' @examples
 #' fcs <- compile_fcs(data_dir = "_data/raw", pattern = "\\.fcs")
 #' @export
 compile_fcs <- function(data_dir,
-                        pattern = "\\.fcs"){
+                        pattern = "\\.fcs",
+                        column.pattern = NULL,
+                        invert.pattern = FALSE){
 
   # Error checking
   if(data_dir %>% endsWith("/")) data_dir <- data_dir %>% stringr::str_sub(end = -2)
@@ -37,7 +40,9 @@ compile_fcs <- function(data_dir,
   fcs_raw <- files %>%
     flowCore::read.flowSet(transformation = FALSE,
                            truncate_max_range = FALSE,
-                           emptyValue = FALSE)
+                           emptyValue = FALSE,
+                           column.pattern = column.pattern,
+                           invert.pattern = invert.pattern)
 
   # Return fcs_raw
   return(fcs_raw)
