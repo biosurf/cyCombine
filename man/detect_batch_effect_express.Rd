@@ -4,14 +4,24 @@
 \alias{detect_batch_effect_express}
 \title{Quicker function for detection of batch effects}
 \usage{
-detect_batch_effect_express(df, out_dir, downsample = NULL, seed = 472)
+detect_batch_effect_express(
+  df,
+  out_dir,
+  batch_col = "batch",
+  downsample = NULL,
+  seed = 472
+)
 }
 \arguments{
 \item{df}{Tibble containing the expression data and batch information. See prepare_data.}
 
 \item{out_dir}{Directory for plot output}
 
+\item{batch_col}{Name of column containing batch information}
+
 \item{downsample}{Number of cells to include in detection. If not specified all cells will be used.}
+
+\item{seed}{Random seed for reproducibility}
 }
 \description{
 This function can be used to check if a dataset contains batch effects.

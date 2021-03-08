@@ -139,6 +139,7 @@ evaluate_emd <- function(uncorrected,
     dplyr::arrange(id) %>%
     cyCombine::compute_emd(binSize = binSize,
                            cell_col = cell_col,
+                           batch_col = batch_col,
                            markers = markers)
 
   message("Computing EMD for uncorrected data..")
@@ -146,6 +147,7 @@ evaluate_emd <- function(uncorrected,
     dplyr::arrange(id) %>%
     cyCombine::compute_emd(binSize = binSize,
                            cell_col = cell_col,
+                           batch_col = batch_col,
                            markers = markers)
 
 
@@ -233,3 +235,109 @@ evaluate_emd <- function(uncorrected,
 
 
 
+# MAD ----
+
+#' Compute MAD
+#'
+#' Given a dataframe, the Median Absolute Deviation (MAD) is calculated per-marker, per-batch
+#'
+#'
+#' @param df Dataframe to compute the MADs of
+#' @param batch_col Column name of df that contains batch numbers
+#' @param markers Vector of the markers to calculate EMD for. If NULL, \code{\link{get_markers}} will be used to find markers
+#' @family mad
+#' @export
+compute_mad <- function(df,
+                        batch_col = "batch",
+                        markers = NULL){
+  
+  # Check for package
+  missing_package("stats", "CRAN")
+
+  # Get markers if not given
+  if(is.null(markers)){
+    markers <- df %>%
+      get_markers()
+  }
+  
+  # Extract batches
+  batches <- df %>%
+    dplyr::pull(batch_col) %>%
+    unique() %>%
+    sort()
+
+  # Compute MADs in each batch
+  mads <- list()
+  for (b in seq_along(batches)) {
+    
+    # Calculate MAD per marker (globally)
+    MAD <- df %>%
+      dplyr::filter(batch == b) %>%
+      dplyr::select(all_of(markers)) %>%
+      apply(2, stats::mad)
+    
+    mads[[b]] <- MAD
+  }
+  
+  return(mads)
+}
+
+#' Evaluate MAD
+#'
+#' The function computes the Median Absolute Deviation of the two given datasets.
+#'   Then the reduction is calculated as the relative change in total MAD.
+#'
+#' @inheritParams compute_mad
+#' @param uncorrected Dataframe of uncorrected data
+#' @param corrected Dataframe of corrected data
+#' @family mad
+#' @export
+evaluate_mad <- function(uncorrected,
+                         corrected,
+                         batch_col = "batch",
+                         markers = NULL){
+  
+  # Check for package
+  missing_package("stats", "CRAN")
+
+  # Check colnames
+  check_colname(colnames(corrected), batch_col, "corrected set")
+  check_colname(colnames(uncorrected), batch_col, "uncorrected set")
+
+  
+  message("Computing MAD for corrected data..")
+  mad_corrected <- corrected %>%
+    dplyr::arrange(id) %>%
+    cyCombine::compute_mad(markers = markers)
+  
+  message("Computing MAD for uncorrected data..")
+  mad_uncorrected <- uncorrected %>%
+    dplyr::arrange(id) %>%
+    cyCombine::compute_mad(markers = markers)
+  
+  
+  # Extractin MAD values
+  unlist_cor <- mad_corrected %>%
+    unlist()
+  unlist_uncor <- mad_uncorrected %>%
+    unlist()
+  
+  # Create a tibble based on the computed MADs
+  mads <- tibble::tibble(
+    "Name" = names(unlist_cor),
+    "Corrected" = unlist_cor,
+    "Uncorrected" = unlist_uncor,
+    "Reduction" = unlist_uncor - unlist_cor
+  ) %>%
+    dplyr::filter(!is.na(Reduction))
+  
+  
+  # Calculate total reduction
+  reduction <- (sum(mads$Reduction) / sum(mads$Uncorrected)) %>%
+    round(2)
+  message("The reduction is: ", reduction)
+  
+  return(list("reduction" = reduction,
+                "mad" = mads))
+  
+}

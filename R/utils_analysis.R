@@ -187,6 +187,18 @@ run_analysis <- function(tool,
     ggsave(filename = paste0("figs/", project, "_scatterplot.png"),
            plot = emd_val$scatterplot, device = "png")
     saveRDS(emd_val, file = paste0(projdir, "_emd.RDS"))
+    
+    
+    
+    message("Evaluating Median Absolute Deviation..")
+    mad_val <- uncorrected %>%
+      cyCombine::evaluate_mad(corrected,
+                              markers = markers)
+    
+    message("Saving results..")
+    saveRDS(mad_val, file = paste0(projdir, "_mad.RDS"))
+    
+    
   }
 
   message("Done!")
