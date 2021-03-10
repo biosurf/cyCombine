@@ -4,16 +4,27 @@
 \alias{evaluate_mad}
 \title{Evaluate MAD}
 \usage{
-evaluate_mad(uncorrected, corrected, batch_col = "batch", markers = NULL)
+evaluate_mad(
+  uncorrected,
+  corrected,
+  cell_col = "label",
+  batch_col = "batch",
+  markers = NULL,
+  filter_limit = 0
+)
 }
 \arguments{
 \item{uncorrected}{Dataframe of uncorrected data}
 
 \item{corrected}{Dataframe of corrected data}
 
+\item{cell_col}{Column name of df that contains cell population labels (or clusters)}
+
 \item{batch_col}{Column name of df that contains batch numbers}
 
 \item{markers}{Vector of the markers to calculate EMD for. If NULL, \code{\link{get_markers}} will be used to find markers}
+
+\item{filter_limit}{Limit for MAD removal (Removing MADs that are below or equal to filter_limit in both before and after correction)}
 }
 \description{
 The function computes the Median Absolute Deviation of the two given datasets.

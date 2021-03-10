@@ -4,10 +4,12 @@
 \alias{compute_mad}
 \title{Compute MAD}
 \usage{
-compute_mad(df, batch_col = "batch", markers = NULL)
+compute_mad(df, cell_col = "label", batch_col = "batch", markers = NULL)
 }
 \arguments{
 \item{df}{Dataframe to compute the MADs of}
+
+\item{cell_col}{Column name of df that contains cell population labels (or clusters)}
 
 \item{batch_col}{Column name of df that contains batch numbers}
 

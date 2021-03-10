@@ -24,7 +24,15 @@ compute_emd <- function(df,
   # Check for package
   missing_package("emdist", "CRAN")
   missing_package("graphics", "CRAN")
-
+  
+  # Check colnames
+  check_colname(colnames(df), cell_col, "df")
+  check_colname(colnames(df), batch_col, "df")
+  
+  # Define cell columns as characters to avoid problems with factors
+  df[[cell_col]] <- df[[cell_col]] %>%
+    as.character()
+  
   # Get markers if not given
   if(is.null(markers)){
     markers <- df %>%
@@ -55,7 +63,7 @@ compute_emd <- function(df,
       # Filter data on batch and cell type
       distr[[b]][[cellType]] <- df %>%
         dplyr::filter(.data[[cell_col]] == cellType,
-                      batch == b) %>%
+                      .data[[batch_col]] == b) %>%
         dplyr::select(all_of(markers)) %>%
         apply(2, function(x) {
           # Bin data
@@ -122,6 +130,12 @@ evaluate_emd <- function(uncorrected,
   missing_package("emdist", "CRAN")
   missing_package("plyr", "CRAN")
 
+  # Get markers if not given
+  if(is.null(markers)){
+    markers <- df %>%
+      get_markers()
+  }
+  
   # Check colnames
   check_colname(colnames(corrected), cell_col, "corrected set")
   check_colname(colnames(uncorrected), cell_col, "uncorrected set")
@@ -151,7 +165,7 @@ evaluate_emd <- function(uncorrected,
                            markers = markers)
 
 
-  # Extractin EMD values
+  # Extracting EMD values
   unlist_cor <- emd_corrected %>%
     unlist()
   unlist_uncor <- emd_uncorrected %>%
@@ -176,6 +190,8 @@ evaluate_emd <- function(uncorrected,
   reduction <- (sum(emds_filtered$Reduction) / sum(emds_filtered$Uncorrected)) %>%
     round(2)
   message("The reduction is: ", reduction)
+  
+  
 
   if(plots == FALSE){
     return(list("reduction" = reduction,
@@ -183,19 +199,6 @@ evaluate_emd <- function(uncorrected,
   }
 
   message("Creating plots..")
-
-  # Extract cell types
-  cellTypes <- corrected %>%
-    dplyr::pull(cell_col) %>%
-    unique() %>%
-    sort()
-
-  # Get markers
-  if(is.null(markers)){
-    markers <- corrected %>%
-      cyCombine::get_markers()
-  }
-
 
   # Define the plotting limit
   limit <- emds_filtered$Uncorrected %>%
@@ -243,16 +246,26 @@ evaluate_emd <- function(uncorrected,
 #'
 #'
 #' @param df Dataframe to compute the MADs of
+#' @param cell_col Column name of df that contains cell population labels (or clusters)
 #' @param batch_col Column name of df that contains batch numbers
 #' @param markers Vector of the markers to calculate EMD for. If NULL, \code{\link{get_markers}} will be used to find markers
 #' @family mad
 #' @export
 compute_mad <- function(df,
+                        cell_col = "label",
                         batch_col = "batch",
                         markers = NULL){
   
   # Check for package
   missing_package("stats", "CRAN")
+
+  # Check colnames
+  check_colname(colnames(df), cell_col, "df")
+  check_colname(colnames(df), batch_col, "df")
+
+  # Define cell columns as characters to avoid problems with factors
+  df[[cell_col]] <- df[[cell_col]] %>%
+    as.character()
 
   # Get markers if not given
   if(is.null(markers)){
@@ -265,18 +278,29 @@ compute_mad <- function(df,
     dplyr::pull(batch_col) %>%
     unique() %>%
     sort()
-
-  # Compute MADs in each batch
+  
+  # Extract cell types
+  cellTypes <- df %>%
+    dplyr::pull(cell_col) %>%
+    unique() %>%
+    sort()
+  
+  
+  # Compute MADs in each batch per-marker, per-cluster
   mads <- list()
-  for (b in seq_along(batches)) {
+  for (cellType in cellTypes) {
+    mads[[cellType]] <- list()
     
-    # Calculate MAD per marker (globally)
-    MAD <- df %>%
-      dplyr::filter(batch == b) %>%
-      dplyr::select(all_of(markers)) %>%
-      apply(2, stats::mad)
-    
-    mads[[b]] <- MAD
+    for (b in seq_along(batches)) {
+      # Calculate MAD per marker
+      MAD <- df %>%
+        dplyr::filter(.data[[cell_col]] == cellType,
+                      .data[[batch_col]] == b) %>%
+        dplyr::select(all_of(markers)) %>%
+        apply(2, stats::mad)
+      
+      mads[[cellType]][[b]] <- MAD
+    }
   }
   
   return(mads)
@@ -290,33 +314,54 @@ compute_mad <- function(df,
 #' @inheritParams compute_mad
 #' @param uncorrected Dataframe of uncorrected data
 #' @param corrected Dataframe of corrected data
+#' @param filter_limit Limit for MAD removal (Removing MADs that are below or equal to filter_limit in both before and after correction)
 #' @family mad
 #' @export
 evaluate_mad <- function(uncorrected,
                          corrected,
+                         cell_col = "label",
                          batch_col = "batch",
-                         markers = NULL){
+                         markers = NULL,
+                         filter_limit = 0){
   
   # Check for package
   missing_package("stats", "CRAN")
 
+  # Get markers if not given
+  if(is.null(markers)){
+    markers <- df %>%
+      get_markers()
+  }
+  
   # Check colnames
+  check_colname(colnames(corrected), cell_col, "corrected set")
+  check_colname(colnames(uncorrected), cell_col, "uncorrected set")
   check_colname(colnames(corrected), batch_col, "corrected set")
   check_colname(colnames(uncorrected), batch_col, "uncorrected set")
-
+  
+  # Define cell columns as characters to avoid problems with factors
+  corrected[[cell_col]] <- corrected[[cell_col]] %>%
+    as.character()
+  uncorrected[[cell_col]] <- uncorrected[[cell_col]] %>%
+    as.character()
+  
   
   message("Computing MAD for corrected data..")
   mad_corrected <- corrected %>%
     dplyr::arrange(id) %>%
-    cyCombine::compute_mad(markers = markers)
+    cyCombine::compute_mad(markers = markers,
+                           batch_col = batch_col,
+                           cell_col = cell_col)
   
   message("Computing MAD for uncorrected data..")
   mad_uncorrected <- uncorrected %>%
     dplyr::arrange(id) %>%
-    cyCombine::compute_mad(markers = markers)
+    cyCombine::compute_mad(markers = markers,
+                           batch_col = batch_col,
+                           cell_col = cell_col)
   
   
-  # Extractin MAD values
+  # Extracting MAD values
   unlist_cor <- mad_corrected %>%
     unlist()
   unlist_uncor <- mad_uncorrected %>%
@@ -327,17 +372,27 @@ evaluate_mad <- function(uncorrected,
     "Name" = names(unlist_cor),
     "Corrected" = unlist_cor,
     "Uncorrected" = unlist_uncor,
-    "Reduction" = unlist_uncor - unlist_cor
-  ) %>%
-    dplyr::filter(!is.na(Reduction))
+    "Difference" = abs(unlist_uncor - unlist_cor)
+  )
+  
+  # Apply filter
+  message(paste("Removing MADs below or equal to", filter_limit, "both before and after correction"))
+  mads_filtered <- mads %>%
+    dplyr::filter(!(Corrected <= filter_limit & Uncorrected <= filter_limit))
   
   
-  # Calculate total reduction
-  reduction <- (sum(mads$Reduction) / sum(mads$Uncorrected)) %>%
-    round(2)
-  message("The reduction is: ", reduction)
+  # Calculate combined MAD score
+  score1 <- mean(mads_filtered$Difference) %>% round(2)
+  score2 <- median(mads_filtered$Difference) %>% round(2)
+  score4 <- max(mads_filtered$Difference) %>% round(2)
+  score5 <- IQR(mads_filtered$Difference) %>% round(2)
   
-  return(list("reduction" = reduction,
-                "mad" = mads))
+  message("The MAD score is: ", score1)
+  
+  return(list("score_mean" = score1,
+              "score_median" = score2,
+              "score_max" = score4,
+              "score_iqr" = score5,
+              "mad" = mads))
   
 }
