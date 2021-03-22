@@ -132,7 +132,7 @@ evaluate_emd <- function(uncorrected,
 
   # Get markers if not given
   if(is.null(markers)){
-    markers <- df %>%
+    markers <- uncorrected %>%
       get_markers()
   }
   
@@ -141,7 +141,9 @@ evaluate_emd <- function(uncorrected,
   check_colname(colnames(uncorrected), cell_col, "uncorrected set")
   check_colname(colnames(corrected), batch_col, "corrected set")
   check_colname(colnames(uncorrected), batch_col, "uncorrected set")
-
+  check_colname(colnames(corrected), 'id', "corrected set")
+  check_colname(colnames(uncorrected), 'id', "uncorrected set")
+  
   # Define cell columns as characters to avoid problems with factors
   corrected[[cell_col]] <- corrected[[cell_col]] %>%
     as.character()
@@ -291,7 +293,7 @@ compute_mad <- function(df,
   for (cellType in cellTypes) {
     mads[[cellType]] <- list()
     
-    for (b in seq_along(batches)) {
+    for (b in batches) {
       # Calculate MAD per marker
       MAD <- df %>%
         dplyr::filter(.data[[cell_col]] == cellType,
@@ -314,7 +316,7 @@ compute_mad <- function(df,
 #' @inheritParams compute_mad
 #' @param uncorrected Dataframe of uncorrected data
 #' @param corrected Dataframe of corrected data
-#' @param filter_limit Limit for MAD removal (Removing MADs that are below or equal to filter_limit in both before and after correction)
+#' @param filter_limit Limit for MAD removal (Removing MADs that are below or equal to filter_limit in both before and after correction). Default filters none of the values.
 #' @family mad
 #' @export
 evaluate_mad <- function(uncorrected,
@@ -322,14 +324,14 @@ evaluate_mad <- function(uncorrected,
                          cell_col = "label",
                          batch_col = "batch",
                          markers = NULL,
-                         filter_limit = 0){
+                         filter_limit = NULL){
   
   # Check for package
   missing_package("stats", "CRAN")
 
   # Get markers if not given
   if(is.null(markers)){
-    markers <- df %>%
+    markers <- uncorrected %>%
       get_markers()
   }
   
@@ -338,6 +340,8 @@ evaluate_mad <- function(uncorrected,
   check_colname(colnames(uncorrected), cell_col, "uncorrected set")
   check_colname(colnames(corrected), batch_col, "corrected set")
   check_colname(colnames(uncorrected), batch_col, "uncorrected set")
+  check_colname(colnames(corrected), 'id', "corrected set")
+  check_colname(colnames(uncorrected), 'id', "uncorrected set")
   
   # Define cell columns as characters to avoid problems with factors
   corrected[[cell_col]] <- corrected[[cell_col]] %>%
@@ -376,23 +380,18 @@ evaluate_mad <- function(uncorrected,
   )
   
   # Apply filter
-  message(paste("Removing MADs below or equal to", filter_limit, "both before and after correction"))
-  mads_filtered <- mads %>%
-    dplyr::filter(!(Corrected <= filter_limit & Uncorrected <= filter_limit))
+  if (!is.null(filter_limit)) {
+    message(paste("Removing MADs below or equal to", filter_limit, "both before and after correction"))
+    mads_filtered <- mads %>%
+      dplyr::filter(!(Corrected <= filter_limit & Uncorrected <= filter_limit))
+  }
   
+  # Calculate combined MAD score (median of all aboslute differences between uncor/cor)
+  score <- median(mads_filtered$Difference) %>% round(2)
+
+  message("The MAD score is: ", score)
   
-  # Calculate combined MAD score
-  score1 <- mean(mads_filtered$Difference) %>% round(2)
-  score2 <- median(mads_filtered$Difference) %>% round(2)
-  score4 <- max(mads_filtered$Difference) %>% round(2)
-  score5 <- IQR(mads_filtered$Difference) %>% round(2)
-  
-  message("The MAD score is: ", score1)
-  
-  return(list("score_mean" = score1,
-              "score_median" = score2,
-              "score_max" = score4,
-              "score_iqr" = score5,
+  return(list("score" = score,
               "mad" = mads))
   
 }

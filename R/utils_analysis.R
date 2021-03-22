@@ -103,8 +103,8 @@ run_analysis <- function(tool,
 
 
   # Plotting ----
-  if (!dir.exists("figs")){
-    dir.create("figs")
+  if (!dir.exists(paste0(data_dir, "figs"))){
+    dir.create(paste0(data_dir, "figs"))
   }
   if(any(segment %in% c("", "density"))){
 
@@ -114,7 +114,7 @@ run_analysis <- function(tool,
       cyCombine::plot_density(uncorrected = uncorrected,
                               corrected = corrected,
                               markers = markers,
-                              filename = paste0("figs/", project, "_densities.png"))
+                              filename = paste0(data_dir, "/figs/", project, "_densities.png"))
     )
   }
 
@@ -138,7 +138,7 @@ run_analysis <- function(tool,
     umap2 <- corrected_sliced %>%
       cyCombine::plot_dimred(name = "corrected", type = "umap", markers = markers)
 
-    cyCombine::plot_save_two(umap1, umap2, filename = paste0("figs/", project, "_umap.png"))
+    cyCombine::plot_save_two(umap1, umap2, filename = paste0(data_dir, "/figs/", project, "_umap.png"))
   }
 
   # Evaluate ----
@@ -182,9 +182,9 @@ run_analysis <- function(tool,
                               cell_col = celltype_col)
 
     message("Saving results..")
-    ggsave(filename = paste0("figs/", project, "_violin.png"),
+    ggsave(filename = paste0(data_dir, "/figs/", project, "_violin.png"),
            plot = emd_val$violin, device = "png")
-    ggsave(filename = paste0("figs/", project, "_scatterplot.png"),
+    ggsave(filename = paste0(data_dir, "/figs/", project, "_scatterplot.png"),
            plot = emd_val$scatterplot, device = "png")
     saveRDS(emd_val, file = paste0(projdir, "_emd.RDS"))
     
@@ -193,7 +193,9 @@ run_analysis <- function(tool,
     message("Evaluating Median Absolute Deviation..")
     mad_val <- uncorrected %>%
       cyCombine::evaluate_mad(corrected,
-                              markers = markers)
+                              markers = markers,
+                              cell_col = celltype_col,
+                              filter_limit = -1)
     
     message("Saving results..")
     saveRDS(mad_val, file = paste0(projdir, "_mad.RDS"))
