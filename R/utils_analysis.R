@@ -195,7 +195,7 @@ run_analysis <- function(tool,
       cyCombine::evaluate_mad(corrected,
                               markers = markers,
                               cell_col = celltype_col,
-                              filter_limit = -1)
+                              filter_limit = NULL)
     
     message("Saving results..")
     saveRDS(mad_val, file = paste0(projdir, "_mad.RDS"))
