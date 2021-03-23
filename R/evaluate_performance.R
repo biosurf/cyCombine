@@ -384,6 +384,8 @@ evaluate_mad <- function(uncorrected,
     message(paste("Removing MADs below or equal to", filter_limit, "both before and after correction"))
     mads_filtered <- mads %>%
       dplyr::filter(!(Corrected <= filter_limit & Uncorrected <= filter_limit))
+  } else {
+    mads_filtered <- mads
   }
   
   # Calculate combined MAD score (median of all aboslute differences between uncor/cor)
