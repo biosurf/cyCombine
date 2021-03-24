@@ -389,7 +389,7 @@ evaluate_mad <- function(uncorrected,
   }
   
   # Calculate combined MAD score (median of all aboslute differences between uncor/cor)
-  score <- median(mads_filtered$Difference) %>% round(2)
+  score <- median(mads_filtered$Difference, na.rm = T) %>% round(2)
 
   message("The MAD score is: ", score)
   
