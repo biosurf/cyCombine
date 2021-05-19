@@ -26,7 +26,12 @@ normalize <- function(df,
 
   # Remove case-sensitivity
   norm_method <- norm_method %>% stringr::str_to_lower()
-
+  
+  # Error check
+  if (norm_method == "rank" & !(ties.method %in% c("average", "first", "last", "random", "max", "min"))) {
+    stop("When using norm_method = 'rank', please use an available ties.method (average, first, last, random, max, or min).")
+  }
+  
   # Messaging
   if(norm_method == "rank") message("Ranking expression data..")
   else if(norm_method == "scale") message("Scaling expression data..")
@@ -36,7 +41,7 @@ normalize <- function(df,
     df_normed <- quantile_norm(df, markers = markers)
     return(df_normed)
     } else stop("Please use either 'scale', 'rank', or 'qnorm' as normalization method." )
-
+  
   if(is.null(markers)){
     # Get markers
     markers <- df %>%
@@ -48,11 +53,11 @@ normalize <- function(df,
     dplyr::group_by(.data$batch) %>%
     purrr::when(norm_method == "rank"  ~ dplyr::mutate(., dplyr::across(dplyr::all_of(markers),
                                                                         .fns = ~{
-                                                                          if(sum(.x) == 0) stop("A marker is 0 for an entire batch. Please remove this markers.")
+                                                                          if(sum(.x) == 0) stop("A marker is 0 for an entire batch. Please remove this marker.")
                                                                           rank(.x, ties.method = ties.method) / length(.x)})),
                 norm_method == "scale" ~ dplyr::mutate(., dplyr::across(dplyr::all_of(markers),
                                                                         .fns = ~{
-                                                                          if(sum(.x) == 0) stop("A marker is 0 for an entire batch. Please remove this markers.")
+                                                                          if(sum(.x) == 0) stop("A marker is 0 for an entire batch. Please remove this marker.")
                                                                           scale(.x)}))
     ) %>%
     dplyr::ungroup()
@@ -272,11 +277,19 @@ correct_data <- function(df,
 
         # If a node is heavily skewed to a single covar, it should be treated as having only 1 covar
         covar_counts <- df %>%
-          count(.data$batch, .data[[covar]]) %>%
-          pull(.data$n)
-        if(sum(covar_counts) < max(covar_counts) + num_covar*5){
+          count(.data$batch, .data[[covar]])
+        
+        # Get number of cells in the condition with most cells
+        covar_max <- covar_counts %>% 
+          group_by(.data[[covar]]) %>% 
+          summarise(sum = sum(n)) %>% 
+          pull(sum) %>% 
+          max()
+        
+        if(sum(covar_counts$n) < covar_max + num_covar*5){   # This should happen very rarely
           num_covar <- 1
         }
+        
       }
 
       # Compute ComBat correction
