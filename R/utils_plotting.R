@@ -1,10 +1,6 @@
 #### Plotting functions ----
 
-# @import ggplot2
-# @import ggridges
-# @import cowplot
 
-# @importFrom dplyr select_if bind_rows rename
 #' Density ridges for two sets
 #'
 #' Compare densities between each batch both before and after correction
@@ -41,7 +37,7 @@ plot_density <- function(uncorrected,
   # Get markers
   if (is.null(markers)) {
     markers <- uncorrected %>%
-      get_markers()
+      cyCombine::get_markers()
   }
 
   # Rename datasets
@@ -62,7 +58,7 @@ plot_density <- function(uncorrected,
 
   # Isolate markers and add Type and batch columns
   uncorrected <- uncorrected %>%
-    dplyr::select(all_of(markers)) %>%
+    dplyr::select(dplyr::all_of(markers)) %>%
     dplyr::mutate(Type = dataset_names[1],
                   batch = batch1)
 
@@ -110,12 +106,12 @@ plot_density <- function(uncorrected,
     # create some space to the left of the legend
     p[[1]] + theme(legend.box.margin = margin(0, 0, 0, 12))
   )
-  
+
   # Make a shared legend
   for (i in 1:length(p)) {
     p[[i]] <- p[[i]] + theme(legend.position="none")
   }
-  
+
   if (!is.null(filename)) {
     cowplot::save_plot(filename, cowplot::plot_grid(cowplot::plot_grid(plotlist = p, ncol = ncol), legend, rel_widths = c(2*ncol,1)), base_width = 20, base_height = length(markers)/height_factor)
   } else {
@@ -125,7 +121,7 @@ plot_density <- function(uncorrected,
 
 
 
-# @importFrom uwot umap
+
 #' Dimensionality reduction plot
 #'
 #' @param df tibble of data to plot
@@ -135,6 +131,8 @@ plot_density <- function(uncorrected,
 #' @param markers Markers to include in dimensionality reduction
 #' @param seed For reproducibility
 #' @param return_coord Return coordinates and not just the plot
+#' @importFrom uwot umap
+#' @importFrom stats prcomp
 #' @family plot
 #' @examples
 #' uncor_umap <- plot_dimred(uncorrected, "Uncorrected", markers = markers)
@@ -241,10 +239,12 @@ plot_dimred <- function(df,
 }
 
 
-# @importFrom uwot umap
 #' Dimensionality reduction plots - colored with labels, batches and marker expression
 #' @inheritParams plot_dimred
 #' @param out_dir Directory to put output figures
+#' @importFrom grDevices colorRampPalette
+#' @importFrom RColorBrewer brewer.pal
+#'
 #' @family plot
 #' @export
 plot_dimred_full <- function(df,
@@ -256,6 +256,8 @@ plot_dimred_full <- function(df,
 
   if(type == "umap") missing_package("uwot", "CRAN")
   missing_package("ggridges", "CRAN")
+  missing_package("grDevices", "CRAN")
+  missing_package("RColorBrewer", "CRAN")
 
   # Check out dir
   if (is.null(out_dir)) {
@@ -277,7 +279,7 @@ plot_dimred_full <- function(df,
   if (type == "pca") {
     # Run PCA
     pca <- df %>%
-      prcomp(scale. = TRUE, center = TRUE)
+      stats::prcomp(scale. = TRUE, center = TRUE)
 
     # Make dataframe with output
     df <- cbind.data.frame(pca$x, as.factor(Batch), as.factor(Label), df); colnames(df)[3:ncol(df)] <- c("Batch", "Label", markers)
@@ -339,7 +341,6 @@ plot_dimred_full <- function(df,
 
 
 
-# @importFrom uwot umap
 #' Dimensionality reduction plots for a two-batch dataset before and after correction - colored by batch and label
 #' @inheritParams plot_dimred
 #' @family plot
@@ -374,10 +375,10 @@ plot_umap_labels <- function(uncorrected,
                    list(df = corrected[corrected$batch == batch1,], plot = 'Label', nplots = 1, name = paste0('Corrected ', batch1)),
                    list(df = corrected[corrected$batch == batch2,], plot = 'Label', nplots = 1, name = paste0('Corrected ', batch2)))
 
-  seed = seed
+  seed <- seed
   plots <- plots2 <- list()
-  plot_count = plot_count2 = 1
-  markers = get_markers(uncorrected)
+  plot_count <- plot_count2 <- 1
+  markers <- cyCombine::get_markers(uncorrected)
   for (i in 1:6) {
 
     df <- datasets[[i]][['df']] #%>% sample_n(1000)

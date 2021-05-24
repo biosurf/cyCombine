@@ -24,19 +24,19 @@ compute_emd <- function(df,
   # Check for package
   missing_package("emdist", "CRAN")
   missing_package("graphics", "CRAN")
-  
+
   # Check colnames
   check_colname(colnames(df), cell_col, "df")
   check_colname(colnames(df), batch_col, "df")
-  
+
   # Define cell columns as characters to avoid problems with factors
   df[[cell_col]] <- df[[cell_col]] %>%
     as.character()
-  
+
   # Get markers if not given
   if(is.null(markers)){
     markers <- df %>%
-      get_markers()
+      cyCombine::get_markers()
   }
 
   # Extract batches
@@ -49,7 +49,7 @@ compute_emd <- function(df,
     dplyr::pull(cell_col) %>%
     unique() %>%
     sort()
-  
+
   # Define limits for binning
   lower <- floor(min(df[,markers])) - binSize
   upper <- ceiling(max(df[,markers])) + binSize
@@ -64,7 +64,7 @@ compute_emd <- function(df,
       distr[[b]][[cellType]] <- df %>%
         dplyr::filter(.data[[cell_col]] == cellType,
                       .data[[batch_col]] == b) %>%
-        dplyr::select(all_of(markers)) %>%
+        dplyr::select(dplyr::all_of(markers)) %>%
         apply(2, function(x) {
           # Bin data
           bins <- seq(binLims[1], binLims[2], by = binSize)
@@ -128,14 +128,14 @@ evaluate_emd <- function(uncorrected,
 
   # Check for package
   missing_package("emdist", "CRAN")
-  missing_package("plyr", "CRAN")
+  if(!plots) missing_package("plyr", "CRAN")
 
   # Get markers if not given
   if(is.null(markers)){
     markers <- uncorrected %>%
-      get_markers()
+      cyCombine::get_markers()
   }
-  
+
   # Check colnames
   check_colname(colnames(corrected), cell_col, "corrected set")
   check_colname(colnames(uncorrected), cell_col, "uncorrected set")
@@ -143,13 +143,13 @@ evaluate_emd <- function(uncorrected,
   check_colname(colnames(uncorrected), batch_col, "uncorrected set")
   check_colname(colnames(corrected), 'id', "corrected set")
   check_colname(colnames(uncorrected), 'id', "uncorrected set")
-  
+
   # Define cell columns as characters to avoid problems with factors
   corrected[[cell_col]] <- corrected[[cell_col]] %>%
     as.character()
   uncorrected[[cell_col]] <- uncorrected[[cell_col]] %>%
     as.character()
-  
+
   message("Computing EMD for corrected data..")
   emd_corrected <- corrected %>%
     dplyr::arrange(id) %>%
@@ -192,10 +192,10 @@ evaluate_emd <- function(uncorrected,
   reduction <- (sum(emds_filtered$Reduction) / sum(emds_filtered$Uncorrected)) %>%
     round(2)
   message("The reduction is: ", reduction)
-  
-  
 
-  if(plots == FALSE){
+
+
+  if(!plots){
     return(list("reduction" = reduction,
                 "emd" = emds))
   }
@@ -209,23 +209,23 @@ evaluate_emd <- function(uncorrected,
 
   # Create violin plot
   violin <- emds_filtered %>%
-    tidyr::pivot_longer(cols = ends_with("orrected"), names_to = "corrected") %>%
-    ggplot(aes(x = corrected, y = value)) +
-    geom_violin() +
-    geom_boxplot(width = 0.1) +
-    labs(x = "",
+    tidyr::pivot_longer(cols = dplyr::ends_with("orrected"), names_to = "corrected") %>%
+    ggplot2::ggplot(ggplot2::aes(x = corrected, y = value)) +
+    ggplot2::geom_violin() +
+    ggplot2::geom_boxplot(width = 0.1) +
+    ggplot2::labs(x = "",
          y = "Earth Mover's Distance",
          title = "Comparison of EMD before and after correction",
          subtitle = paste("Reduction: ", reduction))
 
   # Create scatterplot
   scatterplot <- emds %>%
-    ggplot(aes(x = Corrected, y = Uncorrected)) +
-    geom_point() +
-    annotate("rect", xmin = 0, xmax = filter_limit, ymin = 0, ymax = filter_limit, alpha = .5) +
-    coord_cartesian(xlim = c(-2, limit), ylim = c(-2, limit)) +
-    geom_abline(slope = 1, intercept = 0) +
-    labs(x = "EMD - Corrected",
+    ggplot2::ggplot(ggplot2::aes(x = Corrected, y = Uncorrected)) +
+    ggplot2::geom_point() +
+    ggplot2::annotate("rect", xmin = 0, xmax = filter_limit, ymin = 0, ymax = filter_limit, alpha = .5) +
+    ggplot2::coord_cartesian(xlim = c(-2, limit), ylim = c(-2, limit)) +
+    ggplot2::geom_abline(slope = 1, intercept = 0) +
+    ggplot2::labs(x = "EMD - Corrected",
          y = "EMD - Uncorrected",
          title = "",
          subtitle = paste("Reduction:", reduction))
@@ -257,7 +257,7 @@ compute_mad <- function(df,
                         cell_col = "label",
                         batch_col = "batch",
                         markers = NULL){
-  
+
   # Check for package
   missing_package("stats", "CRAN")
 
@@ -272,39 +272,39 @@ compute_mad <- function(df,
   # Get markers if not given
   if(is.null(markers)){
     markers <- df %>%
-      get_markers()
+      cyCombine::get_markers()
   }
-  
+
   # Extract batches
   batches <- df %>%
     dplyr::pull(batch_col) %>%
     unique() %>%
     sort()
-  
+
   # Extract cell types
   cellTypes <- df %>%
     dplyr::pull(cell_col) %>%
     unique() %>%
     sort()
-  
-  
+
+
   # Compute MADs in each batch per-marker, per-cluster
   mads <- list()
   for (cellType in cellTypes) {
     mads[[cellType]] <- list()
-    
+
     for (b in batches) {
       # Calculate MAD per marker
       MAD <- df %>%
         dplyr::filter(.data[[cell_col]] == cellType,
                       .data[[batch_col]] == b) %>%
-        dplyr::select(all_of(markers)) %>%
+        dplyr::select(dplyr::all_of(markers)) %>%
         apply(2, stats::mad)
-      
+
       mads[[cellType]][[b]] <- MAD
     }
   }
-  
+
   return(mads)
 }
 
@@ -325,16 +325,16 @@ evaluate_mad <- function(uncorrected,
                          batch_col = "batch",
                          markers = NULL,
                          filter_limit = NULL){
-  
+
   # Check for package
   missing_package("stats", "CRAN")
 
   # Get markers if not given
   if(is.null(markers)){
     markers <- uncorrected %>%
-      get_markers()
+      cyCombine::get_markers()
   }
-  
+
   # Check colnames
   check_colname(colnames(corrected), cell_col, "corrected set")
   check_colname(colnames(uncorrected), cell_col, "uncorrected set")
@@ -342,35 +342,35 @@ evaluate_mad <- function(uncorrected,
   check_colname(colnames(uncorrected), batch_col, "uncorrected set")
   check_colname(colnames(corrected), 'id', "corrected set")
   check_colname(colnames(uncorrected), 'id', "uncorrected set")
-  
+
   # Define cell columns as characters to avoid problems with factors
   corrected[[cell_col]] <- corrected[[cell_col]] %>%
     as.character()
   uncorrected[[cell_col]] <- uncorrected[[cell_col]] %>%
     as.character()
-  
-  
+
+
   message("Computing MAD for corrected data..")
   mad_corrected <- corrected %>%
     dplyr::arrange(id) %>%
     cyCombine::compute_mad(markers = markers,
                            batch_col = batch_col,
                            cell_col = cell_col)
-  
+
   message("Computing MAD for uncorrected data..")
   mad_uncorrected <- uncorrected %>%
     dplyr::arrange(id) %>%
     cyCombine::compute_mad(markers = markers,
                            batch_col = batch_col,
                            cell_col = cell_col)
-  
-  
+
+
   # Extracting MAD values
   unlist_cor <- mad_corrected %>%
     unlist()
   unlist_uncor <- mad_uncorrected %>%
     unlist()
-  
+
   # Create a tibble based on the computed MADs
   mads <- tibble::tibble(
     "Name" = names(unlist_cor),
@@ -378,7 +378,7 @@ evaluate_mad <- function(uncorrected,
     "Uncorrected" = unlist_uncor,
     "Difference" = abs(unlist_uncor - unlist_cor)
   )
-  
+
   # Apply filter
   if (!is.null(filter_limit)) {
     message(paste("Removing MADs below or equal to", filter_limit, "both before and after correction"))
@@ -387,13 +387,13 @@ evaluate_mad <- function(uncorrected,
   } else {
     mads_filtered <- mads
   }
-  
+
   # Calculate combined MAD score (median of all aboslute differences between uncor/cor)
   score <- median(mads_filtered$Difference, na.rm = T) %>% round(2)
 
   message("The MAD score is: ", score)
-  
+
   return(list("score" = score,
               "mad" = mads))
-  
+
 }

@@ -34,7 +34,6 @@ fcs <- compile_fcs(data_dir = "_data/raw", pattern = "\\\\.fcs")
 \seealso{
 Other dataprep: 
 \code{\link{convert_flowset}()},
-\code{\link{linear_shift}()},
 \code{\link{prepare_data}()},
 \code{\link{transform_asinh}()}
 }

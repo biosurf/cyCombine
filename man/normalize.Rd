@@ -13,7 +13,7 @@ normalize(df, markers = NULL, norm_method = "scale", ties.method = "average")
 
 \item{norm_method}{Normalization method. Should be either 'rank', 'scale' or 'qnorm'. Default: 'scale'}
 
-\item{ties.method}{The method to handle ties, when using rank. Default: "average". See ?rank for other options.}
+\item{ties.method}{The method to handle ties, when using rank. Default: 'average'. See ?rank for other options.}
 }
 \description{
 This function normalizes the data in a batch-wise manner.

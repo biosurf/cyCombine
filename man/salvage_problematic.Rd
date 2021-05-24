@@ -27,7 +27,7 @@ salvage_problematic(
 \item{exclude}{Channels to exclude (e.g. other misstained channels not to be used for imputation)}
 }
 \description{
-This function imputes the expression values for a single channel based on the information in the other channels
+This function imputes the expression values for a single channel based on the information in the other channels.
 The purpose is to be able to salvage a misstained channel in single batches of an experiment
 }
 \examples{

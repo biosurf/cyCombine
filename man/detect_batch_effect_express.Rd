@@ -19,7 +19,7 @@ detect_batch_effect_express(
 
 \item{batch_col}{Name of column containing batch information}
 
-\item{downsample}{Number of cells to include in detection. If not specified all cells will be used.}
+\item{downsample}{Number of cells to include in detection. If not specified, all cells will be used.}
 
 \item{seed}{Random seed for reproducibility}
 }

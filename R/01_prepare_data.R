@@ -44,7 +44,6 @@ compile_fcs <- function(data_dir,
                            column.pattern = column.pattern,
                            invert.pattern = invert.pattern)
 
-  # Return fcs_raw
   return(fcs_raw)
 }
 
@@ -52,9 +51,6 @@ compile_fcs <- function(data_dir,
 
 
 
-# Load data - the loaded contains objects "fcs_raw", "sample_ids",
-# "batch_ids", "all_markers", which are the raw flowSet, sample ids per row, batch
-# ids per row and all measured markers in the panel
 
 #' Convert a flowSet into a tibble
 #'
@@ -83,7 +79,7 @@ compile_fcs <- function(data_dir,
 #' @param down_sample If TRUE, the output will be down-sampled to size sample_size
 #' @param sample_size The size to down-sample to
 #' @param seed The seed to use for down-sampling
-#' @param panel Optional: Panel as a fileanme or data.frame. Is used to define colnames from the panel_antigen column
+#' @param panel Optional: Panel as a filename or data.frame. Is used to define colnames from the panel_antigen column
 #' @param panel_channel Optional: Only used if panel is given. It is the column name in the panel data.frame that contains the channel names
 #' @param panel_antigen Optional: Only used if panel is given. It is the column name in the panel data.frame that contains the antigen names
 #' @family dataprep
@@ -147,16 +143,18 @@ convert_flowset <- function(flowset,
     }
     # Remove files from metadata
     metadata <- metadata[match(files, metadata[[filename_col]]),]
+    # FlowSet row numbers
+    nrows <- flowCore::fsApply(flowset, nrow)
     # Get sample ids
     if (is.null(sample_ids)){
       sample_ids <- metadata[[filename_col]] %>%
         stringr::str_remove(".fcs") %>%
-        rep(flowCore::fsApply(flowset, nrow))
+        rep(nrows)
     } else if (length(sample_ids) == 1){
       check_colname(md_cols, sample_ids)
       sample_ids <- metadata[[sample_ids]][match(files, metadata[[filename_col]])] %>%
         stringr::str_remove(".fcs") %>%
-        rep(flowCore::fsApply(flowset, nrow))
+        rep(nrows)
     }
 
     # Get batch ids
@@ -165,7 +163,7 @@ convert_flowset <- function(flowset,
         check_colname(md_cols, batch_ids)
         batch_ids <- metadata[[batch_ids]][match(files, metadata[[filename_col]])] %>%
           as.factor() %>%
-          rep(flowCore::fsApply(flowset, nrow))
+          rep(nrows)
       }
     }
     # Get condition
@@ -174,7 +172,7 @@ convert_flowset <- function(flowset,
         check_colname(md_cols, condition)
         condition <- metadata[[condition]][match(basename(files), metadata[[filename_col]])] %>%
           as.factor() %>%
-          rep(flowCore::fsApply(flowset, nrow))
+          rep(nrows)
       }
 
     }
@@ -184,7 +182,7 @@ convert_flowset <- function(flowset,
   # Down sampling setup
   if(down_sample){
     # To down sample within fsApply
-    nrows <- flowCore::fsApply(flowset, nrow)
+    if(!exists(nrows)) nrows <- flowCore::fsApply(flowset, nrow)
     tot_nrows <- sum(nrows)
     message(paste("Down sampling to", sample_size, "samples"))
     set.seed(seed)
@@ -277,7 +275,7 @@ fcs_sample <- function(flowframe, sample, nrows, seed = 473){
 #' Transform data using asinh
 #'
 #' Inverse sine transformation of a tibble.
-#'  This function also de-randomizes data.
+#'  This function can also de-randomize data.
 #'
 #' @param df The tibble to transform
 #' @param markers The markers to transform on
@@ -300,7 +298,7 @@ transform_asinh <- function(df,
       cyCombine::get_markers()
   }
   if(any(markers %!in% colnames(df))){
-    mes <- str_c("Not all given markers are in the data.\nCheck if the markers contain a _ or -:",
+    mes <- stringr::str_c("Not all given markers are in the data.\nCheck if the markers contain a _ or -:",
                  knitr::combine_words(markers),
                  "Columns:",
                  knitr::combine_words(colnames(df)),
@@ -319,43 +317,6 @@ transform_asinh <- function(df,
                      }))
   return(transformed)
 }
-
-
-#' Linear shift of input data
-#'
-#' Linearly shift data to lowest value to zero and all other values are shifted linearly along with it.
-#'
-#' @inheritParams transform_asinh
-#' @family dataprep
-#' @examples
-#' uncorrected <- df %>%
-#'   linear_shift(markers = markers)
-#' @export
-linear_shift <- function(df, markers = NULL, .keep = FALSE){
-  if(is.null(markers)){
-    markers <- df %>%
-      cyCombine::get_markers()
-  }
-  if(any(markers %!in% colnames(df))){
-    mes <- str_c("Not all given markers are in the data.\nCheck if the markers contain a _ or -:",
-                 knitr::combine_words(markers),
-                 "Columns:",
-                 knitr::combine_words(colnames(df)),
-                 sep = "\n"
-    )
-    stop(mes)
-  }
-  message("Linearly shifting data..")
-  transformed <- df %>%
-    purrr::when(.keep ~ .,
-                ~ dplyr::select_if(., colnames(.) %in% c(markers, non_markers))) %>%
-    # Transform all data on those markers
-    dplyr::mutate(dplyr::across(dplyr::all_of(markers),
-                     .fns = function(x) x + (0-quantile(x, 0.01))))
-  return(transformed)
-}
-
-
 
 #### Wrapper function ----
 

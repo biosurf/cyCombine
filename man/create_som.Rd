@@ -23,11 +23,9 @@ create_som(df, markers = NULL, seed = 473, rlen = 10, xdim = 8, ydim = 8)
 A vector of clustering labels
 }
 \description{
-The function uses the FlowSOM or kohonen package to create a Self-Organizing Map.
+The function uses the kohonen package to create a Self-Organizing Map.
 It is used to segregate the cells for the batch correction to make the correction less affected
 by samples with high abundances of a particular cell type.
-FlowSOM is recommended with Z-score normalization.
-kohonen is recommended with rank normalization
 }
 \examples{
 labels <- uncorrected \%>\%

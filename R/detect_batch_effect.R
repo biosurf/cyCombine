@@ -3,9 +3,9 @@
 
 #' Quicker function for detection of batch effects
 #'
-#' This function can be used to check if a dataset contains batch effects. 
-#'   The function employs three different approaches to detect the effects: 
-#'   1. The Earth Mover's Distance per marker when comparing each batch-batch pair. 
+#' This function can be used to check if a dataset contains batch effects.
+#'   The function employs three different approaches to detect the effects:
+#'   1. The Earth Mover's Distance per marker when comparing each batch-batch pair.
 #'   2. Density plots per marker, per batch for visual inspection.
 #'   3. A MultiDimensional Scaling plot based on the median marker expression per sample.
 #'   It can apply downsampling for a quicker analysis of larger datasets.
@@ -17,7 +17,7 @@
 #' @param df Tibble containing the expression data and batch information. See prepare_data.
 #' @param out_dir Directory for plot output
 #' @param batch_col Name of column containing batch information
-#' @param downsample Number of cells to include in detection. If not specified all cells will be used.
+#' @param downsample Number of cells to include in detection. If not specified, all cells will be used.
 #' @param seed Random seed for reproducibility
 #' @family detect_batch_effect
 #' @examples
@@ -33,13 +33,13 @@ detect_batch_effect_express <- function(df,
   missing_package("stats")
   missing_package("Matrix")
   message('Starting the quick(er) detection of batch effects.')
-  
+
   # Check batch_col and rename if necessary
   check_colname(colnames(df), batch_col, location = "df")
   if (batch_col != 'batch') {
     df$batch <- df[, batch_col]
   }
-  
+
   # This works without clustering the data, so we set all labels to 1
   df$label <- 1
 
@@ -71,9 +71,9 @@ detect_batch_effect_express <- function(df,
   p <- list()
   for (c in 1:length(all_markers)) {
 
-    p[[c]] <- ggplot2::ggplot(df, aes_string(x = all_markers[c],
+    p[[c]] <- ggplot2::ggplot(df, ggplot2::aes_string(x = all_markers[c],
                                              y = "batch")) +
-      ggridges::geom_density_ridges(aes(color = batch, fill = batch),
+      ggridges::geom_density_ridges(ggplot2::aes(color = batch, fill = batch),
                                     alpha = 0.4,
                                     quantile_lines = TRUE) +
       ggplot2::theme_bw()
@@ -97,7 +97,7 @@ detect_batch_effect_express <- function(df,
 
   # Get mean PER BATCH per marker
   emd <- lapply(emd[[1]], function(x) {Matrix::forceSymmetric(x, uplo='U')}) # Contains the pairwise EMDs, now made symmetrical for easy extraction of values
-  batch_means <- lapply(emd, function(x) {colMeans(as.matrix(x), na.rm = T)})
+  batch_means <- lapply(emd, function(x) {Matrix::colMeans(as.matrix(x), na.rm = T)})
 
 
 
@@ -122,11 +122,11 @@ detect_batch_effect_express <- function(df,
   emd_markers <- cbind.data.frame(emd_markers, rownames(emd_markers)); colnames(emd_markers) <- c('mean', 'sd', 'marker')
   emd_markers$marker <- factor(emd_markers$marker, levels = emd_markers$marker[order(emd_markers$mean, decreasing=T)])
 
-  p <- ggplot2::ggplot(emd_markers, aes(x = marker, y = mean)) +
-    ggplot2::geom_bar(stat="identity", aes(fill = mean)) +
-    ggplot2::theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  p <- ggplot2::ggplot(emd_markers, ggplot2::aes(x = marker, y = mean)) +
+    ggplot2::geom_bar(stat="identity", ggplot2::aes(fill = mean)) +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, vjust = 0.5, hjust=1)) +
     ggplot2::ylab('Mean EMD') + ggplot2::xlab('') +
-    ggplot2::geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2,
+    ggplot2::geom_errorbar(ggplot2::aes(ymin=mean-sd, ymax=mean+sd), width=.2,
                            position=position_dodge(.9))
   suppressMessages(ggplot2::ggsave(p, filename = paste0(out_dir, '/emd_per_marker.png')))
 
@@ -144,8 +144,8 @@ detect_batch_effect_express <- function(df,
       outliers <- which(batch_means[[m]] > (quantile(batch_means[[m]], 0.75) + stats::IQR(batch_means[[m]])*3))
       message(paste0(m, ' has clear outlier batch(es): ', paste0(names(outliers))))
 
-      summary_non <- df %>% filter(!(batch %in% names(outliers))) %>% pull(m) %>% summary()
-      summary_out <- df %>% filter(batch %in% names(outliers)) %>% pull(m) %>% summary()
+      summary_non <- df %>% dplyr::filter(!(batch %in% names(outliers))) %>% dplyr::pull(m) %>% summary()
+      summary_out <- df %>% dplyr::filter(batch %in% names(outliers)) %>% dplyr::pull(m) %>% summary()
 
       message('Summary of the distribution in the OUTLIER batch(es):')
       message(paste(names(summary_out), '=', round(summary_out,2), collapse = ', '))
@@ -177,7 +177,7 @@ detect_batch_effect_express <- function(df,
   mds$batch <- as.factor(df$batch[match(mds$sample, df$sample)])
 
   p <- ggplot2::ggplot(mds, aes(V1, V2)) +
-    ggplot2::geom_point(aes(colour = batch), size = 2) +
+    ggplot2::geom_point(ggplot2::aes(colour = batch), size = 2) +
     ggplot2::labs(x = "MDS1", y = "MDS2", title = "MDS plot") +
     ggplot2::theme_bw()
 
@@ -193,7 +193,7 @@ detect_batch_effect_express <- function(df,
 #'
 #' This function is used for batch effect detection in multidimensional datasets.
 #'   The function applies a SOM-based clustering to a dataset in order to compare not only marker expression differences across batches,
-#'   but also the cluster percentages in each batch to detect possible populations which are over-/under-represented in a single batch. 
+#'   but also the cluster percentages in each batch to detect possible populations that are over-/under-represented in a single batch.
 #'   This is coupled with UMAP plots to assist the interpretation of the results.
 #'
 #' @param df Tibble containing the expression data and batch information. See prepare_data.
@@ -225,13 +225,13 @@ detect_batch_effect <- function(df,
                                 name = 'raw data') {
 
   missing_package("outliers")
-  
+
   # Check batch_col and rename if necessary
   check_colname(colnames(df), batch_col, location = "df")
   if (batch_col != 'batch') {
     df$batch <- df[, batch_col]
   }
-  
+
   # Check out dir
   if (is.null(out_dir)) {
     stop('Error! Please speicify output directory.')
@@ -295,7 +295,7 @@ detect_batch_effect <- function(df,
   }
 
   marker_emd <- which(stats::p.adjust(sapply(markers_emd, function(x) {outliers::dixon.test(x, opposite=F)$p.value}), method = 'BH') < 0.05 | p.adjust(sapply(markers_emd,  function(x) {outliers::dixon.test(x, opposite=T)$p.value}), method = 'BH') < 0.05)
-  message(paste0('\nThere are ', length(marker_emd), ' markers, which appear to be outliers in a single batch:'))
+  message(paste0('\nThere are ', length(marker_emd), ' markers that appear to be outliers in a single batch:'))
   message(paste(markers[marker_emd], collapse = ', '))
 
   ### Let us think about how we should process this
@@ -329,7 +329,7 @@ detect_batch_effect <- function(df,
   # SHOULD WE DOWNSAMPLE??
   if (nrow(df) > 50000) {
     set.seed(seed)
-    df <- df %>% sample_n(50000)
+    df <- df %>% dplyr::slice_sample(n = 50000)
   }
 
 

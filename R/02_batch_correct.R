@@ -13,7 +13,7 @@
 #' @param df tibble with expression values
 #' @param markers Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.
 #' @param norm_method Normalization method. Should be either 'rank', 'scale' or 'qnorm'. Default: 'scale'
-#' @param ties.method The method to handle ties, when using rank. Default: "average". See ?rank for other options.
+#' @param ties.method The method to handle ties, when using rank. Default: 'average'. See ?rank for other options.
 #' @family batch
 #' @examples
 #' df_normed <- df %>%
@@ -26,12 +26,13 @@ normalize <- function(df,
 
   # Remove case-sensitivity
   norm_method <- norm_method %>% stringr::str_to_lower()
-  
+  ties.method <- ties.method %>% stringr::str_to_lower()
+
   # Error check
-  if (norm_method == "rank" & !(ties.method %in% c("average", "first", "last", "random", "max", "min"))) {
+  if (norm_method == "rank" & ties.method %!in% c("average", "first", "last", "random", "max", "min")) {
     stop("When using norm_method = 'rank', please use an available ties.method (average, first, last, random, max, or min).")
   }
-  
+
   # Messaging
   if(norm_method == "rank") message("Ranking expression data..")
   else if(norm_method == "scale") message("Scaling expression data..")
@@ -41,7 +42,7 @@ normalize <- function(df,
     df_normed <- quantile_norm(df, markers = markers)
     return(df_normed)
     } else stop("Please use either 'scale', 'rank', or 'qnorm' as normalization method." )
-  
+
   if(is.null(markers)){
     # Get markers
     markers <- df %>%
@@ -113,15 +114,12 @@ quantile_norm <- function(df, markers = NULL){
 
 #' Create Self-Organizing Map
 #'
-#' The function uses the FlowSOM or kohonen package to create a Self-Organizing Map.
+#' The function uses the kohonen package to create a Self-Organizing Map.
 #'  It is used to segregate the cells for the batch correction to make the correction less affected
 #'  by samples with high abundances of a particular cell type.
-#'  FlowSOM is recommended with Z-score normalization.
-#'  kohonen is recommended with rank normalization
 #'
 #' @importFrom kohonen som somgrid
 #' @importFrom stats predict
-#' @importFrom FlowSOM SOM
 #' @inheritParams normalize
 #' @param seed The seed to use when creating the SOM.
 #' @param xdim The x-dimension size of the SOM.
@@ -160,39 +158,6 @@ create_som <- function(df,
   return(labels)
 }
 
-#' Compute flowsom clustering (Deprecated)
-#' @importFrom FlowSOM SOM
-#' @export
-create_fsom <- function(df,
-                        markers = NULL,
-                        seed = 473,
-                        xdim = 8,
-                        ydim = 8){
-
-  warning("This function is deprecated. Please use 'create_som(som_type = 'fsom')' instead.")
-  # Check for package
-  missing_package("FlowSOM", "Bioc")
-
-  # Get markers
-  if(is.null(markers)){
-    # Get markers
-    markers <- df %>%
-      cyCombine::get_markers()
-  }
-
-
-  # Create SOM grid
-  set.seed(seed)
-  fsom <- df %>%
-    dplyr::select(dplyr::all_of(markers)) %>%
-    as.matrix() %>%
-    FlowSOM::SOM(xdim = xdim, ydim = ydim)
-
-  label <- fsom$mapping[, 1]
-
-  return(label)
-}
-
 
 # Batch correction ----
 
@@ -200,7 +165,7 @@ create_fsom <- function(df,
 #'
 #' Compute the batch correction on the data using the ComBat algorithm.
 #'  Define a covariate, either as a character vector or name of tibble column.
-#'  The covariate should preferable be the cell condition types, but can be any column that infers heteroneity in the data.
+#'  The covariate should preferable be the cell condition types but can be any column that infers heterogeneity in the data.
 #'  The function assumes that the batch information is in the "batch" column and the data contains a "sample" column with sample information.
 #'
 #' @importFrom sva ComBat
@@ -265,7 +230,7 @@ correct_data <- function(df,
       if(num_batches == 1){
         batch <- df$batch[1]
         message(paste("Label group", lab, "only contains cells from batch", batch))
-        df <- df %>% select(-label) # Not removed from output, but removed here to prevent bug
+        df <- df %>% dplyr::select(-label) # Not removed from output, but removed here to prevent bug
         return(df)
       }
       message(paste("Correcting Label group", lab))
@@ -275,26 +240,20 @@ correct_data <- function(df,
           unique() %>%
           length()
 
-        # If a node is heavily skewed to a single covar, it should be treated as having only 1 covar
-        covar_counts <- df %>%
-          count(.data$batch, .data[[covar]])
-        
+        # If a node is heavily skewed to a single covar, it should be treated as having only 1 covar.
         # Get number of cells in the condition with most cells
-        covar_max <- covar_counts %>% 
-          group_by(.data[[covar]]) %>% 
-          summarise(sum = sum(n)) %>% 
-          pull(sum) %>% 
-          max()
-        
-        if(sum(covar_counts$n) < covar_max + num_covar*5){   # This should happen very rarely
+        covar_counts <- df %>%
+          dplyr::count(.data[[covar]]) %>%
+          dplyr::pull(n)
+
+        if(sum(covar_counts) < max(covar_counts) + num_covar*5){
           num_covar <- 1
         }
-        
       }
 
       # Compute ComBat correction
       ComBat_output <- df %>%
-        dplyr::select(all_of(markers)) %>%
+        dplyr::select(dplyr::all_of(markers)) %>%
         t() %>%
         # The as.character is to remove factor levels not present in the SOM node
         purrr::when(num_covar > 1 ~ sva::ComBat(.,
@@ -326,7 +285,7 @@ correct_data <- function(df,
     }) %>%
     dplyr::ungroup() %>%
     dplyr::arrange(id) %>%
-    select(id, everything())
+    dplyr::select(id, everything())
   return(corrected_data)
 }
 
@@ -375,7 +334,7 @@ correct_data_alt <- function(df,
                                   x <- ifelse(x > max, max, x)
                                   return(x)
                                 })) %>%
-    select(id, everything())
+    dplyr::select(id, everything())
   return(corrected_data)
 }
 
@@ -385,9 +344,7 @@ correct_data_alt <- function(df,
 #' Run batch correction on data
 #'
 #' This is a wrapper function for the cyCombine batch correction workflow.
-#'  To run the workflow manually, type "batch_correct" to see the source code of this wrapper and follow along.
-#'  som_type = "fsom" is recommended when merging batches from a single study/experiment.
-#'  som_type = "kohonen is recommended when merging data from different studies/experiments.
+#'  To run the workflow manually, type "batch_correct" to see the source code of this wrapper and follow along or read the vignettes on the GitHub page \url{https://github.com/biosurf/cyCombine}.
 #'
 #' @inheritParams create_som
 #' @inheritParams correct_data
@@ -407,7 +364,7 @@ batch_correct <- function(df,
                           seed = 473,
                           covar = NULL,
                           markers = NULL,
-                          norm_method = 'scale',
+                          norm_method = "scale",
                           ties.method = "average"){
   # A batch column is required
   check_colname(colnames(df), "batch", "df")

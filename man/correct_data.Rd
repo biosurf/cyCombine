@@ -21,7 +21,7 @@ If NULL, no covar will be used}
 \description{
 Compute the batch correction on the data using the ComBat algorithm.
 Define a covariate, either as a character vector or name of tibble column.
-The covariate should preferable be the cell condition types, but can be any column that infers heteroneity in the data.
+The covariate should preferable be the cell condition types but can be any column that infers heterogeneity in the data.
 The function assumes that the batch information is in the "batch" column and the data contains a "sample" column with sample information.
 }
 \examples{

@@ -40,13 +40,11 @@ If NULL, no covar will be used}
 
 \item{norm_method}{Normalization method. Should be either 'rank', 'scale' or 'qnorm'. Default: 'scale'}
 
-\item{ties.method}{The method to handle ties, when using rank. Default: "average". See ?rank for other options.}
+\item{ties.method}{The method to handle ties, when using rank. Default: 'average'. See ?rank for other options.}
 }
 \description{
 This is a wrapper function for the cyCombine batch correction workflow.
-To run the workflow manually, type "batch_correct" to see the source code of this wrapper and follow along.
-som_type = "fsom" is recommended when merging batches from a single study/experiment.
-som_type = "kohonen is recommended when merging data from different studies/experiments.
+To run the workflow manually, type "batch_correct" to see the source code of this wrapper and follow along or read the vignettes on the GitHub page \url{https://github.com/biosurf/cyCombine}.
 }
 \examples{
 corrected <- uncorrected \%>\%

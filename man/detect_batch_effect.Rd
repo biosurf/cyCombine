@@ -44,7 +44,7 @@ detect_batch_effect(
 \description{
 This function is used for batch effect detection in multidimensional datasets.
 The function applies a SOM-based clustering to a dataset in order to compare not only marker expression differences across batches,
-but also the cluster percentages in each batch to detect possible populations which are over-/under-represented in a single batch.
+but also the cluster percentages in each batch to detect possible populations that are over-/under-represented in a single batch.
 This is coupled with UMAP plots to assist the interpretation of the results.
 }
 \examples{

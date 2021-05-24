@@ -3,7 +3,7 @@
 
 #' Salvaging problematic channels - one at a time
 #'
-#' This function imputes the expression values for a single channel based on the information in the other channels
+#' This function imputes the expression values for a single channel based on the information in the other channels.
 #'   The purpose is to be able to salvage a misstained channel in single batches of an experiment
 #'
 #' @param df Dataframe with expression values
@@ -61,7 +61,7 @@ salvage_problematic <- function(df,
   # For each missing event in each cluster, impute values based on density draws in respective cluster
   # (here represented by random sample and addition of a number with mean 0 and bandwidth sd)
 
-  cat('Performing density draws.\n')
+  message('Performing density draws.')
 
   imputed <- rep(0, length(impute_obs_som))
 
@@ -72,13 +72,13 @@ salvage_problematic <- function(df,
 
       # Estimate the density per marker that needs imputation
       dens <- complete_obs[which(complete_obs_som==s),] %>%
-        pull(channel) %>%
+        dplyr::pull(channel) %>%
         density()
 
       # For each missing event in each cluster, impute values based on density draws in respective cluster (here represented by random sample and addition of a number with mean 0 and bandwidth sd)
       set.seed(seed)
       imputed[which(impute_obs_som==s)] <- complete_obs[which(complete_obs_som==s),] %>%
-        pull(channel) %>%
+        dplyr::pull(channel) %>%
         sample(size = sum(impute_obs_som==s), replace = T) + rnorm(sum(impute_obs_som==s), 0, dens$bw)
 
       # Fix values outside input range (per marker) - per SOM node
@@ -103,8 +103,8 @@ salvage_problematic <- function(df,
 
 #' Impute non-overlapping channels for whole data sets
 #'
-#' This function imputes the expression values for a whole dataset based on the overlapping markers contained in another dataset
-#'   The purpose is to be able to merge multi-panel data or to merge differently run datasets which have non-overlapping markers
+#' This function imputes the expression values for a whole dataset based on the overlapping markers contained in another dataset.
+#'   The purpose is to be able to merge multi-panel data or to merge differently run datasets that have non-overlapping markers
 #'
 #' @param dataset1 Dataframe with expression values 1
 #' @param dataset2 Dataframe with expression values 2
@@ -133,10 +133,10 @@ impute_across_panels <- function(dataset1,
     stop("Error: Some of your impute_channels2 are not found among the dataset1 column names.")
   }
   if (!all(overlap_channels %in% colnames(dataset1))) {
-    stop("Error: Some of your overlap_channels are not found in among dataset1 column names.")
+    stop("Error: Some of your overlap_channels are not found among the dataset1 column names.")
   }
   if (!all(overlap_channels %in% colnames(dataset2))) {
-    stop("Error: Some of your overlap_channels are not found in among dataset2 column names.")
+    stop("Error: Some of your overlap_channels are not found among the dataset2 column names.")
   }
 
 
@@ -170,7 +170,7 @@ impute_across_panels <- function(dataset1,
 
 
     # For each missing event in each cluster, impute values based on density draws in the same cluster
-    cat(paste0('Performing density draws for dataset', i, '.\n'))
+    message(paste0('Performing density draws for dataset', i, '.'))
     imputed <- matrix(nrow=nrow(impute_for), ncol=length(impute_channels), dimnames = list("rn"=NULL, "cn"=impute_channels))
 
     for (s in sort(unique(impute_obs_som))) {
@@ -184,8 +184,8 @@ impute_across_panels <- function(dataset1,
         # Performing the imputation
         set.seed(seed)
         imputed[which(impute_obs_som==s),] <- complete_obs[which(complete_obs_som==s),] %>%
-          dplyr::select(all_of(impute_channels)) %>%
-          dplyr::sample_n(size = sum(impute_obs_som==s), replace = T) %>%
+          dplyr::select(dplyr::all_of(impute_channels)) %>%
+          dplyr::slice_sample(n = sum(impute_obs_som==s), replace = T) %>%
           as.matrix() + sapply(impute_channels, function(ch) {rnorm(sum(impute_obs_som==s), 0, dens[ch])})
 
         # Fix values outside input range (per marker)
@@ -207,7 +207,7 @@ impute_across_panels <- function(dataset1,
     impute_for[,impute_channels] <- imputed
 
     impute_for <- impute_for %>%
-      dplyr::relocate(any_of(non_markers), .after = all_of(impute_channels))
+      dplyr::relocate(dplyr::any_of(non_markers), .after = dplyr::all_of(impute_channels))
 
     imputed_dfs[[paste0('dataset', i)]] <- impute_for
   }

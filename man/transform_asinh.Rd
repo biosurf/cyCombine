@@ -19,7 +19,7 @@ transform_asinh(df, markers = NULL, cofactor = 5, derand = TRUE, .keep = FALSE)
 }
 \description{
 Inverse sine transformation of a tibble.
-This function also de-randomizes data.
+This function can also de-randomize data.
 }
 \examples{
 uncorrected <- df \%>\%
@@ -29,7 +29,6 @@ uncorrected <- df \%>\%
 Other dataprep: 
 \code{\link{compile_fcs}()},
 \code{\link{convert_flowset}()},
-\code{\link{linear_shift}()},
 \code{\link{prepare_data}()}
 }
 \concept{dataprep}

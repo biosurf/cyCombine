@@ -50,7 +50,7 @@ prepare_data(
 
 \item{seed}{The seed to use for down-sampling}
 
-\item{panel}{Optional: Panel as a fileanme or data.frame. Is used to define colnames from the panel_antigen column}
+\item{panel}{Optional: Panel as a filename or data.frame. Is used to define colnames from the panel_antigen column}
 
 \item{panel_channel}{Optional: Only used if panel is given. It is the column name in the panel data.frame that contains the channel names}
 
@@ -78,7 +78,6 @@ uncorrected <- data_dir \%>\%
 Other dataprep: 
 \code{\link{compile_fcs}()},
 \code{\link{convert_flowset}()},
-\code{\link{linear_shift}()},
 \code{\link{transform_asinh}()}
 }
 \concept{dataprep}

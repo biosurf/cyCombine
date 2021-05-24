@@ -10,7 +10,7 @@ evaluate_mad(
   cell_col = "label",
   batch_col = "batch",
   markers = NULL,
-  filter_limit = 0
+  filter_limit = NULL
 )
 }
 \arguments{
@@ -24,7 +24,7 @@ evaluate_mad(
 
 \item{markers}{Vector of the markers to calculate EMD for. If NULL, \code{\link{get_markers}} will be used to find markers}
 
-\item{filter_limit}{Limit for MAD removal (Removing MADs that are below or equal to filter_limit in both before and after correction)}
+\item{filter_limit}{Limit for MAD removal (Removing MADs that are below or equal to filter_limit in both before and after correction). Default filters none of the values.}
 }
 \description{
 The function computes the Median Absolute Deviation of the two given datasets.

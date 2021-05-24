@@ -27,8 +27,8 @@ impute_across_panels(
 \item{impute_channels2}{Channels to impute and add to the impute_for dataset2 (must be present in dataset1)}
 }
 \description{
-This function imputes the expression values for a whole dataset based on the overlapping markers contained in another dataset
-The purpose is to be able to merge multi-panel data or to merge differently run datasets which have non-overlapping markers
+This function imputes the expression values for a whole dataset based on the overlapping markers contained in another dataset.
+The purpose is to be able to merge multi-panel data or to merge differently run datasets that have non-overlapping markers
 }
 \examples{
 dfs_imputed <- impute_across_panels(dataset1 = df_panel1, dataset2 = df_panel2, overlap_channels = intersect(df_panel1_markers, df_panel2_markers), impute_channels1 = unique_df_panel2_markers, , impute_channels2 = unique_df_panel1_markers)
