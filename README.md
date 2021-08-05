@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# cyCombine
+# cyCombine <img src="cyCombine.png" width="200" align="right" />
 
 <!-- badges: start -->
 
@@ -10,34 +10,22 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 <!-- badges: end -->
 
 <!-- ## Clone github repository -->
-
 <!-- ``` {sh, eval = FALSE} -->
-
 <!-- # Run in terminal -->
-
 <!-- git clone git@github.com:shdam/cyCombine.git -->
-
 <!-- ``` -->
-
 <!-- ## Restore renv library -->
-
 <!-- ``` {r, eval = FALSE} -->
-
 <!-- # Open project in Rstudio -->
-
 <!-- # Install renv and restore library -->
-
 <!-- install.packages("renv") -->
-
 <!-- library(renv) -->
-
 <!-- renv::restore() -->
-
 <!-- ``` -->
 
 ## Install as package
 
-### 1\. Create virtual environment with renv (optional)
+### 1. Create virtual environment with renv (optional)
 
 Initialize a local R environment:
 
@@ -49,7 +37,7 @@ library(renv)
 renv::init()
 ```
 
-### 2\. Install package from github
+### 2. Install package from github
 
 ``` r
 # To ensure Rstudio looks up BioConductor packages run:
@@ -60,14 +48,14 @@ devtools::install_github("biosurf/cyCombine")
 
 ## Install as cloned repository
 
-### 1\. Clone repository
+### 1. Clone repository
 
 ``` sh
 # In terminal at desired directory
 git clone git@github.com:biosurf/cyCombine.git
 ```
 
-### 2\. Install dependencies
+### 2. Install dependencies
 
 ``` r
 # Open cyCombine.Rproj in Rstudio
@@ -78,7 +66,7 @@ library(renv)
 renv::restore()
 ```
 
-### 3\. Load package
+### 3. Load package
 
 ``` r
 install.packages("devtools")
@@ -167,41 +155,23 @@ saveRDS(corrected, file = "_data/cycombine_raw_corrected.RDS")
 ```
 
 <!-- ### From a flowset -->
-
 <!-- ```{r, eval = FALSE} -->
-
 <!-- library(cyCombine) -->
-
 <!-- library(magrittr) -->
-
 <!-- # Load data -->
-
 <!-- # Should contain the flowset, sample_ids, batch_ids, and markers of interest -->
-
 <!-- load("data/flowset.Rdata") -->
-
 <!-- # Convert flowset to workable datafram and transform data -->
-
 <!-- uncorrected <- flowset %>% -->
-
 <!--   convert_flowset(batch_ids = batch_ids, -->
-
 <!--                   sample_ids = sample_ids, -->
-
 <!--                   down_sample = TRUE, -->
-
 <!--                   sample_size = 100000, -->
-
 <!--                   seed = 473) %>%  -->
-
 <!--   transform_asinh(markers = markers) -->
-
 <!-- # Run batch correction -->
-
 <!-- corrected <- uncorrected %>% -->
-
 <!--   batch_correct(seed = 473) -->
-
 <!-- ``` -->
 
 ## Plotting

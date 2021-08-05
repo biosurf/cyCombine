@@ -13,7 +13,8 @@ knitr::opts_chunk$set(
 )
 ```
 
-# cyCombine
+# cyCombine <img src="cyCombine.png" width="200" align="right" />
+
 
 <!-- badges: start -->
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
