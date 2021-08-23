@@ -103,6 +103,13 @@ convert_flowset <- function(flowset,
                             panel = NULL,
                             panel_channel = "fcs_colname",
                             panel_antigen = "antigen"){
+  # Extract information necessary both with and without included metadata
+  ## FlowSet row numbers
+  nrows <- flowCore::fsApply(flowset, nrow)
+  ## File names from flowset
+  files <- flowset@phenoData %>%
+    rownames() %>%
+    basename()
   # Add metadata information (long)
   if(!is.null(metadata)){
     # Error handling
@@ -132,10 +139,6 @@ convert_flowset <- function(flowset,
     md_cols <- colnames(metadata)
     check_colname(md_cols, filename_col)
 
-    # Get file names from flowset
-    files <- flowset@phenoData %>%
-      rownames() %>%
-      basename()
 
     # Extract info from metadata
     if(!endsWith(metadata[[filename_col]][1], ".fcs")){
@@ -143,8 +146,7 @@ convert_flowset <- function(flowset,
     }
     # Remove files from metadata
     metadata <- metadata[match(files, metadata[[filename_col]]),]
-    # FlowSet row numbers
-    nrows <- flowCore::fsApply(flowset, nrow)
+
     # Get sample ids
     if (is.null(sample_ids)){
       sample_ids <- metadata[[filename_col]] %>%
@@ -177,12 +179,18 @@ convert_flowset <- function(flowset,
 
     }
 
+  } else{ # If no metadata given
+    if(is.null(sample_ids) | length(sample_ids) == 1){# Get sample ids from filenames
+      sample_ids <- files %>%
+        stringr::str_remove(".fcs") %>%
+        rep(nrows)
+    }
+
   }
 
   # Down sampling setup
   if(down_sample){
     # To down sample within fsApply
-    if(!exists(nrows)) nrows <- flowCore::fsApply(flowset, nrow)
     tot_nrows <- sum(nrows)
     message(paste("Down sampling to", sample_size, "samples"))
     set.seed(seed)
