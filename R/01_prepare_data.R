@@ -317,7 +317,7 @@ transform_asinh <- function(df,
   message(paste0("Transforming data using asinh with a cofactor of ", cofactor, ".."))
   transformed <- df %>%
     purrr::when(.keep ~ .,
-                ~ dplyr::select_if(., colnames(.) %in% c(markers, non_markers))) %>%
+                ~ dplyr::select_if(., colnames(.) %in% c(markers, cyCombine::non_markers))) %>%
     # Transform all data on those markers
     dplyr::mutate(dplyr::across(dplyr::all_of(markers),
                      .fns = function(x){

@@ -41,8 +41,8 @@ salvage_problematic <- function(df,
   }
 
   # Combine the data to impute for and from based on the overlapping markers
-  overlapping_data <- rbind(complete_obs[,!colnames(complete_obs) %in% c(channel, non_markers, exclude)],
-                            impute_for[,!colnames(impute_for) %in% c(non_markers, exclude)])
+  overlapping_data <- rbind(complete_obs[,!colnames(complete_obs) %in% c(channel, cyCombine::non_markers, exclude)],
+                            impute_for[,!colnames(impute_for) %in% c(cyCombine::non_markers, exclude)])
 
 
   # Get SOM classes for each event - on overlapping markers
@@ -207,7 +207,7 @@ impute_across_panels <- function(dataset1,
     impute_for[,impute_channels] <- imputed
 
     impute_for <- impute_for %>%
-      dplyr::relocate(dplyr::any_of(non_markers), .after = dplyr::all_of(impute_channels))
+      dplyr::relocate(dplyr::any_of(cyCombine::non_markers), .after = dplyr::all_of(impute_channels))
 
     imputed_dfs[[paste0('dataset', i)]] <- impute_for
   }

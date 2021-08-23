@@ -36,7 +36,7 @@ missing_package <- function(package, repo = "CRAN", git_repo = ""){
 #' @param df dataframe to get the markers from
 #' @export
 get_markers <- function(df){
-  marker_pos <- colnames(df) %!in% non_markers
+  marker_pos <- colnames(df) %!in% cyCombine::non_markers
   markers <- colnames(df)[marker_pos]
   return(markers)
 }
