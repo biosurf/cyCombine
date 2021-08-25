@@ -26,11 +26,11 @@ convert_flowset(
 
 \item{filename_col}{Optional: The column in the metadata containing the fcs filenames. Needed if metadata is given, but sample_ids is not}
 
-\item{sample_ids}{Optional: If a character, it should be the sample column in the metadata. If its a vector, it should have the same length as the total flowset. If NULL, sample ids will be the file names}
+\item{sample_ids}{Optional: If a character, it should be the sample column in the metadata. If its a vector, it should have the same length as the total flowset. If NULL, sample ids will be the file names. If a single value, all rows will be assigned this value.}
 
-\item{batch_ids}{Optional: If a character, it should be the column in the metadata containing the batch ids. If its a vector, it should have the same length as the total flowset.}
+\item{batch_ids}{Optional: If a character, it should be the column in the metadata containing the batch ids. If its a vector, it should have the same length as the total flowset. If a single value, all rows will be assigned this value.}
 
-\item{condition}{Optional: The column in the metadata containing the condition. Will be used as the covariate in ComBat, but can be specified later.}
+\item{condition}{Optional: The column in the metadata containing the condition. Will be used as the covariate in ComBat, but can be specified later. If a single value, all rows will be assigned this value.}
 
 \item{down_sample}{If TRUE, the output will be down-sampled to size sample_size}
 

@@ -72,10 +72,10 @@ compile_fcs <- function(data_dir,
 #'
 #' @param flowset The flowset to convert
 #' @param metadata Optional: Can be either a filename or data.frame of the metadata file. Please give the full path from working directory to metadata file
-#' @param sample_ids Optional: If a character, it should be the sample column in the metadata. If its a vector, it should have the same length as the total flowset. If NULL, sample ids will be the file names
-#' @param batch_ids Optional: If a character, it should be the column in the metadata containing the batch ids. If its a vector, it should have the same length as the total flowset.
+#' @param sample_ids Optional: If a character, it should be the sample column in the metadata. If its a vector, it should have the same length as the total flowset. If NULL, sample ids will be the file names. If a single value, all rows will be assigned this value.
+#' @param batch_ids Optional: If a character, it should be the column in the metadata containing the batch ids. If its a vector, it should have the same length as the total flowset. If a single value, all rows will be assigned this value.
 #' @param filename_col Optional: The column in the metadata containing the fcs filenames. Needed if metadata is given, but sample_ids is not
-#' @param condition Optional: The column in the metadata containing the condition. Will be used as the covariate in ComBat, but can be specified later.
+#' @param condition Optional: The column in the metadata containing the condition. Will be used as the covariate in ComBat, but can be specified later. If a single value, all rows will be assigned this value.
 #' @param down_sample If TRUE, the output will be down-sampled to size sample_size
 #' @param sample_size The size to down-sample to
 #' @param seed The seed to use for down-sampling
@@ -180,7 +180,7 @@ convert_flowset <- function(flowset,
     }
 
   } else{ # If no metadata given
-    if(is.null(sample_ids) | length(sample_ids) == 1){# Get sample ids from filenames
+    if(is.null(sample_ids)){# Get sample ids from filenames
       sample_ids <- files %>%
         stringr::str_remove(".fcs") %>%
         rep(nrows)
@@ -197,9 +197,9 @@ convert_flowset <- function(flowset,
     sample <- sample(1:tot_nrows, sample_size) %>%
       # Sorting here enables major resource savings when down-sampling
       sort()
-    if(!is.null(sample_ids)) sample_ids <- sample_ids[sample]
-    if(!is.null(batch_ids)) batch_ids <- batch_ids[sample]
-    if(!is.null(condition)) condition <- condition[sample]
+    if(!is.null(sample_ids) & length(sample_ids) > 1) sample_ids <- sample_ids[sample]
+    if(!is.null(batch_ids) & length(batch_ids) > 1) batch_ids <- batch_ids[sample]
+    if(!is.null(condition) & length(condition) > 1) condition <- condition[sample]
   }
 
   message("Extracting expression data..")
