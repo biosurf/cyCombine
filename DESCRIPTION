@@ -1,6 +1,6 @@
 Package: cyCombine
 Title: Robust Integration of Single-Cell Cytometry Datasets
-Version: 0.1.2
+Version: 0.1.3
 Authors@R: 
     c(person(given = "Christina Bligaard",
            family = "Pedersen",
@@ -46,7 +46,8 @@ Suggests:
     plyr,
     graphics,
     stats,
-    outliers
+    outliers,
+    SingleCellExperiment
 VignetteBuilder: knitr
 Depends: 
     R (>= 4.0)
