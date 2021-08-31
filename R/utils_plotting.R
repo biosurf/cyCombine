@@ -76,7 +76,7 @@ plot_density <- function(uncorrected,
     for (c in 1:length(markers)) {
 
       p[[c]] <- df %>%
-        ggplot(aes_string(x = markers[c], y = 'batch')) +
+        ggplot(aes_string(x = paste0('`', markers[c], '`'), y = 'batch')) +
         ggridges::geom_density_ridges(aes(color = .data$Type, fill = .data$Type), alpha = 0.4) +
         coord_cartesian(xlim = xlims) +
         labs(y = y) +
@@ -91,7 +91,7 @@ plot_density <- function(uncorrected,
     for (c in 1:length(markers)) {
 
       p[[c]] <- df %>%
-        ggplot(aes_string(x = markers[c], y = 'Type')) +
+        ggplot(aes_string(x = paste0('`', markers[c], '`'), y = 'Type')) +
         ggridges::geom_density_ridges(aes(color = batch, fill = batch), alpha = 0.4) +
         coord_cartesian(xlim = xlims) +
         labs(y = y) +
@@ -131,7 +131,6 @@ plot_density <- function(uncorrected,
 #' @param markers Markers to include in dimensionality reduction
 #' @param seed For reproducibility
 #' @param return_coord Return coordinates and not just the plot
-#' @importFrom uwot umap
 #' @importFrom stats prcomp
 #' @family plot
 #' @examples
@@ -242,8 +241,6 @@ plot_dimred <- function(df,
 #' Dimensionality reduction plots - colored with labels, batches and marker expression
 #' @inheritParams plot_dimred
 #' @param out_dir Directory to put output figures
-#' @importFrom grDevices colorRampPalette
-#' @importFrom RColorBrewer brewer.pal
 #'
 #' @family plot
 #' @export

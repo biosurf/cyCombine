@@ -1,6 +1,6 @@
 Package: cyCombine
 Title: Robust Integration of Single-Cell Cytometry Datasets
-Version: 0.1.3
+Version: 0.1.4
 Authors@R: 
     c(person(given = "Christina Bligaard",
            family = "Pedersen",
@@ -9,10 +9,12 @@ Authors@R:
            comment = c(ORCID = "0000-0002-9895-0930")),
     person(given = "Søren Helweg",
            family = "Dam",
-           role = c("aut")),
+           role = c("aut")
+           comment = c(ORCID = "0000-0003-0755-0016")),
     person(given = "Lars Rønn",
-            family = "Olsen",
-            role = c("aut")))
+           family = "Olsen",
+           role = c("aut")),
+           comment = c(ORCID = "0000-0002-6725-7850"))
 Description: A package for combining single-cell cytometry datasets, which increases the analytical flexibility and the statistical power of the analyses while minimizing technical noise.
 License: MIT + file LICENSE
 Encoding: UTF-8
@@ -36,7 +38,8 @@ Imports:
     ggplot2,
     knitr,
     FlowSOM,
-    cytolib
+    cytolib,
+    stats
 Suggests: 
     rmarkdown,
     testthat,
@@ -45,9 +48,10 @@ Suggests:
     uwot,
     plyr,
     graphics,
-    stats,
     outliers,
-    SingleCellExperiment
+    SingleCellExperiment,
+    grDevices,
+    viridis
 VignetteBuilder: knitr
 Depends: 
     R (>= 4.0)

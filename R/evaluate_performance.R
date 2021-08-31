@@ -10,7 +10,6 @@
 #' @param cell_col Column name of df that contains cell population labels (or clusters)
 #' @param batch_col Column name of df that contains batch numbers
 #' @param markers Vector of the markers to calculate EMD for. If NULL, \code{\link{get_markers}} will be used to find markers
-#' @importFrom graphics hist
 #' @family emd
 #' @examples
 #' emd <- compute_emd(df, markers = markers)
@@ -258,9 +257,6 @@ compute_mad <- function(df,
                         batch_col = "batch",
                         markers = NULL){
 
-  # Check for package
-  missing_package("stats", "CRAN")
-
   # Check colnames
   check_colname(colnames(df), cell_col, "df")
   check_colname(colnames(df), batch_col, "df")
@@ -325,9 +321,6 @@ evaluate_mad <- function(uncorrected,
                          batch_col = "batch",
                          markers = NULL,
                          filter_limit = NULL){
-
-  # Check for package
-  missing_package("stats", "CRAN")
 
   # Get markers if not given
   if(is.null(markers)){

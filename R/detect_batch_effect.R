@@ -30,7 +30,6 @@ detect_batch_effect_express <- function(df,
                                         downsample = NULL,
                                         seed = 472) {
 
-  missing_package("stats")
   missing_package("Matrix")
   message('Starting the quick(er) detection of batch effects.')
 
