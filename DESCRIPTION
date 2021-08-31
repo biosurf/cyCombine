@@ -9,12 +9,12 @@ Authors@R:
            comment = c(ORCID = "0000-0002-9895-0930")),
     person(given = "Søren Helweg",
            family = "Dam",
-           role = c("aut")
+           role = c("aut"),
            comment = c(ORCID = "0000-0003-0755-0016")),
     person(given = "Lars Rønn",
            family = "Olsen",
-           role = c("aut")),
-           comment = c(ORCID = "0000-0002-6725-7850"))
+           role = c("aut"),
+           comment = c(ORCID = "0000-0002-6725-7850")))
 Description: A package for combining single-cell cytometry datasets, which increases the analytical flexibility and the statistical power of the analyses while minimizing technical noise.
 License: MIT + file LICENSE
 Encoding: UTF-8
