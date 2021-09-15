@@ -95,6 +95,9 @@ salvage_problematic <- function(df,
   # Put the values back in the dataset
   df[df$batch %in% correct_batches, channel] <- imputed
 
+  # Print statement warning users about directly interpreting imputed values
+  message('Caution! Analysis based on imputed values can lead to false inferences. We recommend only using imputed marker expressions for visualization and not for differential expression analysis.')
+
   return(df)
 }
 
@@ -212,6 +215,8 @@ impute_across_panels <- function(dataset1,
     imputed_dfs[[paste0('dataset', i)]] <- impute_for
   }
 
+  # Print statement warning users about directly interpreting imputed values
+  message('Caution! Analysis based on imputed values can lead to false inferences. We recommend only using imputed marker expressions for visualization and not for differential expression analysis.')
 
   return(imputed_dfs)
 }
