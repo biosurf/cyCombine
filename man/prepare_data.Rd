@@ -16,10 +16,12 @@ prepare_data(
   condition = NULL,
   down_sample = TRUE,
   sample_size = 5e+05,
+  sampling_type = "random",
   seed = 473,
   panel = NULL,
   panel_channel = "fcs_colname",
   panel_antigen = "antigen",
+  transform = TRUE,
   cofactor = 5,
   derand = TRUE,
   .keep = FALSE
@@ -48,6 +50,8 @@ prepare_data(
 
 \item{sample_size}{The size to down-sample to}
 
+\item{sampling_type}{The type of down-sampling to use. "random" to randomly select cells across the entire dataset, "batch_ids" to sample evenly (sample_size) from each batch, or "sample_ids" sample evenly (sample_size) from each sample.}
+
 \item{seed}{The seed to use for down-sampling}
 
 \item{panel}{Optional: Panel as a filename or data.frame. Is used to define colnames from the panel_antigen column}
@@ -55,6 +59,8 @@ prepare_data(
 \item{panel_channel}{Optional: Only used if panel is given. It is the column name in the panel data.frame that contains the channel names}
 
 \item{panel_antigen}{Optional: Only used if panel is given. It is the column name in the panel data.frame that contains the antigen names}
+
+\item{transform}{If TRUE, the data will be transformed; if FALSE, it will not.}
 
 \item{cofactor}{The cofactor to use when transforming}
 

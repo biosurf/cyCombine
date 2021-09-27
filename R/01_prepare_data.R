@@ -78,6 +78,7 @@ compile_fcs <- function(data_dir,
 #' @param condition Optional: The column in the metadata containing the condition. Will be used as the covariate in ComBat, but can be specified later. If a single value, all rows will be assigned this value.
 #' @param down_sample If TRUE, the output will be down-sampled to size sample_size
 #' @param sample_size The size to down-sample to
+#' @param sampling_type The type of down-sampling to use. "random" to randomly select cells across the entire dataset, "batch_ids" to sample evenly (sample_size) from each batch, or "sample_ids" sample evenly (sample_size) from each sample.
 #' @param seed The seed to use for down-sampling
 #' @param panel Optional: Panel as a filename or data.frame. Is used to define colnames from the panel_antigen column
 #' @param panel_channel Optional: Only used if panel is given. It is the column name in the panel data.frame that contains the channel names
@@ -99,6 +100,7 @@ convert_flowset <- function(flowset,
                             condition = NULL,
                             down_sample = TRUE,
                             sample_size = 500000,
+                            sampling_type = "random",
                             seed = 473,
                             panel = NULL,
                             panel_channel = "fcs_colname",
@@ -106,6 +108,9 @@ convert_flowset <- function(flowset,
   # Extract information necessary both with and without included metadata
   ## FlowSet row numbers
   nrows <- flowCore::fsApply(flowset, nrow)
+  ## To down sample within fsApply
+  tot_nrows <- sum(nrows)
+  ids <- 1:tot_nrows
   ## File names from flowset
   files <- flowset@phenoData %>%
     rownames() %>%
@@ -146,6 +151,11 @@ convert_flowset <- function(flowset,
     }
     # Remove files from metadata
     metadata <- metadata[match(files, metadata[[filename_col]]),]
+    # Check that all files are represented in metadata
+    if(any(files %!in% metadata[[filename_col]])){
+      missing_files <- files[files %!in% metadata[[filename_col]]]
+      warning(stringr::str_c("The samples ", missing_files, " were not found in the metadata file and the sample_ids will be set to NA."))
+      }
 
     # Get sample ids
     if (is.null(sample_ids)){
@@ -190,13 +200,28 @@ convert_flowset <- function(flowset,
 
   # Down sampling setup
   if(down_sample){
-    # To down sample within fsApply
-    tot_nrows <- sum(nrows)
     message(paste("Down sampling to", sample_size, "samples"))
     set.seed(seed)
-    sample <- sample(1:tot_nrows, sample_size) %>%
-      # Sorting here enables major resource savings when down-sampling
-      sort()
+    if(sampling_type == "random"){
+      sample <- sample(ids, sample_size) %>%
+        # Sorting here enables major resource savings when down-sampling
+        sort()
+    } else if(sampling_type == "batch_ids" & !is.null(batch_ids)){ # even down-sampling from batches
+      sample <- tibble::tibble(batch_ids, ids) %>%
+        dplyr::group_by(batch_ids) %>%
+        dplyr::slice_sample(n = sample_size) %>%
+        dplyr::pull(ids) %>%
+        sort()
+    } else{ # Even down-sampling from samples
+      sample <- tibble::tibble(sample_ids, ids) %>%
+        dplyr::group_by(sample_ids) %>%
+        dplyr::slice_sample(n = sample_size) %>%
+        dplyr::pull(ids) %>%
+        sort()
+    }
+
+    # Down-sample metadata columns
+    ids <- ids[sample]
     if(!is.null(sample_ids) & length(sample_ids) > 1) sample_ids <- sample_ids[sample]
     if(!is.null(batch_ids) & length(batch_ids) > 1) batch_ids <- batch_ids[sample]
     if(!is.null(condition) & length(condition) > 1) condition <- condition[sample]
@@ -209,8 +234,8 @@ convert_flowset <- function(flowset,
                                                 nrows = nrows),
                 ~ flowCore::fsApply(., Biobase::exprs)) %>%
     tibble::as_tibble() %>%
-    dplyr::mutate(id = 1:nrow(.)) %>%
-    select(id, everything())
+    dplyr::mutate(id = ids) %>%
+    dplyr::select(id, everything())
 
   # Clean column names
   if (!is.null(panel)){
@@ -339,6 +364,7 @@ transform_asinh <- function(df,
 #' @inheritParams compile_fcs
 #' @inheritParams convert_flowset
 #' @inheritParams transform_asinh
+#' @param transform If TRUE, the data will be transformed; if FALSE, it will not.
 #' @family dataprep
 #' @examples
 #' uncorrected <- data_dir %>%
@@ -360,10 +386,12 @@ prepare_data <- function(data_dir = NULL,
                          condition = NULL,
                          down_sample = TRUE,
                          sample_size = 500000,
+                         sampling_type = "random",
                          seed = 473,
                          panel = NULL,
                          panel_channel = "fcs_colname",
                          panel_antigen = "antigen",
+                         transform = TRUE,
                          cofactor = 5,
                          derand = TRUE,
                          .keep = FALSE){
@@ -395,15 +423,18 @@ prepare_data <- function(data_dir = NULL,
                                condition = condition,
                                down_sample = down_sample,
                                sample_size = sample_size,
+                               sampling_type = sampling_type,
                                seed = seed,
                                panel = panel,
                                panel_channel = panel_channel,
                                panel_antigen = panel_antigen) %>%
     # Transform dataset with asinh
-    cyCombine::transform_asinh(markers = markers,
-                               cofactor = cofactor,
-                               derand = derand,
-                               .keep = .keep)
+    purrr::when(transform ~ cyCombine::transform_asinh(., markers = markers,
+                                                       cofactor = cofactor,
+                                                       derand = derand,
+                                                       .keep = .keep),
+                ~ .)
+
   message("Done!")
   return(fcs_data)
 }

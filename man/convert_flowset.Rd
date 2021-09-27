@@ -13,6 +13,7 @@ convert_flowset(
   condition = NULL,
   down_sample = TRUE,
   sample_size = 5e+05,
+  sampling_type = "random",
   seed = 473,
   panel = NULL,
   panel_channel = "fcs_colname",
@@ -35,6 +36,8 @@ convert_flowset(
 \item{down_sample}{If TRUE, the output will be down-sampled to size sample_size}
 
 \item{sample_size}{The size to down-sample to}
+
+\item{sampling_type}{The type of down-sampling to use. "random" to randomly select cells across the entire dataset, "batch_ids" to sample evenly (sample_size) from each batch, or "sample_ids" sample evenly (sample_size) from each sample.}
 
 \item{seed}{The seed to use for down-sampling}
 
