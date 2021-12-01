@@ -266,9 +266,9 @@ correct_data <- function(df,
                     ) %>%
         t() %>%
         tibble::as_tibble() %>%
-        dplyr::mutate(batch = df$batch,
-                      sample = df$sample,
-                      id = df$id) %>%
+        dplyr::left_join(
+          dplyr::select(df,
+                        -dplyr::all_of(c(markers, label)))) %>%
         # Cap values to range of input data
         dplyr::mutate(dplyr::across(dplyr::all_of(markers),
                                     function(x) {
