@@ -266,7 +266,7 @@ correct_data <- function(df,
                     ) %>%
         t() %>%
         tibble::as_tibble() %>%
-        dplyr::left_join(
+        dplyr::bind_cols(
           dplyr::select(df,
                         -dplyr::all_of(c(markers, label)))) %>%
         # Cap values to range of input data
