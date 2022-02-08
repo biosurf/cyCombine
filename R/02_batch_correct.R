@@ -210,9 +210,10 @@ correct_data_prev <- function(df,
 #' @importFrom sva ComBat
 #' @importFrom stats model.matrix
 #' @param label The cluster or cell type label. Either as a column name or vector.
-#' @param covar The covariate ComBat should use. Can be a vector or a column name in the input datafrome.
-#'   If NULL, no covar will be used
+#' @param covar The covariate ComBat should use (usually the sample condition, but other covariates may be used). Can be a vector or a column name in the input datafrome.
+#'   If NULL, no covar will be used.
 #' @param parametric Default: TRUE. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used.
+#' @param anchor Optional: A column or vector specifying which samples are replicates and which are not. If specified, this column will be used as a covariate in ComBat. Be aware that it may be confounded with the condition.
 #' @inheritParams scale_expr
 #' @family batch
 #' @examples
@@ -222,6 +223,7 @@ correct_data_prev <- function(df,
 correct_data <- function(df,
                          label,
                          covar = NULL,
+                         anchor = NULL,
                          markers = NULL,
                          parametric = TRUE){
   message("Batch correcting data..")
@@ -239,16 +241,29 @@ correct_data <- function(df,
     label <- "label"
   }
 
+
   # Add covar to df, if given
   if(is.null(covar)){
-    # No covar is given
+    # No covar  is given
     num_covar <- 1
-  }else if(length(covar) == 1){
+  }else if(length(covar) == 1 ){
     check_colname(colnames(df), covar)
+    df[[covar]] <- as.factor(df[[covar]])
   } else{
     # Covar was given as a vector
     df$covar <- as.factor(covar)
     covar <- "covar"
+  }
+  # Add anchor to df, if given
+  if(!is.null(anchor)){
+    if(length(anchor) == 1){
+      check_colname(colnames(df), anchor)
+      df[[anchor]] <- as.factor(df[[anchor]])
+  } else{
+    # Anchor was given as a vector
+    df$anchor <- as.factor(anchor)
+    anchor <- "anchor"
+    }
   }
 
   corrected_data <- df %>%
@@ -277,6 +292,7 @@ correct_data <- function(df,
           count(.data$batch, .data[[covar]]) %>%
           pull(.data$n)
 
+        # If the vast majority of cells belong to a single covar, disregard covars for this node
         if(sum(covar_counts) < max(covar_counts) + num_covar*5){
           num_covar <- 1
         }
@@ -287,10 +303,14 @@ correct_data <- function(df,
         dplyr::select(all_of(markers)) %>%
         t() %>%
         # The as.character is to remove factor levels not present in the SOM node
-        purrr::when(num_covar > 1 ~ sva::ComBat(.,
+        purrr::when(num_covar > 1 & is.null(anchor) ~ sva::ComBat(.,
                                                 batch = as.character(df$batch),
-                                                mod = stats::model.matrix(~as.character(df[[covar]])),
+                                                mod = stats::model.matrix(~ df[[covar]]),
                                                 par.prior = parametric),
+                    num_covar > 1 & !is.null(anchor) ~ sva::ComBat(.,
+                                                                  batch = as.character(df$batch),
+                                                                  mod = stats::model.matrix(~df[[covar]] + df[[anchor]]),
+                                                                  par.prior = parametric),
                     ~ sva::ComBat(.,
                                   batch = as.character(df$batch),
                                   par.prior = parametric)
@@ -302,7 +322,10 @@ correct_data <- function(df,
                       id = df$id) %>%
         # Only add covar column, if it is not null
         purrr::when(!is.null(covar) ~ dplyr::mutate(., covar = df[[covar]]),
-                    ~ .)
+                    ~ .) %>%
+      # Only add anchor column, if it is not null
+      purrr::when(!is.null(anchor) ~ dplyr::mutate(., anchor = df[[anchor]]),
+                  ~ .)
       return(ComBat_output)
     }) %>%
     dplyr::ungroup() %>%
@@ -337,10 +360,48 @@ batch_correct <- function(df,
                           parametric = TRUE,
                           seed = 473,
                           covar = NULL,
+                          anchor = NULL,
                           markers = NULL,
                           norm_method = 'scale'){
   # A batch column is required
   check_colname(colnames(df), "batch")
+
+  # Add covar to df, if given
+  if(!is.null(covar)){
+    if(length(covar) == 1 ){
+      check_colname(colnames(df), covar)
+      df[[covar]] <- as.factor(df[[covar]])
+      } else{
+        # Covar was given as a vector
+        df$covar <- as.factor(covar)
+        covar <- "covar"
+      }
+    }
+  # Add anchor to df, if given
+  if(!is.null(anchor)){
+    if(length(anchor) == 1){
+      check_colname(colnames(df), anchor)
+      df[[anchor]] <- as.factor(df[[anchor]])
+    } else{
+      # Anchor was given as a vector
+      df$anchor <- as.factor(anchor)
+      anchor <- "anchor"
+    }
+  }
+
+  # Check if covariates confound with batch or each other
+  if(!is.null(covar)){
+    if(!is.null(anchor)){
+      mod <- stats::model.matrix(~df[[covar]] + df[[anchor]])
+    } else{
+      mod <- stats::model.matrix(~df[[covar]])
+    }
+  } else if(!is.null(anchor)){
+    mod <- stats::model.matrix(~df[[anchor]])
+  }
+  # Confound check
+  if(!is.null(covar) | !is.null(anchor)) check_confound(df, markers = markers, batch = df$batch, mod = mod)
+
 
   # Create SOM on scaled data
   if(is.null(label)) {
@@ -376,6 +437,7 @@ batch_correct <- function(df,
   corrected <- df %>%
     correct_data(label = label,
                  covar = covar,
+                 anchor = anchor,
                  markers = markers,
                  parametric = parametric)
   message("Done!")

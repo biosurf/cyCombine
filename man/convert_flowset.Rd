@@ -11,6 +11,7 @@ convert_flowset(
   sample_ids = NULL,
   batch_ids = NULL,
   condition = NULL,
+  anchor = NULL,
   down_sample = TRUE,
   sample_size = 5e+05,
   seed = 473,
@@ -30,7 +31,9 @@ convert_flowset(
 
 \item{batch_ids}{Optional: If a character, it should be the column in the metadata containing the batch ids. If its a vector, it should have the same length as the total flowset.}
 
-\item{condition}{Optional: The column in the metadata containing the condition. Will be used as the covariate in ComBat, but can be specified later.}
+\item{condition}{Optional: The column in the metadata containing the condition. Will be used as the covariate in ComBat, but can be specified later. You may use this to add a different column of choice, in case you want to use a custom column in the ComBat model matrix.}
+
+\item{anchor}{Optional: The column in the metadata referencing the anchor samples (control references). Will be used as a covariate in ComBat, if specified. Please be aware that this column may be confounded with the condition column. You may use this to add a different column of choice, in case you want to use a custom column in the ComBat model matrix. You may use a custom column name, but it is good practice to add the name to the 'non_markers' object exported by cyCombine, to reduce the risk of unexpected errors.}
 
 \item{down_sample}{If TRUE, the output will be down-sampled to size sample_size}
 

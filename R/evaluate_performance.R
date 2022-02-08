@@ -111,7 +111,7 @@ evaluate_emd <- function(preprocessed,
   missing_package("plyr", "CRAN")
 
   check_colname(colnames(corrected), cell_col, "corrected set")
-  check_colname(colnames(preprocessed), cell_col, "corrected set")
+  check_colname(colnames(preprocessed), cell_col, "uncorrected set")
   # Define cell columns as characters to avoid problems with factors
   corrected[[cell_col]] <- corrected[[cell_col]] %>%
     as.character()
@@ -149,13 +149,14 @@ evaluate_emd <- function(preprocessed,
     dplyr::filter(!is.na(Reduction))
 
   # Calculate total reduction
+  message(paste("Removing EMDs below", filter_limit, "both before and after correction"))
   emds_filtered <- emds %>%
     dplyr::filter(!(Corrected < filter_limit & Uncorrected < filter_limit))
 
-  message(paste("Removing EMDs below", filter_limit, "both before and after correction"))
+  # Compute reduction
   reduction <- (sum(emds_filtered$Reduction) / sum(emds_filtered$Uncorrected)) %>%
     round(2)
-  message("The reduction is:", reduction)
+  message("The reduction is: ", reduction)
 
   if(plots == FALSE){
     return(list("reduction" = reduction,

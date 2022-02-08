@@ -4,15 +4,24 @@
 \alias{correct_data}
 \title{Correct data using ComBat}
 \usage{
-correct_data(df, label, covar = NULL, markers = NULL, parametric = TRUE)
+correct_data(
+  df,
+  label,
+  covar = NULL,
+  anchor = NULL,
+  markers = NULL,
+  parametric = TRUE
+)
 }
 \arguments{
 \item{df}{Dataframe with expression values}
 
 \item{label}{The cluster or cell type label. Either as a column name or vector.}
 
-\item{covar}{The covariate ComBat should use. Can be a vector or a column name in the input datafrome.
-If NULL, no covar will be used}
+\item{covar}{The covariate ComBat should use (usually the sample condition, but other covariates may be used). Can be a vector or a column name in the input datafrome.
+If NULL, no covar will be used.}
+
+\item{anchor}{Optional: A column or vector specifying which samples are replicates and which are not. If specified, this column will be used as a covariate in ComBat. Be aware that it may be confounded with the condition.}
 
 \item{markers}{Markers to scale. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 

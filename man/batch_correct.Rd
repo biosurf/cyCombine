@@ -12,6 +12,7 @@ batch_correct(
   parametric = TRUE,
   seed = 473,
   covar = NULL,
+  anchor = NULL,
   markers = NULL,
   norm_method = "scale"
 )
@@ -29,8 +30,10 @@ batch_correct(
 
 \item{seed}{The seed to use when creating the SOM}
 
-\item{covar}{The covariate ComBat should use. Can be a vector or a column name in the input datafrome.
-If NULL, no covar will be used}
+\item{covar}{The covariate ComBat should use (usually the sample condition, but other covariates may be used). Can be a vector or a column name in the input datafrome.
+If NULL, no covar will be used.}
+
+\item{anchor}{Optional: A column or vector specifying which samples are replicates and which are not. If specified, this column will be used as a covariate in ComBat. Be aware that it may be confounded with the condition.}
 
 \item{markers}{Markers to scale. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 

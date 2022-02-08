@@ -8,7 +8,7 @@
 #' Density ridges for two sets
 #' @import ggplot2
 #' @export
-plot_density <- function(uncorrected, corrected, markers = NULL, filename, y = "batch", xlim = 10) {
+plot_density <- function(uncorrected, corrected, markers = NULL, filename = NULL, y = "batch", xlim = 10) {
 
   # Check for packages
   missing_package("ggridges", "CRAN")
@@ -66,7 +66,12 @@ plot_density <- function(uncorrected, corrected, markers = NULL, filename, y = "
   # Save the plots
   # ggsave(filename = filename, plot = p,
   # device = "png", width = 28, height = 40)
-  cowplot::save_plot(filename, cowplot::plot_grid(plotlist = p, ncol = 6), base_width = 28, base_height = 40)
+  if(is.null(filename)){
+    return(cowplot::plot_grid(plotlist = p, ncol = 6))
+  } else{
+    cowplot::save_plot(filename, cowplot::plot_grid(plotlist = p, ncol = 6), base_width = 28, base_height = 40)
+  }
+
 
 }
 

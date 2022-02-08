@@ -64,7 +64,8 @@ compile_fcs <- function(data_dir,
 #' @param sample_ids Optional: If a character, it should be the sample column in the metadata. If its a vector, it should have the same length as the total flowset. If NULL, sample ids will be the file names
 #' @param batch_ids Optional: If a character, it should be the column in the metadata containing the batch ids. If its a vector, it should have the same length as the total flowset.
 #' @param filename_col Optional: The column in the metadata containing the fcs filenames. Needed if metadata is given, but sample_ids is not
-#' @param condition Optional: The column in the metadata containing the condition. Will be used as the covariate in ComBat, but can be specified later.
+#' @param condition Optional: The column in the metadata containing the condition. Will be used as the covariate in ComBat, but can be specified later. You may use this to add a different column of choice, in case you want to use a custom column in the ComBat model matrix.
+#' @param anchor Optional: The column in the metadata referencing the anchor samples (control references). Will be used as a covariate in ComBat, if specified. Please be aware that this column may be confounded with the condition column. You may use this to add a different column of choice, in case you want to use a custom column in the ComBat model matrix. You may use a custom column name, but it is good practice to add the name to the 'non_markers' object exported by cyCombine, to reduce the risk of unexpected errors.
 #' @param down_sample If TRUE, the output will be down-sampled to size sample_size
 #' @param sample_size The size to down-sample to
 #' @param seed The seed to use for down-sampling
@@ -81,6 +82,7 @@ convert_flowset <- function(flowset,
                             sample_ids = NULL,
                             batch_ids = NULL,
                             condition = NULL,
+                            anchor = NULL,
                             down_sample = TRUE,
                             sample_size = 500000,
                             seed = 473,
@@ -155,9 +157,16 @@ convert_flowset <- function(flowset,
           as.factor() %>%
           rep(flowCore::fsApply(flowset, nrow))
       }
-
     }
-
+    # Get anchor
+    if(!is.null(anchor)){
+      if(length(anchor == 1)){
+        check_colname(md_cols, anchor)
+        anchor <- metadata[[anchor]][match(basename(files), metadata[[filename_col]])] %>%
+          as.factor() %>%
+          rep(flowCore::fsApply(flowset, nrow))
+      }
+    }
   }
 
   # Down sampling setup
@@ -173,6 +182,7 @@ convert_flowset <- function(flowset,
     if(!is.null(sample_ids)) sample_ids <- sample_ids[sample]
     if(!is.null(batch_ids)) batch_ids <- batch_ids[sample]
     if(!is.null(condition)) condition <- condition[sample]
+    if(!is.null(anchor)) anchor <- anchor[sample]
   }
 
   message("Extracting expression data..")
@@ -183,16 +193,16 @@ convert_flowset <- function(flowset,
                 ~ flowCore::fsApply(., Biobase::exprs)) %>%
     tibble::as_tibble() %>%
     dplyr::mutate(id = 1:nrow(.)) %>%
-    select(id, everything())
+    dplyr::select(id, everything())
 
   # Clean column names
   if (!is.null(panel)){
     if("character" %in% class(panel)){
       if(endsWith(panel, suffix = ".xlsx")){
-        metadata <- suppressMessages(file.path(panel) %>%
+        panel <- suppressMessages(file.path(panel) %>%
                                        readxl::read_xlsx())
       } else if(endsWith(panel, suffix = ".csv")){
-        metadata <- suppressMessages(file.path(panel) %>%
+        panel <- suppressMessages(file.path(panel) %>%
                                        readr::read_csv())
       } else {
         stop(paste("Sorry, file", panel, "is not in a supported format. Please use a .xlsx or .csv file."))
@@ -220,6 +230,7 @@ convert_flowset <- function(flowset,
   if(!is.null(sample_ids)) fcs_data$sample <- sample_ids
   if(!is.null(batch_ids)) fcs_data$batch <- batch_ids
   if(!is.null(condition)) fcs_data$condition <- condition
+  if(!is.null(anchor)) fcs_data$anchor <- anchor
 
   message("Your flowset is now converted into a dataframe.")
   return(fcs_data)
@@ -313,6 +324,7 @@ prepare_data <- function(data_dir = NULL,
                          sample_ids = NULL,
                          batch_ids = NULL,
                          condition = NULL,
+                         anchor = NULL,
                          down_sample = TRUE,
                          sample_size = 500000,
                          seed = 473,
@@ -342,6 +354,7 @@ prepare_data <- function(data_dir = NULL,
                                sample_ids = sample_ids,
                                batch_ids = batch_ids,
                                condition = condition,
+                               anchor = anchor,
                                down_sample = down_sample,
                                sample_size = sample_size,
                                seed = seed,
