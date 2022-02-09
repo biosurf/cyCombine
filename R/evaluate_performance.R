@@ -181,7 +181,6 @@ evaluate_emd <- function(uncorrected,
   ) %>%
     dplyr::filter(!is.na(Reduction))
 
-
   # Apply filter
   message(paste("Removing EMDs below", filter_limit, "both before and after correction"))
   emds_filtered <- emds %>%

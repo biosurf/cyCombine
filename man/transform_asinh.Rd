@@ -4,22 +4,31 @@
 \alias{transform_asinh}
 \title{Transform data using asinh}
 \usage{
-transform_asinh(df, markers = NULL, cofactor = 5, .keep = FALSE)
+transform_asinh(df, markers = NULL, cofactor = 5, derand = TRUE, .keep = FALSE)
 }
 \arguments{
-\item{df}{The dataframe to transform}
+\item{df}{The tibble to transform}
 
 \item{markers}{The markers to transform on}
 
 \item{cofactor}{The cofactor to use when transforming}
 
+\item{derand}{Derandomize. Should be TRUE for CyTOF data, otherwise FALSE.}
+
 \item{.keep}{Keep all channels. If FALSE, channels that are not transformed are removed}
 }
 \description{
-Inverse sine transformation of a dataframe.
+Inverse sine transformation of a tibble.
+This function can also de-randomize data.
 }
 \examples{
-preprocessed <- df \%>\%
+uncorrected <- df \%>\%
   transform_asinh(markers = markers)
 }
-\concept{preprocess}
+\seealso{
+Other dataprep: 
+\code{\link{compile_fcs}()},
+\code{\link{convert_flowset}()},
+\code{\link{prepare_data}()}
+}
+\concept{dataprep}

@@ -14,32 +14,34 @@ correct_data(
 )
 }
 \arguments{
-\item{df}{Dataframe with expression values}
+\item{df}{tibble with expression values}
 
 \item{label}{The cluster or cell type label. Either as a column name or vector.}
 
-\item{covar}{The covariate ComBat should use (usually the sample condition, but other covariates may be used). Can be a vector or a column name in the input datafrome.
-If NULL, no covar will be used.}
+\item{covar}{The covariate ComBat should use. Can be a vector or a column name in the input tibble.
+If NULL, no covar will be used}
 
 \item{anchor}{Optional: A column or vector specifying which samples are replicates and which are not. If specified, this column will be used as a covariate in ComBat. Be aware that it may be confounded with the condition.}
 
-\item{markers}{Markers to scale. If NULL, markers will be found using the \code{\link{get_markers}} function.}
+\item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 
 \item{parametric}{Default: TRUE. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used.}
 }
 \description{
-This function computes the batch correction on the preprocessed data using the ComBat algorithm.
+Compute the batch correction on the data using the ComBat algorithm.
+Define a covariate, either as a character vector or name of tibble column.
+The covariate should preferable be the cell condition types but can be any column that infers heterogeneity in the data.
+The function assumes that the batch information is in the "batch" column and the data contains a "sample" column with sample information.
 }
 \examples{
-corrected <- preprocesed \%>\%
-  correct_data(label = som_$unit.classif, covar = "condition")
+corrected <- uncorrected \%>\%
+  correct_data(label = labels, covar = "condition")
 }
 \seealso{
 Other batch: 
 \code{\link{batch_correct}()},
 \code{\link{create_som}()},
-\code{\link{quantile_norm}()},
-\code{\link{ranking}()},
-\code{\link{scale_expr}()}
+\code{\link{normalize}()},
+\code{\link{quantile_norm}()}
 }
 \concept{batch}

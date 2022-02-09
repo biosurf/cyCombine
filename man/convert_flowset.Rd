@@ -2,7 +2,7 @@
 % Please edit documentation in R/01_prepare_data.R
 \name{convert_flowset}
 \alias{convert_flowset}
-\title{Convert a flowset into a workable dataframe}
+\title{Convert a flowSet into a tibble}
 \usage{
 convert_flowset(
   flowset,
@@ -14,6 +14,7 @@ convert_flowset(
   anchor = NULL,
   down_sample = TRUE,
   sample_size = 5e+05,
+  sampling_type = "random",
   seed = 473,
   panel = NULL,
   panel_channel = "fcs_colname",
@@ -27,9 +28,9 @@ convert_flowset(
 
 \item{filename_col}{Optional: The column in the metadata containing the fcs filenames. Needed if metadata is given, but sample_ids is not}
 
-\item{sample_ids}{Optional: If a character, it should be the sample column in the metadata. If its a vector, it should have the same length as the total flowset. If NULL, sample ids will be the file names}
+\item{sample_ids}{Optional: If a character, it should be the sample column in the metadata. If its a vector, it should have the same length as the total flowset. If NULL, sample ids will be the file names. If a single value, all rows will be assigned this value.}
 
-\item{batch_ids}{Optional: If a character, it should be the column in the metadata containing the batch ids. If its a vector, it should have the same length as the total flowset.}
+\item{batch_ids}{Optional: If a character, it should be the column in the metadata containing the batch ids. If its a vector, it should have the same length as the total flowset. If a single value, all rows will be assigned this value.}
 
 \item{condition}{Optional: The column in the metadata containing the condition. Will be used as the covariate in ComBat, but can be specified later. You may use this to add a different column of choice, in case you want to use a custom column in the ComBat model matrix.}
 
@@ -39,17 +40,37 @@ convert_flowset(
 
 \item{sample_size}{The size to down-sample to}
 
+\item{sampling_type}{The type of down-sampling to use. "random" to randomly select cells across the entire dataset, "batch_ids" to sample evenly (sample_size) from each batch, or "sample_ids" sample evenly (sample_size) from each sample.}
+
 \item{seed}{The seed to use for down-sampling}
 
-\item{panel}{Optional: Panel as a fileanme or data.frame. Is used to define colnames from the panel_antigen column}
+\item{panel}{Optional: Panel as a filename or data.frame. Is used to define colnames from the panel_antigen column}
 
 \item{panel_channel}{Optional: Only used if panel is given. It is the column name in the panel data.frame that contains the channel names}
 
 \item{panel_antigen}{Optional: Only used if panel is given. It is the column name in the panel data.frame that contains the antigen names}
 }
 \description{
-Convert a flowset into a workable dataframe
+Use this function to convert a flowSet into the tibble object that the remaining
+functions in cyCombine relies on.
+A tibble is a Tidyverse implementation of a data.frame and can be treated as a such.
+The majority of arguments revolves adding relevant info from the metadata file/object.
+The panel argument is included to adjust the output column names using a panel with channel and antigen columns.
+Bear in mind the column names will be altered with the following:
+\code{stringr::str_remove_all("^\\d+[A-Za-z]+_") \%>\% stringr::str_remove_all("[ _-]")}.
 }
 \examples{
-df <- convert_flowset(flowset = fcs$fcs_raw, sample_ids = fcs$sample_ids, batch_ids = fcs$batch_ids, down_sample = FALSE)
+df <- convert_flowset(flowset = flowset,
+ metadata = file.path(data_dir, "metadata.csv"),
+ filename_col = "FCS_files",
+ sample_ids = "sample_id",
+ batch_ids = "batch_ids",
+ down_sample = FALSE)
 }
+\seealso{
+Other dataprep: 
+\code{\link{compile_fcs}()},
+\code{\link{prepare_data}()},
+\code{\link{transform_asinh}()}
+}
+\concept{dataprep}

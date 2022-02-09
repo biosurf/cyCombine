@@ -4,19 +4,41 @@
 \alias{detect_batch_effect_express}
 \title{Quicker function for detection of batch effects}
 \usage{
-detect_batch_effect_express(df, downsample = NULL, seed = 472, out_dir = NULL)
+detect_batch_effect_express(
+  df,
+  out_dir,
+  batch_col = "batch",
+  downsample = NULL,
+  seed = 472
+)
 }
 \arguments{
 \item{df}{Tibble containing the expression data and batch information. See prepare_data.}
 
-\item{downsample}{Number of cells to include in detection. If not specified all cells will be used.}
-
 \item{out_dir}{Directory for plot output}
+
+\item{batch_col}{Name of column containing batch information}
+
+\item{downsample}{Number of cells to include in detection. If not specified, all cells will be used.}
+
+\item{seed}{Random seed for reproducibility}
 }
 \description{
-Quicker function for detection of batch effects
+This function can be used to check if a dataset contains batch effects.
+The function employs three different approaches to detect the effects:
+\enumerate{
+\item The Earth Mover's Distance per marker when comparing each batch-batch pair.
+\item Density plots per marker, per batch for visual inspection.
+\item A MultiDimensional Scaling plot based on the median marker expression per sample.
+It can apply downsampling for a quicker analysis of larger datasets.
+}
 }
 \examples{
 detect_batch_effect_express(df = exprs, out_dir = '/my/cycombine/dir/')
 detect_batch_effect_express(df = exprs, downsample = 100000, out_dir = '/my/cycombine/dir/')
 }
+\seealso{
+Other detect_batch_effect: 
+\code{\link{detect_batch_effect}()}
+}
+\concept{detect_batch_effect}

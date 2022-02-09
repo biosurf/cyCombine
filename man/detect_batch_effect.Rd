@@ -6,24 +6,30 @@
 \usage{
 detect_batch_effect(
   df,
+  out_dir,
   downsample = NULL,
+  norm_method = "scale",
   xdim = 8,
   ydim = 8,
   seed = 382,
   markers = NULL,
   batch_col = "batch",
   label_col = "label",
-  out_dir
+  name = "raw data"
 )
 }
 \arguments{
 \item{df}{Tibble containing the expression data and batch information. See prepare_data.}
 
+\item{out_dir}{Directory for plot output}
+
 \item{downsample}{Number of cells to include in detection. If not specified all cells will be used. One should be careful with the downsampling here as too strong downsampling leads to spurious results.}
 
-\item{xdim}{Grid size in x-axis for SOM}
+\item{norm_method}{Normalization methods (options = 'scale' and 'rank')}
 
-\item{ydim}{Grid size in y-axis for SOM}
+\item{xdim}{Grid size in x-axis for SOM (default = 8)}
+
+\item{ydim}{Grid size in y-axis for SOM (default = 8)}
 
 \item{seed}{Random seed for reproducibility}
 
@@ -33,12 +39,20 @@ detect_batch_effect(
 
 \item{label_col}{If existing labels should be used, this column must be present in the data}
 
-\item{out_dir}{Directory for plot output}
+\item{name}{Name of dataset - used for plot titles}
 }
 \description{
-Full function for detection of batch effects using cluster proportions
+This function is used for batch effect detection in multidimensional datasets.
+The function applies a SOM-based clustering to a dataset in order to compare not only marker expression differences across batches,
+but also the cluster percentages in each batch to detect possible populations that are over-/under-represented in a single batch.
+This is coupled with UMAP plots to assist the interpretation of the results.
 }
 \examples{
 detect_batch_effect(df = exprs)
 detect_batch_effect(df = exprs, xdim = 8, ydim = 8, seed = 382, markers = c('CD3', 'CD4', 'CD8a', 'CD20', 'CD19', 'CD56', 'CD33'))
 }
+\seealso{
+Other detect_batch_effect: 
+\code{\link{detect_batch_effect_express}()}
+}
+\concept{detect_batch_effect}

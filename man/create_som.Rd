@@ -4,18 +4,23 @@
 \alias{create_som}
 \title{Create Self-Organizing Map}
 \usage{
-create_som(df, markers = NULL, seed = 473, xdim = 8, ydim = 8)
+create_som(df, markers = NULL, seed = 473, rlen = 10, xdim = 8, ydim = 8)
 }
 \arguments{
-\item{df}{Dataframe with expression values}
+\item{df}{tibble with expression values}
 
-\item{markers}{Markers to scale. If NULL, markers will be found using the \code{\link{get_markers}} function.}
+\item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 
-\item{seed}{The seed to use when creating the SOM}
+\item{seed}{The seed to use when creating the SOM.}
 
-\item{xdim}{The x-dimension size of the SOM}
+\item{rlen}{Number of times the data is presented to the SOM network}
 
-\item{ydim}{The y-dimension size of the SOM}
+\item{xdim}{The x-dimension size of the SOM.}
+
+\item{ydim}{The y-dimension size of the SOM.}
+}
+\value{
+A vector of clustering labels
 }
 \description{
 The function uses the kohonen package to create a Self-Organizing Map.
@@ -23,15 +28,14 @@ It is used to segregate the cells for the batch correction to make the correctio
 by samples with high abundances of a particular cell type.
 }
 \examples{
-som_ <- preprocessed \%>\%
+labels <- uncorrected \%>\%
   create_som()
 }
 \seealso{
 Other batch: 
 \code{\link{batch_correct}()},
 \code{\link{correct_data}()},
-\code{\link{quantile_norm}()},
-\code{\link{ranking}()},
-\code{\link{scale_expr}()}
+\code{\link{normalize}()},
+\code{\link{quantile_norm}()}
 }
 \concept{batch}

@@ -17,11 +17,14 @@ prepare_data(
   anchor = NULL,
   down_sample = TRUE,
   sample_size = 5e+05,
+  sampling_type = "random",
   seed = 473,
   panel = NULL,
   panel_channel = "fcs_colname",
   panel_antigen = "antigen",
+  transform = TRUE,
   cofactor = 5,
+  derand = TRUE,
   .keep = FALSE
 )
 }
@@ -38,9 +41,9 @@ prepare_data(
 
 \item{filename_col}{Optional: The column in the metadata containing the fcs filenames. Needed if metadata is given, but sample_ids is not}
 
-\item{sample_ids}{Optional: If a character, it should be the sample column in the metadata. If its a vector, it should have the same length as the total flowset. If NULL, sample ids will be the file names}
+\item{sample_ids}{Optional: If a character, it should be the sample column in the metadata. If its a vector, it should have the same length as the total flowset. If NULL, sample ids will be the file names. If a single value, all rows will be assigned this value.}
 
-\item{batch_ids}{Optional: If a character, it should be the column in the metadata containing the batch ids. If its a vector, it should have the same length as the total flowset.}
+\item{batch_ids}{Optional: If a character, it should be the column in the metadata containing the batch ids. If its a vector, it should have the same length as the total flowset. If a single value, all rows will be assigned this value.}
 
 \item{condition}{Optional: The column in the metadata containing the condition. Will be used as the covariate in ComBat, but can be specified later. You may use this to add a different column of choice, in case you want to use a custom column in the ComBat model matrix.}
 
@@ -50,18 +53,40 @@ prepare_data(
 
 \item{sample_size}{The size to down-sample to}
 
+\item{sampling_type}{The type of down-sampling to use. "random" to randomly select cells across the entire dataset, "batch_ids" to sample evenly (sample_size) from each batch, or "sample_ids" sample evenly (sample_size) from each sample.}
+
 \item{seed}{The seed to use for down-sampling}
 
-\item{panel}{Optional: Panel as a fileanme or data.frame. Is used to define colnames from the panel_antigen column}
+\item{panel}{Optional: Panel as a filename or data.frame. Is used to define colnames from the panel_antigen column}
 
 \item{panel_channel}{Optional: Only used if panel is given. It is the column name in the panel data.frame that contains the channel names}
 
 \item{panel_antigen}{Optional: Only used if panel is given. It is the column name in the panel data.frame that contains the antigen names}
 
+\item{transform}{If TRUE, the data will be transformed; if FALSE, it will not.}
+
 \item{cofactor}{The cofactor to use when transforming}
+
+\item{derand}{Derandomize. Should be TRUE for CyTOF data, otherwise FALSE.}
 
 \item{.keep}{Keep all channels. If FALSE, channels that are not transformed are removed}
 }
 \description{
-This is a wrapper function that takes you from a directory of .fcs files or a flowset to a transformed dataframe.
+This is a wrapper function that takes you from a directory of .fcs files or a flowset to a transformed tibble.
 }
+\examples{
+uncorrected <- data_dir \%>\%
+  prepare_data(metadata = "metadata.csv",
+  markers = markers,
+  filename_col = "FCS_name",
+  batch_ids = "Batch",
+  condition = "condition",
+  down_sample = FALSE)
+}
+\seealso{
+Other dataprep: 
+\code{\link{compile_fcs}()},
+\code{\link{convert_flowset}()},
+\code{\link{transform_asinh}()}
+}
+\concept{dataprep}

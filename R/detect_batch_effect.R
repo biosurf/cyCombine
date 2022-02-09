@@ -3,28 +3,40 @@
 
 #' Quicker function for detection of batch effects
 #'
-#'
+#' This function can be used to check if a dataset contains batch effects.
+#'   The function employs three different approaches to detect the effects:
+#'   1. The Earth Mover's Distance per marker when comparing each batch-batch pair.
+#'   2. Density plots per marker, per batch for visual inspection.
+#'   3. A MultiDimensional Scaling plot based on the median marker expression per sample.
+#'   It can apply downsampling for a quicker analysis of larger datasets.
 #'
 #' @importFrom readxl read_xlsx
 #' @importFrom readr read_csv
-#' @import dplyr
 #' @importFrom magrittr %>%
 #' @importFrom flowCore read.flowSet fsApply
 #' @param df Tibble containing the expression data and batch information. See prepare_data.
-#' @param downsample Number of cells to include in detection. If not specified all cells will be used.
 #' @param out_dir Directory for plot output
-#'
+#' @param batch_col Name of column containing batch information
+#' @param downsample Number of cells to include in detection. If not specified, all cells will be used.
+#' @param seed Random seed for reproducibility
+#' @family detect_batch_effect
 #' @examples
 #' detect_batch_effect_express(df = exprs, out_dir = '/my/cycombine/dir/')
 #' detect_batch_effect_express(df = exprs, downsample = 100000, out_dir = '/my/cycombine/dir/')
 #' @export
-detect_batch_effect_express <- function(df, downsample = NULL, seed = 472, out_dir = NULL) {
+detect_batch_effect_express <- function(df,
+                                        out_dir,
+                                        batch_col = "batch",
+                                        downsample = NULL,
+                                        seed = 472) {
 
+  missing_package("Matrix")
   message('Starting the quick(er) detection of batch effects.')
 
-  # Check out dir
-  if (is.null(out_dir)) {
-    stop('Error! Please speicify output directory.')
+  # Check batch_col and rename if necessary
+  check_colname(colnames(df), batch_col, location = "df")
+  if (batch_col != 'batch') {
+    df$batch <- df[, batch_col]
   }
 
   # This works without clustering the data, so we set all labels to 1
@@ -40,7 +52,7 @@ detect_batch_effect_express <- function(df, downsample = NULL, seed = 472, out_d
     message(paste0('Downsampling to ', downsample, ' cells.'))
     if (downsample <= nrow(df)) {
       set.seed(seed)
-      df <- df %>% sample_n(downsample)
+      df <- df %>% dplyr::slice_sample(n = downsample)
     } else {
       warning('Specified downsample parameter exceeds the number of cells in the dataset.')
     }
@@ -58,8 +70,11 @@ detect_batch_effect_express <- function(df, downsample = NULL, seed = 472, out_d
   p <- list()
   for (c in 1:length(all_markers)) {
 
-    p[[c]] <- ggplot2::ggplot(df, aes_string(x = all_markers[c], y = "batch")) +
-      ggridges::geom_density_ridges(aes(color = batch, fill = batch), alpha = 0.4, quantile_lines = TRUE) +
+    p[[c]] <- ggplot2::ggplot(df, ggplot2::aes_string(x = all_markers[c],
+                                             y = "batch")) +
+      ggridges::geom_density_ridges(ggplot2::aes(color = batch, fill = batch),
+                                    alpha = 0.4,
+                                    quantile_lines = TRUE) +
       ggplot2::theme_bw()
   }
 
@@ -81,7 +96,7 @@ detect_batch_effect_express <- function(df, downsample = NULL, seed = 472, out_d
 
   # Get mean PER BATCH per marker
   emd <- lapply(emd[[1]], function(x) {Matrix::forceSymmetric(x, uplo='U')}) # Contains the pairwise EMDs, now made symmetrical for easy extraction of values
-  batch_means <- lapply(emd, function(x) {colMeans(as.matrix(x), na.rm = T)})
+  batch_means <- lapply(emd, function(x) {Matrix::colMeans(as.matrix(x), na.rm = T)})
 
 
 
@@ -106,11 +121,11 @@ detect_batch_effect_express <- function(df, downsample = NULL, seed = 472, out_d
   emd_markers <- cbind.data.frame(emd_markers, rownames(emd_markers)); colnames(emd_markers) <- c('mean', 'sd', 'marker')
   emd_markers$marker <- factor(emd_markers$marker, levels = emd_markers$marker[order(emd_markers$mean, decreasing=T)])
 
-  p <- ggplot2::ggplot(emd_markers, aes(x = marker, y = mean)) +
-    ggplot2::geom_bar(stat="identity", aes(fill = mean)) +
-    ggplot2::theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  p <- ggplot2::ggplot(emd_markers, ggplot2::aes(x = marker, y = mean)) +
+    ggplot2::geom_bar(stat="identity", ggplot2::aes(fill = mean)) +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, vjust = 0.5, hjust=1)) +
     ggplot2::ylab('Mean EMD') + ggplot2::xlab('') +
-    ggplot2::geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2,
+    ggplot2::geom_errorbar(ggplot2::aes(ymin=mean-sd, ymax=mean+sd), width=.2,
                            position=position_dodge(.9))
   suppressMessages(ggplot2::ggsave(p, filename = paste0(out_dir, '/emd_per_marker.png')))
 
@@ -124,12 +139,12 @@ detect_batch_effect_express <- function(df, downsample = NULL, seed = 472, out_d
   # Flagging markers with clear outlier batches with STRONG effects
   any_outliers <- F
   for (m in emd_markers$marker[emd_markers$mean > median(emd_markers$mean)]) {
-    if (any(batch_means[[m]] > (quantile(batch_means[[m]], 0.75) + iqr(batch_means[[m]])*3))) {
-      outliers <- which(batch_means[[m]] > (quantile(batch_means[[m]], 0.75) + iqr(batch_means[[m]])*3))
+    if (any(batch_means[[m]] > (quantile(batch_means[[m]], 0.75) + stats::IQR(batch_means[[m]])*3))) {
+      outliers <- which(batch_means[[m]] > (quantile(batch_means[[m]], 0.75) + stats::IQR(batch_means[[m]])*3))
       message(paste0(m, ' has clear outlier batch(es): ', paste0(names(outliers))))
 
-      summary_non <- df %>% filter(!(batch %in% names(outliers))) %>% pull(m) %>% summary()
-      summary_out <- df %>% filter(batch %in% names(outliers)) %>% pull(m) %>% summary()
+      summary_non <- df %>% dplyr::filter(!(batch %in% names(outliers))) %>% dplyr::pull(m) %>% summary()
+      summary_out <- df %>% dplyr::filter(batch %in% names(outliers)) %>% dplyr::pull(m) %>% summary()
 
       message('Summary of the distribution in the OUTLIER batch(es):')
       message(paste(names(summary_out), '=', round(summary_out,2), collapse = ', '))
@@ -153,7 +168,7 @@ detect_batch_effect_express <- function(df, downsample = NULL, seed = 472, out_d
     dplyr::group_by(sample) %>%
     dplyr::summarise_at(get_markers(df), median)
 
-  dist_mat <- as.matrix(dist(median_expr[,all_markers]))   # Euclidean distance
+  dist_mat <- as.matrix(dist(median_expr[, all_markers]))   # Euclidean distance
   rownames(dist_mat) <- colnames(dist_mat) <- median_expr$sample
 
   mds <- as.data.frame(stats::cmdscale(dist_mat, k = 2))
@@ -161,8 +176,9 @@ detect_batch_effect_express <- function(df, downsample = NULL, seed = 472, out_d
   mds$batch <- as.factor(df$batch[match(mds$sample, df$sample)])
 
   p <- ggplot2::ggplot(mds, aes(V1, V2)) +
-    ggplot2::geom_point(aes(colour=batch), size=2) +
-    ggplot2::labs(x="MDS1", y="MDS2", title="MDS plot") + ggplot2::theme_bw()
+    ggplot2::geom_point(ggplot2::aes(colour = batch), size = 2) +
+    ggplot2::labs(x = "MDS1", y = "MDS2", title = "MDS plot") +
+    ggplot2::theme_bw()
 
   suppressMessages(ggplot2::ggsave(p, filename = paste0(out_dir, '/MDS_per_batch.png')))
   message(paste0('Saved MDS plot here: ', out_dir, '/MDS_per_batch.png'))
@@ -174,33 +190,46 @@ detect_batch_effect_express <- function(df, downsample = NULL, seed = 472, out_d
 
 #' Full function for detection of batch effects using cluster proportions
 #'
-#'
+#' This function is used for batch effect detection in multidimensional datasets.
+#'   The function applies a SOM-based clustering to a dataset in order to compare not only marker expression differences across batches,
+#'   but also the cluster percentages in each batch to detect possible populations that are over-/under-represented in a single batch.
+#'   This is coupled with UMAP plots to assist the interpretation of the results.
 #'
 #' @param df Tibble containing the expression data and batch information. See prepare_data.
 #' @param downsample Number of cells to include in detection. If not specified all cells will be used. One should be careful with the downsampling here as too strong downsampling leads to spurious results.
-#' @param xdim Grid size in x-axis for SOM
-#' @param ydim Grid size in y-axis for SOM
+#' @param norm_method Normalization methods (options = 'scale' and 'rank')
+#' @param xdim Grid size in x-axis for SOM (default = 8)
+#' @param ydim Grid size in y-axis for SOM (default = 8)
 #' @param seed Random seed for reproducibility
 #' @param markers If only some markers should be used this parameter is used to define them. If not set, all markers are used.
 #' @param batch_col Name of column containing batch information
 #' @param label_col If existing labels should be used, this column must be present in the data
 #' @param out_dir Directory for plot output
-#'
+#' @param name Name of dataset - used for plot titles
+#' @family detect_batch_effect
 #' @examples
 #' detect_batch_effect(df = exprs)
 #' detect_batch_effect(df = exprs, xdim = 8, ydim = 8, seed = 382, markers = c('CD3', 'CD4', 'CD8a', 'CD20', 'CD19', 'CD56', 'CD33'))
 #' @export
 detect_batch_effect <- function(df,
+                                out_dir,
                                 downsample = NULL,
+                                norm_method = "scale",
                                 xdim = 8,
                                 ydim = 8,
                                 seed = 382,
                                 markers = NULL,
                                 batch_col = "batch",
                                 label_col = "label",
-                                out_dir) {
+                                name = 'raw data') {
 
+  missing_package("outliers")
+
+  # Check batch_col and rename if necessary
   check_colname(colnames(df), batch_col, location = "df")
+  if (batch_col != 'batch') {
+    df$batch <- df[, batch_col]
+  }
 
   # Check out dir
   if (is.null(out_dir)) {
@@ -226,15 +255,16 @@ detect_batch_effect <- function(df,
   # Create SOM on scaled data if no labels exist
   if (!(label_col %in% colnames(df))) {
     message('Determining new cell type labels using SOM:')
-    som_ <- df %>%
-      cyCombine::scale_expr(markers = markers) %>%
+    labels <- df %>%
+      cyCombine::normalize(markers = markers,
+                           norm_method = norm_method) %>%
       cyCombine::create_som(markers = markers,
                             seed = seed,
                             xdim = xdim,
                             ydim = ydim)
 
     # Get SOM output
-    df$label <- som_$unit.classif
+    df$label <- labels
 
   } else {
     message('Using existig cell type labels.')
@@ -256,15 +286,15 @@ detect_batch_effect <- function(df,
     marker_emd <- lapply(marker_emd, function(x) {Matrix::forceSymmetric(x, uplo='U')})
 
     marker_emd <- do.call(rbind, marker_emd)
-    marker_emd <- colMeans(as.matrix(marker_emd), na.rm = T)
+    marker_emd <- Matrix::colMeans(as.matrix(marker_emd), na.rm = T)
 
     # print(m)
     # print(marker_emd)
     markers_emd[[m]] <- marker_emd
   }
 
-  marker_emd <- which(stats::p.adjust(sapply(markers_emd, function(x) {outliers::dixon.test(x, opposite=F)$p.value}), method = 'BH') < 0.05 | p.adjust(sapply(markers_emd,  function(x) {dixon.test(x, opposite=T)$p.value}), method = 'BH') < 0.05)
-  message(paste0('\nThere are ', length(marker_emd), ' markers, which appear to be outliers in a single batch:'))
+  marker_emd <- which(stats::p.adjust(sapply(markers_emd, function(x) {outliers::dixon.test(x, opposite=F)$p.value}), method = 'BH') < 0.05 | p.adjust(sapply(markers_emd,  function(x) {outliers::dixon.test(x, opposite=T)$p.value}), method = 'BH') < 0.05)
+  message(paste0('\nThere are ', length(marker_emd), ' markers that appear to be outliers in a single batch:'))
   message(paste(markers[marker_emd], collapse = ', '))
 
   ### Let us think about how we should process this
@@ -272,10 +302,10 @@ detect_batch_effect <- function(df,
 
   # Look for cluster over- and under-representation
   counts <- table(df$batch, df$label)
-  perc <- (counts / rowSums(counts))*100
+  perc <- (counts / Matrix::rowSums(counts))*100
 
   # use the Dixon test to look for outliers (test whether a single low or high value is an outlier)
-  out_cl <- which(stats::p.adjust(apply(perc, 2, function(x) {outliers::dixon.test(x, opposite=F)$p.value}), method = 'BH') < 0.05 | p.adjust(apply(perc, 2, function(x) {dixon.test(x, opposite=T)$p.value}), method = 'BH') < 0.05)
+  out_cl <- which(stats::p.adjust(apply(perc, 2, function(x) {outliers::dixon.test(x, opposite=F)$p.value}), method = 'BH') < 0.05 | p.adjust(apply(perc, 2, function(x) {outliers::dixon.test(x, opposite=T)$p.value}), method = 'BH') < 0.05)
 
   message(paste0('\nThere are ', length(out_cl), ' clusters, in which a single cluster is strongly over- or underrepresented.'))
 
@@ -298,11 +328,16 @@ detect_batch_effect <- function(df,
   # SHOULD WE DOWNSAMPLE??
   if (nrow(df) > 50000) {
     set.seed(seed)
-    df <- df %>% sample_n(50000)
+    df <- df %>% dplyr::slice_sample(n = 50000)
   }
 
 
-  cyCombine::plot_dimred_full(df, 'Ogishi data', type = "umap", markers = NULL, seed = 473, out_dir)
+  cyCombine::plot_dimred_full(df,
+                              name,
+                              type = "umap",
+                              markers = NULL,
+                              seed = 473,
+                              out_dir)
 
   message(paste0('Saved UMAP plot for batches and labels here: ', out_dir, ' as UMAP_batches_labels.png.'))
   message(paste0('Saved UMAP plot colored by each marker in directory: ', out_dir, '/UMAP_markers.\n'))

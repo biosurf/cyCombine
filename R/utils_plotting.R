@@ -29,7 +29,6 @@ plot_density <- function(uncorrected,
                          ncol = 6,
                          format = 1) {
 
-
   # Check for packages
   missing_package("ggridges", "CRAN")
   missing_package("ggplot2", "CRAN")
@@ -108,12 +107,10 @@ plot_density <- function(uncorrected,
     p[[1]] + theme(legend.box.margin = margin(0, 0, 0, 12))
   )
 
-
   # Make a shared legend
   for (i in 1:length(p)) {
     p[[i]] <- p[[i]] + theme(legend.position="none")
   }
-
 
   if (!is.null(filename)) {
     cowplot::save_plot(filename, cowplot::plot_grid(cowplot::plot_grid(plotlist = p, ncol = ncol), legend, rel_widths = c(2*ncol,1)), base_width = 20, base_height = length(markers)/height_factor)

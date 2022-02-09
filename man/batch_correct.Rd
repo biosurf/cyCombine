@@ -2,53 +2,63 @@
 % Please edit documentation in R/02_batch_correct.R
 \name{batch_correct}
 \alias{batch_correct}
-\title{Run batch correction on preprocessed data}
+\title{Run batch correction on data}
 \usage{
 batch_correct(
   df,
   label = NULL,
   xdim = 8,
   ydim = 8,
+  rlen = 10,
   parametric = TRUE,
   seed = 473,
   covar = NULL,
   anchor = NULL,
   markers = NULL,
-  norm_method = "scale"
+  norm_method = "scale",
+  ties.method = "average"
 )
 }
 \arguments{
-\item{df}{Dataframe with expression values}
+\item{df}{tibble with expression values}
 
 \item{label}{The cluster or cell type label. Either as a column name or vector.}
 
-\item{xdim}{The x-dimension size of the SOM}
+\item{xdim}{The x-dimension size of the SOM.}
 
-\item{ydim}{The y-dimension size of the SOM}
+\item{ydim}{The y-dimension size of the SOM.}
+
+\item{rlen}{Number of times the data is presented to the SOM network}
 
 \item{parametric}{Default: TRUE. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used.}
 
-\item{seed}{The seed to use when creating the SOM}
+\item{seed}{The seed to use when creating the SOM.}
 
-\item{covar}{The covariate ComBat should use (usually the sample condition, but other covariates may be used). Can be a vector or a column name in the input datafrome.
-If NULL, no covar will be used.}
+\item{covar}{The covariate ComBat should use. Can be a vector or a column name in the input tibble.
+If NULL, no covar will be used}
 
 \item{anchor}{Optional: A column or vector specifying which samples are replicates and which are not. If specified, this column will be used as a covariate in ComBat. Be aware that it may be confounded with the condition.}
 
-\item{markers}{Markers to scale. If NULL, markers will be found using the \code{\link{get_markers}} function.}
+\item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 
-\item{preprocessed}{The preprocessed dataframe to run batch correction on}
+\item{norm_method}{Normalization method. Should be either 'rank', 'scale' or 'qnorm'. Default: 'scale'}
+
+\item{ties.method}{The method to handle ties, when using rank. Default: 'average'. See ?rank for other options.}
 }
 \description{
 This is a wrapper function for the cyCombine batch correction workflow.
-To run the workflow manually, type "batch_correct" to see the source code of this wrapper and follow along.
+To run the workflow manually, type "batch_correct" to see the source code of this wrapper and follow along or read the vignettes on the GitHub page \url{https://github.com/biosurf/cyCombine}.
+}
+\examples{
+corrected <- uncorrected \%>\%
+  batch_correct(markers = markers,
+  covar = "condition")
 }
 \seealso{
 Other batch: 
 \code{\link{correct_data}()},
 \code{\link{create_som}()},
-\code{\link{quantile_norm}()},
-\code{\link{ranking}()},
-\code{\link{scale_expr}()}
+\code{\link{normalize}()},
+\code{\link{quantile_norm}()}
 }
 \concept{batch}

@@ -37,7 +37,6 @@ missing_package <- function(package, repo = "CRAN", git_repo = ""){
 #' @importFrom stringr str_to_lower
 #' @export
 get_markers <- function(df){
-
   marker_pos <- stringr::str_to_lower(colnames(df)) %!in% non_markers
   markers <- colnames(df)[marker_pos]
   return(markers)
@@ -66,41 +65,6 @@ run_pca <- function(df, pcs = 20){
   return(pca$x[, 1:pcs])
 }
 
-# @importFrom FlowSOM ReadInput BuildSOM BuildMST metaClustering_consensus
-
-
-#' Compute flowsom clustering
-#' @importFrom flowCore flowFrame colnames
-#' @noRd
-run_flowsom <- function(dataset, k = 7, seed = 473){
-
-  # Check for package
-  missing_package("FlowSOM", "Bioc")
-
-  # Create FlowFrame from data
-
-  data_FlowSOM <- dataset %>%
-    dplyr::select_if(colnames(.) %!in% non_markers) %>%
-    as.matrix() %>%
-    flowCore::flowFrame()
-  # Set seed for reproducibility
-  set.seed(seed)
-
-  # Run FlowSOM (initial steps prior to meta-clustering)
-  fSOM <- data_FlowSOM %>%
-    FlowSOM::ReadInput(transform = FALSE, scale = FALSE, silent = TRUE) %>%
-    FlowSOM::BuildSOM(colsToUse = colnames(data_FlowSOM), silent = TRUE) %>%
-    FlowSOM::BuildMST(silent = TRUE)
-  # Extract cluster labels (pre meta-clustering) from output object
-  labels_pre <- fSOM$map$mapping[, 1]
-
-  # Run FlowSOM meta-clustering
-  fSOM_Cluster <- FlowSOM::metaClustering_consensus(fSOM$map$codes, seed = seed, k = k)
-
-  labels <- fSOM_Cluster[labels_pre]
-
-  return(labels)
-}
 
 #' Check if directory exists, if not, make it
 #' @noRd

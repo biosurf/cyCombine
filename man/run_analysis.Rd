@@ -53,6 +53,8 @@ run_analysis(
 
 \item{segment}{Optional: Run only a specific segment of the analysis. Options include: "emd", "density", "umap"}
 
+\item{rlen}{Number of times the data is presented to the SOM network}
+
 \item{gridsize}{The gridsize to use when clustering. Only used if no celltype_col is given}
 
 \item{seed}{The seed to use when creating the UMAP}
