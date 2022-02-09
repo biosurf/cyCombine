@@ -195,7 +195,7 @@ convert_flowset <- function(flowset,
         check_colname(md_cols, anchor)
         anchor <- metadata[[anchor]][match(basename(files), metadata[[filename_col]])] %>%
           as.factor() %>%
-          rep(flowCore::fsApply(flowset, nrow))
+          rep(nrows)
       }
     }
 
@@ -206,7 +206,6 @@ convert_flowset <- function(flowset,
         stringr::str_remove(".fcs") %>%
         rep(nrows)
     }
-
   }
 
   # Down sampling setup
