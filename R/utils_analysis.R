@@ -3,14 +3,14 @@
 #'
 #' This function only runs under the assumption that the batch correction has been run with the cyCombine workflow in mind.
 #'   Some result preparation can be necessary, if cyCombine was not used during batch correction.
-#'   This function assumes that the uncorrected data us stored under the name "{data_dir}/{tool}_{data}{variant}{uncorrected_extension}.RDS" and
-#'   the corrected data is stored with the name "{data_dir}/{tool}_{data}{variant}{corrected_extension}.RDS".
+#'   This function assumes that the uncorrected data us stored under the name \code{"{data_dir}/{tool}_{data}{variant}{uncorrected_extension}.RDS"} and
+#'   the corrected data is stored with the name \code{"{data_dir}/{tool}_{data}{variant}{corrected_extension}.RDS"}.
 #'   The analysis currently encompass marker-wise density plots, UMAP of corrected vs uncorrected, and Earth Movers Distance.
 #'
 #' @param tool The name of the tool used to batch correct
 #' @param data The name of the data used
-#' @param data_dir The location of the preprocessed and corrected data
-#' @param uncorrected_extension The extension used to name the uncorrected data. Default: "_preprocessed"
+#' @param data_dir The location of the uncorrected and corrected data
+#' @param uncorrected_extension The extension used to name the uncorrected data. Default: "_uncorrected
 #' @param corrected_extension The extension used to name the corrected data. Default: "_corrected"
 #' @param variant Optional: A parameter to set a variant name of an experiment
 #' @param use_cycombine_uncor If TRUE, the uncorrected data made by cyCombine will be used.
@@ -18,27 +18,29 @@
 #' @param md Optional: Metadata filename. Currently not useful
 #' @param panel Optional: If given, it will be used to define markers. Otherwise the function \code{\link{get_markers}} will be used
 #' @param markers Optional: Manually define markers to use in plots and performance metrics
-#' @param celltype_col Optional: If the cell types are know, specify which column they are defined in
+#' @param celltype_col Optional: If the cell types are known, specify which column they are defined in. If NULL, a clustering will be run.
 #' @param segment Optional: Run only a specific segment of the analysis. Options include: "emd", "density", "umap"
 #' @param gridsize The gridsize to use when clustering. Only used if no celltype_col is given
 #' @param seed The seed to use when creating the UMAP
+#' @inheritParams create_som
 #'
 #' @examples
 #' run_analysis(tool = "cycombine",
-#' data = "FR-FCM-ZY34",
-#' data_dir = "_data")
-#' run_analysis(tool = "cycombine",
-#' data = "FR-FCM-ZY34",
-#' data_dir = "_data",
-#' variant = "_p3",
-#' panel = "/attachments/MC_panel3.xlsx")
+#'  data = "dfci1",
+#'  data_dir = "_data")
+#'  run_analysis(tool = "cycombine",
+#'  data = "FR-FCM-ZY34",
+#'  data_dir = "_data",
+#'  variant = "_p3",
+#'  panel = "/attachments/MC_panel3.xlsx")
 #' @export
 run_analysis <- function(tool,
                          data,
                          data_dir,
-                         uncorrected_extension = "_preprocessed",
+                         uncorrected_extension = "_uncorrected",
                          corrected_extension = "_corrected",
                          variant = NULL,
+                         uncorrected_variant = NULL,
                          use_cycombine_uncor = FALSE,
                          restart = FALSE,
                          md = NULL,
@@ -47,6 +49,7 @@ run_analysis <- function(tool,
                          celltype_col = NULL,
                          segment = "",
                          binSize = 0.1,
+                         rlen = 10,
                          gridsize = 8,
                          seed = 473,
                          umap_size = 20000){
@@ -79,9 +82,9 @@ run_analysis <- function(tool,
 
   # Load data
   if(use_cycombine_uncor){
-    preprocessed <- readRDS(paste0(data_dir, "/cycombine_", data, variant, uncorrected_extension, ".RDS"))
+    uncorrected <- readRDS(paste0(data_dir, "/cycombine_", data, uncorrected_variant, uncorrected_extension, ".RDS"))
   } else{
-    preprocessed <- readRDS(paste0(projdir, uncorrected_extension, ".RDS"))
+    uncorrected <- readRDS(paste0(projdir, uncorrected_extension, ".RDS"))
   }
   corrected <- readRDS(paste0(projdir, corrected_extension, ".RDS"))
 
@@ -89,7 +92,7 @@ run_analysis <- function(tool,
   # Get markers
   if(is.null(markers)){
     if(is.null(panel)){
-      markers <- cyCombine::get_markers(preprocessed)
+      markers <- cyCombine::get_markers(uncorrected)
     } else{
       markers <- panel %>%
         dplyr::filter(marker_class %!in% c("none")) %>%
@@ -100,92 +103,104 @@ run_analysis <- function(tool,
 
 
   # Plotting ----
-  if (!dir.exists("figs")){
-    dir.create("figs")
+  if (!dir.exists(paste0(data_dir, "figs"))){
+    dir.create(paste0(data_dir, "figs"))
   }
   if(any(segment %in% c("", "density"))){
 
     message("Creating density plots..")
     # Density plots
     suppressMessages(
-      cyCombine::plot_density(uncorrected = preprocessed,
+      cyCombine::plot_density(uncorrected = uncorrected,
                               corrected = corrected,
                               markers = markers,
-                              filename = paste0("figs/", project, "_densities_withcovar.png"))
+                              filename = paste0(data_dir, "/figs/", project, "_densities.png"))
     )
   }
-  # suppressMessages(
-  # plot_density(uncorrected = preprocessed,
-  #              corrected = corrected,
-  #              markers = markers,
-  #              filename = paste0("figs/", project, "_densities_withcovar_label.png"),
-  #              y = "label")
-  # )
+
   # UMAP
   if(any(segment %in% c("", "umap"))){
     message("Creating UMAPs..")
 
     # Down-sample
     set.seed(seed)
-    preprocessed_sliced <- preprocessed %>%
+    uncorrected_sliced <- uncorrected %>%
       dplyr::slice_sample(n = umap_size)
 
     corrected_sliced <- corrected %>%
-      dplyr::semi_join(preprocessed_sliced, by = "id")
+      dplyr::semi_join(uncorrected_sliced, by = "id")
 
     # UMAP plot uncorrected
-    umap1 <- preprocessed_sliced %>%
+    umap1 <- uncorrected_sliced %>%
       cyCombine::plot_dimred(name = "uncorrected", type = "umap", markers = markers)
 
     # UMAP plot corrected
     umap2 <- corrected_sliced %>%
       cyCombine::plot_dimred(name = "corrected", type = "umap", markers = markers)
 
-    cyCombine::plot_save_two(umap1, umap2, filename = paste0("figs/", project, "_umap.png"))
+    cyCombine::plot_save_two(umap1, umap2, filename = paste0(data_dir, "/figs/", project, "_umap.png"))
   }
 
   # Evaluate ----
   if(any(segment %in% c("", "emd"))){
 
-
     if(is.null(celltype_col)){
       # Cluster and add labels
       if (file.exists(paste0(projdir, "_som.RDS")) & !restart){
         message("Loading SOMgrid..")
-        som_ <- readRDS(paste0(projdir, "_som.RDS"))
-      }else{
-        som_ <- corrected %>%
+        labels <- readRDS(paste0(projdir, "_som.RDS"))
+        # labels <- som_$unit.classif
+      } else{
+        labels <- corrected %>%
           cyCombine::create_som(seed = seed,
+                                rlen = rlen,
                                 xdim = gridsize,
                                 ydim = gridsize,
                                 markers = markers)
-        saveRDS(som_, file = paste0(projdir, "_som.RDS"))
+          saveRDS(labels, file = paste0(projdir, "_som.RDS"))
       }
       # Add labels
       corrected <- corrected %>%
-        dplyr::mutate(som = som_$unit.classif)
+        dplyr::mutate(som = labels)
       celltype_col <- "som"
-    }
+    } else if (celltype_col %!in% colnames(corrected)) stop(paste0("Column '", celltype_col, "' was not found in 'Corrected'. Please set 'celltype_col' to NULL or a column containing the celltypes or cluster labels."))
     message("Adding labels to data..")
 
-    if(celltype_col %!in% colnames(preprocessed)){
-      preprocessed <- corrected %>%
+    if(celltype_col %!in% colnames(uncorrected)){
+      uncorrected <- corrected %>%
         dplyr::select(id, all_of(celltype_col)) %>%
-        dplyr::left_join(preprocessed, by = "id")
+        dplyr::left_join(uncorrected, by = "id")
     }
 
 
 
     message("Evaluating Earth Movers Distance..")
-    emd_val <- preprocessed %>%
-      cyCombine::evaluate_emd(corrected, binSize = binSize, markers = markers, cell_col = celltype_col)
+    emd_val <- uncorrected %>%
+      cyCombine::evaluate_emd(corrected,
+                              binSize = binSize,
+                              markers = markers,
+                              cell_col = celltype_col)
 
     message("Saving results..")
-    ggsave(filename = paste0("figs/", project, "_violin.png"),
+    ggsave(filename = paste0(data_dir, "/figs/", project, "_violin.png"),
            plot = emd_val$violin, device = "png")
-    ggsave(filename = paste0("figs/", project, "_scatterplot.png"),
+    ggsave(filename = paste0(data_dir, "/figs/", project, "_scatterplot.png"),
            plot = emd_val$scatterplot, device = "png")
     saveRDS(emd_val, file = paste0(projdir, "_emd.RDS"))
+    
+    
+    
+    message("Evaluating Median Absolute Deviation..")
+    mad_val <- uncorrected %>%
+      cyCombine::evaluate_mad(corrected,
+                              markers = markers,
+                              cell_col = celltype_col,
+                              filter_limit = NULL)
+    
+    message("Saving results..")
+    saveRDS(mad_val, file = paste0(projdir, "_mad.RDS"))
+    
+    
   }
 
   message("Done!")

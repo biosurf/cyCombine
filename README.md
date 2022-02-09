@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# cyCombine
+# cyCombine <img src="cyCombine.png" width="200" align="right" />
 
 <!-- badges: start -->
 
@@ -10,34 +10,22 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 <!-- badges: end -->
 
 <!-- ## Clone github repository -->
-
 <!-- ``` {sh, eval = FALSE} -->
-
 <!-- # Run in terminal -->
-
 <!-- git clone git@github.com:shdam/cyCombine.git -->
-
 <!-- ``` -->
-
 <!-- ## Restore renv library -->
-
 <!-- ``` {r, eval = FALSE} -->
-
 <!-- # Open project in Rstudio -->
-
 <!-- # Install renv and restore library -->
-
 <!-- install.packages("renv") -->
-
 <!-- library(renv) -->
-
 <!-- renv::restore() -->
-
 <!-- ``` -->
 
 ## Install as package
 
-### 1\. Create virtual environment with renv
+### 1. Create virtual environment with renv (optional)
 
 Initialize a local R environment:
 
@@ -49,25 +37,25 @@ library(renv)
 renv::init()
 ```
 
-### 2\. Install package from github
+### 2. Install package from github
 
 ``` r
 # To ensure Rstudio looks up BioConductor packages run:
 setRepositories(ind = c(1:6, 8))
 # Then install package with
-devtools::install_github("shdam/cyCombine")
+devtools::install_github("biosurf/cyCombine")
 ```
 
 ## Install as cloned repository
 
-### 1\. Clone repository
+### 1. Clone repository
 
 ``` sh
 # In terminal at desired directory
-git clone git@github.com:shdam/cyCombine.git
+git clone git@github.com:biosurf/cyCombine.git
 ```
 
-### 2\. Install dependecies
+### 2. Install dependencies
 
 ``` r
 # Open cyCombine.Rproj in Rstudio
@@ -78,44 +66,51 @@ library(renv)
 renv::restore()
 ```
 
-### 3\. Load package
+### 3. Load package
 
 ``` r
 install.packages("devtools")
 library(devtools)
-devtools::load_all("~/Rprojects/cyCombine")
+devtools::load_all("path/to/cyCombine")
 ```
+
+## Vignettes
+
+Vignettes are available at [biosurf](https://biosurf.org/cyCombine).
 
 ## Usage
 
-### From a directory of .fcs files
+### From a directory of uncorrected .fcs files
 
 ``` r
 library(cyCombine)
 library(magrittr)
-# Direcory containing .fcs files
+# Directory containing .fcs files
 data_dir <- "data/raw"
 # Markers of interest
 markers <- c("CD20", "CD3", "CD27", "CD45RA", "CD279", "CD5", "CD19", "CD14", "CD45RO", "GranzymeA", "GranzymeK", "FCRL6", "CD355", "CD152", "CD69", "CD33", "CD4", "CD337", "CD8", "CD197", "LAG3", "CD56", "CD137", "CD161", "FoxP3", "CD80", "CD270", "CD275", "CD134", "CD278", "CD127", "KLRG1", "CD25", "HLADR", "TBet", "XCL1")
 
 # Compile fcs files, down-sample, and preprocess
-preprocessed <- preprocess(data_dir = data_dir,
-                           markers = markers,
-                           metadata = paste0(data_dir, "/CyTOF samples cohort.xlsx"),
-                           sample_ids = NULL,
-                           batch_ids = "Batch",
-                           filename_col = "FCS_name",
-                           condition = "Set",
-                           down_sample = TRUE,
-                           sample_size = 300000,
-                           seed = 473,
-                           cofactor = 5) 
-saveRDS(preprocessed, file = "_data/cycombine_dfci1_preprocessed.RDS")
+uncorrected <- prepare_data(data_dir = data_dir,
+                             markers = markers,
+                             metadata = file.path(data_dir, "metadata.xlsx"), # Can also be .csv file or data.frame object
+                             sample_ids = NULL,
+                             batch_ids = "Batch",
+                             filename_col = "FCS_name",
+                             condition = "Set",
+                             down_sample = TRUE,
+                             sample_size = 500000,
+                             seed = 473,
+                             cofactor = 5) 
+saveRDS(uncorrected, file = "_data/cycombine_raw_uncorrected.RDS")
 
 # Run batch correction
-corrected <- preprocessed %>%
-  batch_correct(seed = 473)
-saveRDS(corrected, file = "_data/cycombine_dfci1_corrected.RDS")
+corrected <- uncorrected %>%
+  batch_correct(markers = markers,
+                norm_method = "scale", # "rank" is recommended when combining data with heavy batch effects
+                rlen = 10, # Consider a larger value, if results are not convincing (e.g. 100)
+                covar = "condition")
+saveRDS(corrected, file = "_data/cycombine_raw_corrected.RDS")
 ```
 
 ### The modular alternative
@@ -132,82 +127,79 @@ markers <- c("CD20", "CD3", "CD27", "CD45RA", "CD279", "CD5", "CD19", "CD14", "C
 flowset <- compile_fcs(data_dir = data_dir,
                    pattern = "\\.fcs")
 
-df <- convert_flowset(metadata = paste0(data_dir, "/CyTOF samples cohort.xlsx"),
+df <- convert_flowset(metadata = file.path(data_dir, "metadata.xlsx"),
                       sample_ids = NULL,
                       batch_ids = "Batch",
                       filename_col = "FCS_name",
                       condition = "Set",
                       down_sample = TRUE,
-                      sample_size = 300000,
+                      sample_size = 500000,
                       seed = 473)
 
-preprocessed <- df %>% 
+uncorrected <- df %>% 
   transform_asinh(markers = markers)
 
-saveRDS(preprocessed, file = "_data/cycombine_dfci1_preprocessed.RDS")
+saveRDS(uncorrected, file = "_data/cycombine_raw_uncorrected.RDS")
 
 # Run batch correction
-som_ <- preprocessed %>%
-  scale_expr() %>%
-  create_som(markers = markers)
+labels <- uncorrected %>%
+  normalize(markers = markers,
+            norm_method = "scale") %>%
+  create_som(markers = markers,
+             rlen = 10)
 
-corrected <- preprocessed %>%
-  correct_data(som_classes = som_$unit.classif,
-               covar = "condition",
-               markers = markers)
-saveRDS(corrected, file = "_data/cycombine_dfci1_corrected.RDS")
+corrected <- uncorrected %>%
+  correct_data(label = labels,
+               covar = "condition")
+saveRDS(corrected, file = "_data/cycombine_raw_corrected.RDS")
 ```
 
-### From a flowset
-
-``` r
-library(cyCombine)
-library(magrittr)
-# Load data
-# Should contain the flowset, sample_ids, batch_ids, and markers of interest
-load("data/flowset.Rdata")
-
-# Convert flowset to workable datafram and transform data
-fcs_preprocessed <- flowset %>%
-  convert_flowset(batch_ids = batch_ids,
-                  sample_ids = sample_ids,
-                  down_sample = TRUE,
-                  sample_size = 100000,
-                  seed = 473) %>% 
-  transform_asinh(markers = markers)
-  
-# Run batch correction
-corrected <- preprocessed %>%
-  batch_correct(seed = 473)
-```
+<!-- ### From a flowset -->
+<!-- ```{r, eval = FALSE} -->
+<!-- library(cyCombine) -->
+<!-- library(magrittr) -->
+<!-- # Load data -->
+<!-- # Should contain the flowset, sample_ids, batch_ids, and markers of interest -->
+<!-- load("data/flowset.Rdata") -->
+<!-- # Convert flowset to workable datafram and transform data -->
+<!-- uncorrected <- flowset %>% -->
+<!--   convert_flowset(batch_ids = batch_ids, -->
+<!--                   sample_ids = sample_ids, -->
+<!--                   down_sample = TRUE, -->
+<!--                   sample_size = 100000, -->
+<!--                   seed = 473) %>%  -->
+<!--   transform_asinh(markers = markers) -->
+<!-- # Run batch correction -->
+<!-- corrected <- uncorrected %>% -->
+<!--   batch_correct(seed = 473) -->
+<!-- ``` -->
 
 ## Plotting
 
 ``` r
-# Full analysis can be run with
-run_analysis(tool = "cycombine", data = "dfci1", data_dir = "_data")
+# Full analysis can be run with - type ?run_analysis to see how you can modify the analysis
+run_analysis(tool = "cycombine", data = "raw", data_dir = "_data", markers = markers)
 
 # Otherwise, plots can be made like so:
-density_plots(uncorrected = preprocessed,
-                corrected = corrected,
-                markers = markers,
-                filename = 'figs/densities_withcovar.png')
+density_plots(uncorrected = uncorrected,
+              corrected = corrected,
+              markers = markers,
+              filename = 'figs/densities_withcovar.png')
 
 # PCA plot uncorrected
-pca1 <- preprocessed_data %>%
-  dimred_plot('uncorrected', type = 'pca')
+pca1 <- uncorrected %>%
+  plot_dimred('uncorrected', type = 'pca')
   
 # PCA plot corrected
-pca2 <- corrected_data %>%
-  dimred_plot('corrected', type = 'pca')
+pca2 <- corrected %>%
+  plot_dimred('corrected', type = 'pca')
 save_two_plots(pca1, pca2, filename = 'figs/pca.png')
 
 # UMAP
 # UMAP plot uncorrected
-umap1 <- preprocessed_data %>%
-  dimred_plot('uncorrected', type = 'umap')
-
-# UMAP plot corrected
-umap2 <- dimred_plot(corrected_data, 'corrected', type = 'umap')
-save_two_plots(umap1, umap2, filename = 'figs/umap.png')
+set.seed(473)
+sample <- sample(1:nrow(uncorrected), 20000)
+plot1 <- plot_dimred(uncorrected[sample,], type = 'umap', name = 'Uncorrected')
+plot2 <- plot_dimred(corrected[sample,], type = 'umap', name = 'Corrected')
+save_two_plots(plot1, plot2, filename = 'figs/umap.png')
 ```

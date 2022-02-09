@@ -1,0 +1,152 @@
+---
+title: "Panel merging"
+author: "Christina Bligaard Pedersen"
+date: "March 2, 2021"
+output: 
+  prettydoc::html_pretty:
+    theme: hpstr
+    highlight: vignette
+vignette: >
+  %\VignetteIndexEntry{Panel merging}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  strip.white = T, comment = ""
+)
+
+```
+
+This vignette will introduce the panel merging module of cyCombine which has two main functions:
+
+
+#. Imputation of non-overlapping channels for whole data sets (`impute_across_panels`)
+#. Imputation of single misstained (or in some other way) problematic channels (`salvage_problematic`)
+
+For demonstrated use cases and discussions, please refer to the [online vignette](https://biosurf.org/cyCombine_panel_merging.html). Here, we will only introduce the how to use the functions. 
+
+<br>
+
+
+## Imputation of non-overlapping channels for whole data sets
+
+We start by loading packages, then load the data files using cyCombine's `prepare_data` function.
+
+```{r setup and load 1, eval=FALSE}
+# Loading packages
+library(cyCombine)
+library(tidyverse)
+
+# Setting data directory
+data_dir <- 'data_dir'
+
+# Loading two panels' data - this is meant to represent a simple case with only one sample per panel. 
+# Refer to the cyCombine reference manual for specifics on how to load more complex sets
+panel_1 <- prepare_data(data_dir = data_dir, 
+                        pattern = 'panel1', 
+                        down_sample = F, 
+                        batch_ids = 'Panel1', 
+                        sample_ids = 1)
+
+panel_2 <- prepare_data(data_dir = data_dir, 
+                        pattern = 'panel2', 
+                        down_sample = F, 
+                        batch_ids = 'Panel2', 
+                        sample_ids = 1)
+```
+
+<br>
+
+The data from these two panel can then be merged. We want to specify which markers to base the imputation on (overlapping markers) and which markers to impute (missing_X)
+
+We will do panel merging with two panels at a time. 
+Let us first focus on panels A and B.
+
+```{r two panels, eval=FALSE}
+# Define the overlap 
+overlap_channels <- intersect(get_markers(panel_1), get_markers(panel_2))
+
+# Define markers unique to each panel
+missing_1 <- get_markers(panel_2)[!(get_markers(panel_2) %in% overlap_channels)]
+missing_2 <- get_markers(panel_1)[!(get_markers(panel_1) %in% overlap_channels)]
+
+# Perform imputations 
+imputed <- impute_across_panels(dataset1 = panel_1,
+                                dataset2 = panel_2,
+                                overlap_channels = overlap_channels,
+                                impute_channels1 = missing_1,
+                                impute_channels2 = missing_2)
+
+# Extract the dataframes for each set
+imputed_1 <- imputed$dataset1
+imputed_2 <- imputed$dataset2
+
+# Bind the rows together - good for co-analysis
+final <- rbind(imputed$dataset1, imputed$dataset2)
+
+```
+
+
+<br><br>
+
+## Imputation of single misstained channels
+Sometimes we want to correct only a single channel - we will show how to do so here.
+
+```{r setup and load 2, eval=FALSE}
+# Loading packages 
+library(cyCombine)
+library(tidyverse)
+
+
+## Loading data based on a panel and meta-data defined in csv format
+
+# Specifying data directory
+data_dir <- 'data_dir'
+
+# Loading panel info
+panel <- read_csv(paste0(data_dir, "/panel.csv"))
+
+# Extracting the markers
+markers <- panel %>%
+  filter(Type != "none") %>%
+  pull(Marker) %>%
+  str_remove_all("[ _-]")
+
+# Preparing the expression data
+data <- prepare_data(data_dir = data_dir,
+                     metadata = paste0(data_dir, "/metadata.csv"),
+                     filename_col = "FCS_name",
+                     batch_ids = "Batch",
+                     condition = "Set",
+                     derand = TRUE,
+                     cofactor = 5,
+                     markers = markers,
+                     down_sample = FALSE)
+
+```
+
+
+<br>
+Now that we have loaded the data, we want to correct a single misstained channel, which we will refer to as 'BAD'. It was misstained in two batches, batches 3 and 4. It worked fine in the other 4 batches of the data: Batches 1-2 and 5-6. 
+
+
+```{r salavging channel, eval=FALSE}
+# Salvage BAD in batches 3-4
+fixed <- salvage_problematic(df = data,
+                             correct_batches = c(3,4),
+                             channel = 'BAD',
+                             sample_size = 100000)
+```
+
+<br>
+
+We can visualize this correction with density plots. Only 'BAD' will be affected.
+
+```{r density plots, eval=FALSE}
+plot_density(data, fixed, ncol = 4)
+
+```
+

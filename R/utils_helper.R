@@ -1,10 +1,8 @@
-#' Inverted versions of in, is.null and is.na
+#' Inverted versions of in
 #'
 #' @noRd
-#'
 #' @examples
 #' 1 %!in% 1:10
-#' not_null(NULL)
 `%!in%` <- Negate(`%in%`)
 
 
@@ -39,6 +37,7 @@ missing_package <- function(package, repo = "CRAN", git_repo = ""){
 #' @importFrom stringr str_to_lower
 #' @export
 get_markers <- function(df){
+
   marker_pos <- stringr::str_to_lower(colnames(df)) %!in% non_markers
   markers <- colnames(df)[marker_pos]
   return(markers)
@@ -52,6 +51,7 @@ check_colname <- function(df_colnames, col_name, location = "metadata"){
       stop("Column \"", col_name, "\" was not found in the ", location)
     }}
 }
+
 
 #' Run PCA analysis
 #' @importFrom stats prcomp
@@ -178,3 +178,4 @@ check_confound <- function(dat, batch, markers = NULL, mod = NULL) {
     }
   }
 }
+

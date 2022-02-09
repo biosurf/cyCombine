@@ -7,12 +7,34 @@
 plot_dimred_full(
   df,
   name,
-  type = "pca",
+  type = "umap",
   markers = NULL,
   seed = 473,
   out_dir = NULL
 )
 }
+\arguments{
+\item{df}{tibble of data to plot}
+
+\item{name}{Name of the output plot}
+
+\item{type}{Type of dimensionality reduction ("umap" or "pca")}
+
+\item{markers}{Markers to include in dimensionality reduction}
+
+\item{seed}{For reproducibility}
+
+\item{out_dir}{Directory to put output figures}
+}
 \description{
 Dimensionality reduction plots - colored with labels, batches and marker expression
 }
+\seealso{
+Other plot: 
+\code{\link{plot_density}()},
+\code{\link{plot_dimred}()},
+\code{\link{plot_save_four}()},
+\code{\link{plot_save_two}()},
+\code{\link{plot_umap_labels}()}
+}
+\concept{plot}

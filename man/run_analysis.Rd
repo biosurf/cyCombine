@@ -8,9 +8,10 @@ run_analysis(
   tool,
   data,
   data_dir,
-  uncorrected_extension = "_preprocessed",
+  uncorrected_extension = "_uncorrected",
   corrected_extension = "_corrected",
   variant = NULL,
+  uncorrected_variant = NULL,
   use_cycombine_uncor = FALSE,
   restart = FALSE,
   md = NULL,
@@ -19,6 +20,7 @@ run_analysis(
   celltype_col = NULL,
   segment = "",
   binSize = 0.1,
+  rlen = 10,
   gridsize = 8,
   seed = 473,
   umap_size = 20000
@@ -29,9 +31,9 @@ run_analysis(
 
 \item{data}{The name of the data used}
 
-\item{data_dir}{The location of the preprocessed and corrected data}
+\item{data_dir}{The location of the uncorrected and corrected data}
 
-\item{uncorrected_extension}{The extension used to name the uncorrected data. Default: "_preprocessed"}
+\item{uncorrected_extension}{The extension used to name the uncorrected data. Default: "_uncorrected}
 
 \item{corrected_extension}{The extension used to name the corrected data. Default: "_corrected"}
 
@@ -47,7 +49,7 @@ run_analysis(
 
 \item{markers}{Optional: Manually define markers to use in plots and performance metrics}
 
-\item{celltype_col}{Optional: If the cell types are know, specify which column they are defined in}
+\item{celltype_col}{Optional: If the cell types are known, specify which column they are defined in. If NULL, a clustering will be run.}
 
 \item{segment}{Optional: Run only a specific segment of the analysis. Options include: "emd", "density", "umap"}
 
@@ -58,17 +60,17 @@ run_analysis(
 \description{
 This function only runs under the assumption that the batch correction has been run with the cyCombine workflow in mind.
 Some result preparation can be necessary, if cyCombine was not used during batch correction.
-This function assumes that the uncorrected data us stored under the name "{data_dir}/{tool}\emph{{data}{variant}{uncorrected_extension}.RDS" and
-the corrected data is stored with the name "{data_dir}/{tool}}{data}{variant}{corrected_extension}.RDS".
+This function assumes that the uncorrected data us stored under the name \code{"{data_dir}/{tool}_{data}{variant}{uncorrected_extension}.RDS"} and
+the corrected data is stored with the name \code{"{data_dir}/{tool}_{data}{variant}{corrected_extension}.RDS"}.
 The analysis currently encompass marker-wise density plots, UMAP of corrected vs uncorrected, and Earth Movers Distance.
 }
 \examples{
 run_analysis(tool = "cycombine",
-data = "FR-FCM-ZY34",
-data_dir = "_data")
-run_analysis(tool = "cycombine",
-data = "FR-FCM-ZY34",
-data_dir = "_data",
-variant = "_p3",
-panel = "/attachments/MC_panel3.xlsx")
+ data = "dfci1",
+ data_dir = "_data")
+ run_analysis(tool = "cycombine",
+ data = "FR-FCM-ZY34",
+ data_dir = "_data",
+ variant = "_p3",
+ panel = "/attachments/MC_panel3.xlsx")
 }

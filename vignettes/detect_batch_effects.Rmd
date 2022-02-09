@@ -1,0 +1,103 @@
+---
+title: "Detection of batch effects"
+author: "Christina Bligaard Pedersen"
+date: "March 2, 2021"
+output: 
+  prettydoc::html_pretty:
+    theme: hpstr
+    highlight: vignette
+vignette: >
+  %\VignetteIndexEntry{Detection of batch effects}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+This vignette will introduce the use of the batch effect detection module of cyCombine. For demonstrated use cases, see our [online vignettes](https://biosurf.org/cyCombine).
+
+<br>
+
+### Pre-processing data
+
+First, packages must be loaded.
+
+```{r libraries, eval=FALSE}
+library(cyCombine)
+library(tidyverse)
+
+```
+
+
+<br>
+
+Then, it is possible to load the cytometry data - we suggest using the cyCombine package, but the batch detection functions work on all data frames. 
+
+We are now ready to load the CyTOF data. We have set up a panel file in csv format, so the correct information is extractable from there.
+
+```{r loading data, eval=FALSE}
+# Directory with raw .fcs files
+data_dir <- "~/data"
+
+# Reading the panel from a CSV
+panel <- read_csv(paste0(data_dir, "/panel.csv"))
+
+# Extracting the markers
+markers <- panel %>%
+  filter(Type != "none") %>%
+  pull(Marker) %>%
+  str_remove_all("[ _-]")
+
+# Reading cytometry data and converting to tibble
+expr <- prepare_data(data_dir = data_dir,
+                     metadata = paste0(data_dir, "/metadata.csv"),
+                     filename_col = "FCS_name",
+                     batch_ids = "Batch",
+                     condition = "Set",
+                     derand = TRUE,
+                     cofactor = 5,
+                     markers = markers,
+                     down_sample = FALSE)
+
+```
+
+<br>
+
+If loading mass cytometry (CyTOF) data, we suggest using derandomization and cofactor = 5 (default). For flow cytometry data, a cofactor of 150 is usually suitable, and for spectral flow cytometry, we recommend using cofactor = 6000.
+
+
+<br><br>
+
+### Checking for batch effects
+Now for inspection of the data. We have two different functions: `detect_batch_effect_express` and `detect_batch_effect`. See the [online vignette](https://biosurf.org/cyCombine_detect_batch_effects.html) for a thorough discussion regarding these. Here, we just demonstrate how they are run.
+
+<br>
+
+#### detect_batch_effect_express
+Here, we demonstrate how to use the `detect_batch_effect_express` function.
+
+
+```{r detect batch effects express, eval=FALSE}
+detect_batch_effect_express(df = expr,
+                            batch_col = 'batch',
+                            downsample = 10000, 
+                            out_dir = paste0(data_dir, '/batch_effect_check'))
+```
+<br>
+
+This function prints some diagnostics to the screen and provides three plots to the directory specified by `out_dir`. An MDS plot, a set of density plots (per-marker, per-batch), and a plot showing the batch-batch Earth Mover's Distances per-marker. 
+
+<br><br>
+
+#### detect_batch_effect
+Here, we demonstrate how to use the `detect_batch_effect` function.
+
+```{r detect batch effects, eval=FALSE}
+detect_batch_effect(df = expr,
+                    batch_col = 'batch',
+                    out_dir = paste0(data_dir, '/batch_effect_check'), 
+                    seed = 434,
+                    name = 'CyTOF data')
+
+```
+<br>
+
+This function prints some diagnostics to the screen and also provides UMAP plots, which are saved in the directory specified by `out_dir`. These plots should assist in detecting potential batch effects.

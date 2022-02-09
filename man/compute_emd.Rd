@@ -25,5 +25,13 @@ compute_emd(
 }
 \description{
 Given a dataframe, the Earth Movers Distance is computed, using the emdist package.
-A comparison matrix is returned containing the maximum distance for each marker for each group of cells.
+A matrix is returned containing the EMD for each marker for each group of cells.
 }
+\examples{
+emd <- compute_emd(df, markers = markers)
+}
+\seealso{
+Other emd: 
+\code{\link{evaluate_emd}()}
+}
+\concept{emd}

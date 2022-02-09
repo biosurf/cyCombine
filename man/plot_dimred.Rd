@@ -4,8 +4,43 @@
 \alias{plot_dimred}
 \title{Dimensionality reduction plot}
 \usage{
-plot_dimred(df, name, type = "pca", plot = "batch", markers = NULL, seed = 473)
+plot_dimred(
+  df,
+  name,
+  type = "umap",
+  plot = "batch",
+  markers = NULL,
+  seed = 473,
+  return_coord = FALSE
+)
+}
+\arguments{
+\item{df}{tibble of data to plot}
+
+\item{name}{Name of the output plot}
+
+\item{type}{Type of dimensionality reduction ("umap" or "pca")}
+
+\item{plot}{The column to use for coloring}
+
+\item{markers}{Markers to include in dimensionality reduction}
+
+\item{seed}{For reproducibility}
+
+\item{return_coord}{Return coordinates and not just the plot}
 }
 \description{
 Dimensionality reduction plot
 }
+\examples{
+uncor_umap <- plot_dimred(uncorrected, "Uncorrected", markers = markers)
+}
+\seealso{
+Other plot: 
+\code{\link{plot_density}()},
+\code{\link{plot_dimred_full}()},
+\code{\link{plot_save_four}()},
+\code{\link{plot_save_two}()},
+\code{\link{plot_umap_labels}()}
+}
+\concept{plot}
