@@ -106,6 +106,7 @@ check_confound <- function(dat, batch, markers = NULL, mod = NULL) {
 
   ## coerce dat into a matrix
   dat <- as.matrix(dat[, markers])
+  batch <- as.factor(batch)
 
   batchmod <- model.matrix(~-1+batch)
 

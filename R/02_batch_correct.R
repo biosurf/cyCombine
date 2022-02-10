@@ -215,6 +215,7 @@ correct_data <- function(df,
   }else if(length(covar) == 1){
     check_colname(colnames(df), covar, "df")
     df[[covar]] <- as.factor(df[[covar]])
+    if(length(levels(df[[covar]])) == 1) covar <- NULL
   } else{
     # Covar was given as a vector
     df$covar <- as.factor(covar)
@@ -225,6 +226,7 @@ correct_data <- function(df,
     if(length(anchor) == 1){
       check_colname(colnames(df), anchor)
       df[[anchor]] <- as.factor(df[[anchor]])
+      if(length(levels(df[[anchor]])) == 1) anchor <- NULL
     } else{
       # Anchor was given as a vector
       df$anchor <- as.factor(anchor)
@@ -419,6 +421,7 @@ batch_correct <- function(df,
     if(length(covar) == 1 ){
       check_colname(colnames(df), covar)
       df[[covar]] <- as.factor(df[[covar]])
+      if(length(levels(df[[covar]])) == 1) covar <- NULL
     } else{
       # Covar was given as a vector
       df$covar <- as.factor(covar)
@@ -430,6 +433,7 @@ batch_correct <- function(df,
     if(length(anchor) == 1){
       check_colname(colnames(df), anchor)
       df[[anchor]] <- as.factor(df[[anchor]])
+      if(length(levels(df[[anchor]])) == 1) anchor <- NULL
     } else{
       # Anchor was given as a vector
       df$anchor <- as.factor(anchor)
