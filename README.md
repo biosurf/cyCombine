@@ -4,9 +4,10 @@
 # cyCombine <img src="cyCombine.png" width="200" align="right" />
 
 <!-- badges: start -->
+<!-- [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental) -->
 
 [![Lifecycle:
-experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
+stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
 <!-- badges: end -->
 
 <!-- ## Clone github repository -->
@@ -23,21 +24,7 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 <!-- renv::restore() -->
 <!-- ``` -->
 
-## Install as package
-
-### 1. Create virtual environment with renv (optional)
-
-Initialize a local R environment:
-
-``` r
-# Open project in Rstudio
-# Install and initialize renv 
-install.packages("renv")
-library(renv)
-renv::init()
-```
-
-### 2. Install package from github
+## Install from github
 
 ``` r
 # To ensure Rstudio looks up BioConductor packages run:
@@ -46,37 +33,38 @@ setRepositories(ind = c(1:6, 8))
 devtools::install_github("biosurf/cyCombine")
 ```
 
-## Install as cloned repository
-
-### 1. Clone repository
-
-``` sh
-# In terminal at desired directory
-git clone git@github.com:biosurf/cyCombine.git
-```
-
-### 2. Install dependencies
-
-``` r
-# Open cyCombine.Rproj in Rstudio
-# Install renv
-install.packages("renv")
-library(renv)
-# Restore from lock file
-renv::restore()
-```
-
-### 3. Load package
-
-``` r
-install.packages("devtools")
-library(devtools)
-devtools::load_all("path/to/cyCombine")
-```
-
 ## Vignettes
 
 Vignettes are available at [biosurf](https://biosurf.org/cyCombine).
+
+There is a total of eight vignettes, which cover a range of different
+topics:
+
+1.  A [reference manual](https://biosurf.org/cyCombine_ref_manual.html)
+    showing general commands for using cyCombine.
+2.  A [performance benchmarking
+    vignette](https://biosurf.org/cyCombine_benchmarking.html) that
+    shows an example of batch correction using five different tools,
+    including calculation of EMD reductions and MAD scores.
+3.  A
+    [vignette](https://biosurf.org/cyCombine_detect_batch_effects.html)
+    covering how to detect batch effects.
+4.  A [panel merging
+    vignette](https://biosurf.org/cyCombine_panel_merging.html)
+    including an extended discussion of how to use and evaluate merging.
+5.  An [example
+    vignette](https://biosurf.org/cyCombine_CyTOF_1panel.html) covering
+    how to process a 1-panel mass cytometry (CyTOF) dataset.
+6.  An [example
+    vignette](https://biosurf.org/cyCombine_CyTOF_2panels.html) covering
+    how to process a 2-panel mass cytometry (CyTOF) dataset.
+7.  A [vignette](https://biosurf.org/cyCombine_Spectralflow_CyTOF.html)
+    showing an example with integration of datasets from spectral flow
+    cytometry (SFC) and mass cytometry (CyTOF).
+8.  A
+    [vignette](https://biosurf.org/cyCombine_CITEseq_Spectral_CyTOF.html)
+    covering an example with integration of datasets from spectral flow
+    cytometry (SFC), CITE-seq, and mass cytometry (CyTOF).
 
 ## Usage
 
@@ -89,6 +77,7 @@ library(magrittr)
 data_dir <- "data/raw"
 # Markers of interest
 markers <- c("CD20", "CD3", "CD27", "CD45RA", "CD279", "CD5", "CD19", "CD14", "CD45RO", "GranzymeA", "GranzymeK", "FCRL6", "CD355", "CD152", "CD69", "CD33", "CD4", "CD337", "CD8", "CD197", "LAG3", "CD56", "CD137", "CD161", "FoxP3", "CD80", "CD270", "CD275", "CD134", "CD278", "CD127", "KLRG1", "CD25", "HLADR", "TBet", "XCL1")
+# The list of markers can also be imported from a panel file (See the reference manual for an example)
 
 # Compile fcs files, down-sample, and preprocess
 uncorrected <- prepare_data(data_dir = data_dir,
@@ -113,12 +102,18 @@ corrected <- uncorrected %>%
 saveRDS(corrected, file = "_data/cycombine_raw_corrected.RDS")
 ```
 
-### The modular alternative
+### The modular workflow
+
+If your data is in another format than FCS files or a flowset, please
+convert your data to a *tibble*, add the relevant columns (*sample*,
+*batch*, *covar*/*condition*/*anchor*), and begin from
+*transform_asinh()* (if your data is not yet transformed; otherwise,
+skip that step as well).
 
 ``` r
 library(cyCombine)
 library(magrittr)
-# Direcory containing .fcs files
+# Directory containing .fcs files
 data_dir <- "data/raw"
 # Markers of interest
 markers <- c("CD20", "CD3", "CD27", "CD45RA", "CD279", "CD5", "CD19", "CD14", "CD45RO", "GranzymeA", "GranzymeK", "FCRL6", "CD355", "CD152", "CD69", "CD33", "CD4", "CD337", "CD8", "CD197", "LAG3", "CD56", "CD137", "CD161", "FoxP3", "CD80", "CD270", "CD275", "CD134", "CD278", "CD127", "KLRG1", "CD25", "HLADR", "TBet", "XCL1")
@@ -127,6 +122,7 @@ markers <- c("CD20", "CD3", "CD27", "CD45RA", "CD279", "CD5", "CD19", "CD14", "C
 flowset <- compile_fcs(data_dir = data_dir,
                    pattern = "\\.fcs")
 
+# Convert the generated flowset into a tibble
 df <- convert_flowset(metadata = file.path(data_dir, "metadata.xlsx"),
                       sample_ids = NULL,
                       batch_ids = "Batch",
@@ -136,6 +132,7 @@ df <- convert_flowset(metadata = file.path(data_dir, "metadata.xlsx"),
                       sample_size = 500000,
                       seed = 473)
 
+# Transform data
 uncorrected <- df %>% 
   transform_asinh(markers = markers)
 
@@ -177,7 +174,7 @@ saveRDS(corrected, file = "_data/cycombine_raw_corrected.RDS")
 ## Plotting
 
 ``` r
-# Full analysis can be run with - type ?run_analysis to see how you can modify the analysis
+# Full analysis - type ?run_analysis to see how you can modify the analysis
 run_analysis(tool = "cycombine", data = "raw", data_dir = "_data", markers = markers)
 
 # Otherwise, plots can be made like so:

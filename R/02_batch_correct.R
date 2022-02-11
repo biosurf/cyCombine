@@ -209,29 +209,34 @@ correct_data <- function(df,
   }
 
   # Add covar to df, if given
-  if(is.null(covar)){
+  if(!is.null(covar)){
+    if(length(covar) == 1){
+      check_colname(colnames(df), covar, "df")
+      df[[covar]] <- as.factor(df[[covar]])
+    } else{
+      # Covar was given as a vector
+      df$covar <- as.factor(covar)
+      covar <- "covar"
+    }
+    # Ensure there is more than 1 factor level
+    if(nlevels(df[[covar]]) == 1) covar <- NULL; num_covar <- 1
+  } else {
     # No covar is given
     num_covar <- 1
-  }else if(length(covar) == 1){
-    check_colname(colnames(df), covar, "df")
-    df[[covar]] <- as.factor(df[[covar]])
-    if(length(levels(df[[covar]])) == 1) covar <- NULL
-  } else{
-    # Covar was given as a vector
-    df$covar <- as.factor(covar)
-    covar <- "covar"
   }
+
   # Add anchor to df, if given
   if(!is.null(anchor)){
     if(length(anchor) == 1){
       check_colname(colnames(df), anchor)
       df[[anchor]] <- as.factor(df[[anchor]])
-      if(length(levels(df[[anchor]])) == 1) anchor <- NULL
     } else{
       # Anchor was given as a vector
       df$anchor <- as.factor(anchor)
       anchor <- "anchor"
     }
+    # Ensure there is more than 1 factor level
+    if(nlevels(df[[anchor]]) == 1) anchor <- NULL
   }
 
   corrected_data <- df %>%
@@ -421,24 +426,24 @@ batch_correct <- function(df,
     if(length(covar) == 1 ){
       check_colname(colnames(df), covar)
       df[[covar]] <- as.factor(df[[covar]])
-      if(length(levels(df[[covar]])) == 1) covar <- NULL
     } else{
       # Covar was given as a vector
       df$covar <- as.factor(covar)
       covar <- "covar"
     }
+    if(nlevels(df[[covar]]) == 1) covar <- NULL
   }
   # Add anchor to df, if given
   if(!is.null(anchor)){
     if(length(anchor) == 1){
       check_colname(colnames(df), anchor)
       df[[anchor]] <- as.factor(df[[anchor]])
-      if(length(levels(df[[anchor]])) == 1) anchor <- NULL
     } else{
       # Anchor was given as a vector
       df$anchor <- as.factor(anchor)
       anchor <- "anchor"
     }
+    if(nlevels(df[[anchor]]) == 1) anchor <- NULL
   }
   # Check if covariates confound with batch or each other
   if(!is.null(covar)){
