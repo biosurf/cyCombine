@@ -21,12 +21,12 @@ compute_emd <- function(df,
                         markers = NULL){
 
   # Check for package
-  missing_package("emdist", "CRAN")
-  missing_package("graphics", "CRAN")
+  cyCombine:::missing_package("emdist", "CRAN")
+  cyCombine:::missing_package("graphics", "CRAN")
 
   # Check colnames
-  check_colname(colnames(df), cell_col, "df")
-  check_colname(colnames(df), batch_col, "df")
+  cyCombine:::check_colname(colnames(df), cell_col, "df")
+  cyCombine:::check_colname(colnames(df), batch_col, "df")
 
   # Define cell columns as characters to avoid problems with factors
   df[[cell_col]] <- df[[cell_col]] %>%
@@ -126,8 +126,8 @@ evaluate_emd <- function(uncorrected,
                          filter_limit = 2){
 
   # Check for package
-  missing_package("emdist", "CRAN")
-  if(!plots) missing_package("plyr", "CRAN")
+  cyCombine:::missing_package("emdist", "CRAN")
+  if(!plots) cyCombine:::missing_package("plyr", "CRAN")
 
   # Get markers if not given
   if(is.null(markers)){
@@ -136,12 +136,12 @@ evaluate_emd <- function(uncorrected,
   }
 
   # Check colnames
-  check_colname(colnames(corrected), cell_col, "corrected set")
-  check_colname(colnames(uncorrected), cell_col, "uncorrected set")
-  check_colname(colnames(corrected), batch_col, "corrected set")
-  check_colname(colnames(uncorrected), batch_col, "uncorrected set")
-  check_colname(colnames(corrected), 'id', "corrected set")
-  check_colname(colnames(uncorrected), 'id', "uncorrected set")
+  cyCombine:::check_colname(colnames(corrected), cell_col, "corrected set")
+  cyCombine:::check_colname(colnames(uncorrected), cell_col, "uncorrected set")
+  cyCombine:::check_colname(colnames(corrected), batch_col, "corrected set")
+  cyCombine:::check_colname(colnames(uncorrected), batch_col, "uncorrected set")
+  cyCombine:::check_colname(colnames(corrected), 'id', "corrected set")
+  cyCombine:::check_colname(colnames(uncorrected), 'id', "uncorrected set")
 
   # Define cell columns as characters to avoid problems with factors
   corrected[[cell_col]] <- corrected[[cell_col]] %>%
@@ -258,8 +258,8 @@ compute_mad <- function(df,
                         markers = NULL){
 
   # Check colnames
-  check_colname(colnames(df), cell_col, "df")
-  check_colname(colnames(df), batch_col, "df")
+  cyCombine:::check_colname(colnames(df), cell_col, "df")
+  cyCombine:::check_colname(colnames(df), batch_col, "df")
 
   # Define cell columns as characters to avoid problems with factors
   df[[cell_col]] <- df[[cell_col]] %>%
@@ -329,12 +329,12 @@ evaluate_mad <- function(uncorrected,
   }
 
   # Check colnames
-  check_colname(colnames(corrected), cell_col, "corrected set")
-  check_colname(colnames(uncorrected), cell_col, "uncorrected set")
-  check_colname(colnames(corrected), batch_col, "corrected set")
-  check_colname(colnames(uncorrected), batch_col, "uncorrected set")
-  check_colname(colnames(corrected), 'id', "corrected set")
-  check_colname(colnames(uncorrected), 'id', "uncorrected set")
+  cyCombine:::check_colname(colnames(corrected), cell_col, "corrected set")
+  cyCombine:::check_colname(colnames(uncorrected), cell_col, "uncorrected set")
+  cyCombine:::check_colname(colnames(corrected), batch_col, "corrected set")
+  cyCombine:::check_colname(colnames(uncorrected), batch_col, "uncorrected set")
+  cyCombine:::check_colname(colnames(corrected), 'id', "corrected set")
+  cyCombine:::check_colname(colnames(uncorrected), 'id', "uncorrected set")
 
   # Define cell columns as characters to avoid problems with factors
   corrected[[cell_col]] <- corrected[[cell_col]] %>%

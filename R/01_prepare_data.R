@@ -110,9 +110,7 @@ convert_flowset <- function(flowset,
   # Extract information necessary both with and without included metadata
   ## FlowSet row numbers
   nrows <- flowCore::fsApply(flowset, nrow)
-  ## To down sample within fsApply
-  tot_nrows <- sum(nrows)
-  ids <- 1:tot_nrows
+
   ## File names from flowset
   files <- flowset@phenoData %>%
     rownames() %>%
@@ -144,20 +142,28 @@ convert_flowset <- function(flowset,
 
     # Check for errors in metadata columns
     md_cols <- colnames(metadata)
-    check_colname(md_cols, filename_col)
+    cyCombine:::check_colname(md_cols, filename_col)
 
 
     # Extract info from metadata
     if(!endsWith(metadata[[filename_col]][1], ".fcs")){
       metadata[[filename_col]] <- paste0(metadata[[filename_col]], ".fcs")
     }
-    # Remove files from metadata
-    metadata <- metadata[match(files, metadata[[filename_col]]),]
+    # Check that all metadata rows has a file
+    if(any(metadata[[filename_col]] %!in% files)){
+      missing_files <- metadata[[filename_col]][metadata[[filename_col]] %!in% files]
+      warning(stringr::str_c("The sample ", missing_files, " in the metadata was not found in the provided folder and will be ignored.\n"))
+      # Remove files from metadata
+      metadata <- metadata[metadata[[filename_col]] %in% files,]
+    }
+
     # Check that all files are represented in metadata
     if(any(files %!in% metadata[[filename_col]])){
       missing_files <- files[files %!in% metadata[[filename_col]]]
-      warning(stringr::str_c("The samples ", missing_files, " were not found in the metadata file and the sample_ids will be set to NA."))
-      }
+      warning(stringr::str_c("The sample ", missing_files, " was not found in the metadata file and will be ignored.\n"))
+      files <- files[files %in% metadata[[filename_col]]]
+      nrows <- nrows[which(rownames(nrows) %in% files),] %>% as.matrix()
+    }
 
     # Get sample ids
     if (is.null(sample_ids)){
@@ -165,7 +171,7 @@ convert_flowset <- function(flowset,
         stringr::str_remove(".fcs") %>%
         rep(nrows)
     } else if (length(sample_ids) == 1){
-      check_colname(md_cols, sample_ids)
+      cyCombine:::check_colname(md_cols, sample_ids)
       sample_ids <- metadata[[sample_ids]][match(files, metadata[[filename_col]])] %>%
         stringr::str_remove(".fcs") %>%
         rep(nrows)
@@ -174,7 +180,7 @@ convert_flowset <- function(flowset,
     # Get batch ids
     if (!is.null(batch_ids)){
       if(length(batch_ids) == 1){
-        check_colname(md_cols, batch_ids)
+        cyCombine:::check_colname(md_cols, batch_ids)
         batch_ids <- metadata[[batch_ids]][match(files, metadata[[filename_col]])] %>%
           as.factor() %>%
           rep(nrows)
@@ -183,8 +189,8 @@ convert_flowset <- function(flowset,
     # Get condition
     if(!is.null(condition)){
       if(length(condition == 1)){
-        check_colname(md_cols, condition)
-        condition <- metadata[[condition]][match(basename(files), metadata[[filename_col]])] %>%
+        cyCombine:::check_colname(md_cols, condition)
+        condition <- metadata[[condition]][match(files, metadata[[filename_col]])] %>%
           as.factor() %>%
           rep(nrows)
       }
@@ -192,8 +198,8 @@ convert_flowset <- function(flowset,
     # Get anchor
     if(!is.null(anchor)){
       if(length(anchor == 1)){
-        check_colname(md_cols, anchor)
-        anchor <- metadata[[anchor]][match(basename(files), metadata[[filename_col]])] %>%
+        cyCombine:::check_colname(md_cols, anchor)
+        anchor <- metadata[[anchor]][match(files, metadata[[filename_col]])] %>%
           as.factor() %>%
           rep(nrows)
       }
@@ -207,22 +213,26 @@ convert_flowset <- function(flowset,
         rep(nrows)
     }
   }
-
+  ## To down sample within fsApply
+  tot_nrows <- sum(nrows)
+  ids <- 1:tot_nrows
   # Down sampling setup
   if(down_sample){
-    message(paste("Down sampling to", sample_size, "samples"))
     set.seed(seed)
     if(sampling_type == "random"){
+      message(paste("Down sampling to", sample_size, "cells"))
       sample <- sample(ids, sample_size) %>%
         # Sorting here enables major resource savings when down-sampling
         sort()
     } else if(sampling_type == "batch_ids" & !is.null(batch_ids)){ # even down-sampling from batches
+      message(paste("Down sampling to", sample_size, "cells per batch"))
       sample <- tibble::tibble(batch_ids, ids) %>%
         dplyr::group_by(batch_ids) %>%
         dplyr::slice_sample(n = sample_size) %>%
         dplyr::pull(ids) %>%
         sort()
     } else{ # Even down-sampling from samples
+      message(paste("Down sampling to", sample_size, "cells per sample"))
       sample <- tibble::tibble(sample_ids, ids) %>%
         dplyr::group_by(sample_ids) %>%
         dplyr::slice_sample(n = sample_size) %>%
@@ -240,7 +250,7 @@ convert_flowset <- function(flowset,
 
   message("Extracting expression data..")
   fcs_data <- flowset %>%
-    purrr::when(down_sample ~ flowCore::fsApply(., fcs_sample,
+    purrr::when(down_sample ~ flowCore::fsApply(., cyCombine:::fcs_sample,
                                                 sample = sample,
                                                 nrows = nrows),
                 ~ flowCore::fsApply(., Biobase::exprs)) %>%
@@ -295,16 +305,22 @@ convert_flowset <- function(flowset,
 #' Extract from a flowset given a sample of indices
 #' @noRd
 #' @importFrom purrr accumulate
+#' @importFrom flowCore keyword
 fcs_sample <- function(flowframe, sample, nrows, seed = 473){
-  nrows_acc <- c(0, nrows %>%
-    purrr::accumulate(`+`))
-  ff_number <- stringr::str_c("^", nrow(flowframe), "$") %>%
-    grep(nrows)
 
+  # Determine which flowframe was given
+  ff_name <- flowCore::keyword(flowframe)$FILENAME %>%
+      basename()
+  ff_number <- which(rownames(nrows) == ff_name)
+
+  # Down-sample based on accumulated nrows (ensures the correct rows are extracted from each flowframe)
+  nrows_acc <- c(0, nrows %>%
+                   purrr::accumulate(`+`))
   ff_sample <- sample - nrows_acc[ff_number]
   ff_sample <- ff_sample[ff_sample > 0]
   ff_sample <- ff_sample[ff_sample <= nrows[ff_number]]
 
+  # Extract expression data
   ff <- flowframe %>%
     Biobase::exprs()
   ff <- ff[ff_sample, ]
@@ -354,7 +370,7 @@ transform_asinh <- function(df,
   message(paste0("Transforming data using asinh with a cofactor of ", cofactor, ".."))
   transformed <- df %>%
     purrr::when(.keep ~ .,
-                ~ dplyr::select_if(., colnames(.) %in% c(markers, cyCombine::non_markers))) %>%
+                ~ dplyr::select_if(., colnames(.) %in% c(markers, non_markers))) %>%
     # Transform all data on those markers
     dplyr::mutate(dplyr::across(dplyr::all_of(markers),
                      .fns = function(x){
@@ -417,8 +433,10 @@ prepare_data <- function(data_dir = NULL,
     if(data_dir %>% endsWith("/")) data_dir <- data_dir %>% stringr::str_sub(end = -2)
 
     # Compile directory to flowset
-    flowset <- data_dir %>%
-      cyCombine::compile_fcs(pattern = pattern)
+    if(is.null(flowset)){
+      flowset <- data_dir %>%
+        cyCombine::compile_fcs(pattern = pattern)
+    }
 
     # Look for metadata in data_dir
     if(!is.null(metadata)){

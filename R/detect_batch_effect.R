@@ -30,11 +30,13 @@ detect_batch_effect_express <- function(df,
                                         downsample = NULL,
                                         seed = 472) {
 
-  missing_package("Matrix")
+  cyCombine:::missing_package("Matrix")
   message('Starting the quick(er) detection of batch effects.')
+  # Create output directory if missing
+  cyCombine:::check_make_dir(out_dir)
 
   # Check batch_col and rename if necessary
-  check_colname(colnames(df), batch_col, location = "df")
+  cyCombine:::check_colname(colnames(df), batch_col, location = "df")
   if (batch_col != 'batch') {
     df$batch <- df[, batch_col]
   }
@@ -166,9 +168,9 @@ detect_batch_effect_express <- function(df,
 
   median_expr <- df %>%
     dplyr::group_by(sample) %>%
-    dplyr::summarise_at(get_markers(df), median)
+    dplyr::summarise_at(cyCombine::get_markers(df), median)
 
-  dist_mat <- as.matrix(dist(median_expr[, all_markers]))   # Euclidean distance
+  dist_mat <- as.matrix(stat::dist(median_expr[, all_markers]))   # Euclidean distance
   rownames(dist_mat) <- colnames(dist_mat) <- median_expr$sample
 
   mds <- as.data.frame(stats::cmdscale(dist_mat, k = 2))
@@ -224,9 +226,11 @@ detect_batch_effect <- function(df,
                                 name = 'raw data') {
 
   missing_package("outliers")
+  # Create output directory if missing
+  cyCombine:::check_make_dir(out_dir)
 
   # Check batch_col and rename if necessary
-  check_colname(colnames(df), batch_col, location = "df")
+  cyCombine:::check_colname(colnames(df), batch_col, location = "df")
   if (batch_col != 'batch') {
     df$batch <- df[, batch_col]
   }
@@ -315,7 +319,7 @@ detect_batch_effect <- function(df,
 
     exp_markers <- df %>%
       dplyr::filter(label == cl) %>%
-      dplyr::summarise_at(get_markers(df), median) %>%
+      dplyr::summarise_at(cyCombine::get_markers(df), median) %>%
       sort(decreasing = T)
 
     message(paste0('The cluster expresses ', paste(names(exp_markers[which(exp_markers > 1)]), collapse = ', ')), '.')

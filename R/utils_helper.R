@@ -39,6 +39,7 @@ missing_package <- function(package, repo = "CRAN", git_repo = ""){
 get_markers <- function(df){
   marker_pos <- stringr::str_to_lower(colnames(df)) %!in% non_markers
   markers <- colnames(df)[marker_pos]
+  markers <- markers[which(!is.na(markers))]
   return(markers)
 }
 
@@ -95,19 +96,13 @@ col_min <- function(df, m){
 #' Check if the batch is confounded with the provided model
 #'
 #' @noRd
-check_confound <- function(dat, batch, markers = NULL, mod = NULL) {
+check_confound <- function(batch, mod = NULL) {
 
-  if (is.null(markers)){
-    # Get markers
-    markers <- df %>%
-      cyCombine::get_markers()
-  }
+
   ### Code adapted from sva::ComBat
 
-  ## coerce dat into a matrix
-  dat <- as.matrix(dat[, markers])
+  ## Create batch model
   batch <- as.factor(batch)
-
   batchmod <- model.matrix(~-1+batch)
 
 

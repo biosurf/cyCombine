@@ -41,15 +41,15 @@ salvage_problematic <- function(df,
   }
 
   # Combine the data to impute for and from based on the overlapping markers
-  overlapping_data <- rbind(complete_obs[,!colnames(complete_obs) %in% c(channel, cyCombine::non_markers, exclude)],
-                            impute_for[,!colnames(impute_for) %in% c(cyCombine::non_markers, exclude)])
+  overlapping_data <- rbind(complete_obs[,!colnames(complete_obs) %in% c(channel, non_markers, exclude)],
+                            impute_for[,!colnames(impute_for) %in% c(non_markers, exclude)])
 
 
   # Get SOM classes for each event - on overlapping markers
   som_classes <- overlapping_data %>%
-    create_som(xdim = xdim,
-               ydim = ydim,
-               seed = seed)
+    cyCombine::create_som(xdim = xdim,
+                          ydim = ydim,
+                          seed = seed)
 
   # Split SOM classes to each original dataset
   complete_obs_som <- som_classes[1:nrow(complete_obs)]
@@ -73,13 +73,13 @@ salvage_problematic <- function(df,
       # Estimate the density per marker that needs imputation
       dens <- complete_obs[which(complete_obs_som==s),] %>%
         dplyr::pull(channel) %>%
-        density()
+        stats::density()
 
       # For each missing event in each cluster, impute values based on density draws in respective cluster (here represented by random sample and addition of a number with mean 0 and bandwidth sd)
       set.seed(seed)
       imputed[which(impute_obs_som==s)] <- complete_obs[which(complete_obs_som==s),] %>%
         dplyr::pull(channel) %>%
-        sample(size = sum(impute_obs_som==s), replace = T) + rnorm(sum(impute_obs_som==s), 0, dens$bw)
+        sample(size = sum(impute_obs_som==s), replace = T) + stats::rnorm(sum(impute_obs_som==s), 0, dens$bw)
 
       # Fix values outside input range (per marker) - per SOM node
       imputed[which(impute_obs_som==s)][imputed[which(impute_obs_som==s)] < min(complete_obs[which(complete_obs_som==s),channel])] <- min(complete_obs[which(complete_obs_som==s),channel])
@@ -147,10 +147,10 @@ impute_across_panels <- function(dataset1,
   overlapping_data <- rbind(dataset1[,overlap_channels], dataset2[,overlap_channels])
 
   som_classes <- overlapping_data %>%
-    create_som(markers = overlap_channels,
-               xdim = xdim,
-               ydim = ydim,
-               seed = seed)
+    cyCombine::create_som(markers = overlap_channels,
+                          xdim = xdim,
+                          ydim = ydim,
+                          seed = seed)
 
     # Split SOM classes to each original dataset
   dataset1_som <- som_classes[1:nrow(dataset1)]
@@ -182,14 +182,14 @@ impute_across_panels <- function(dataset1,
       if (sum(complete_obs_som==s) >= 50) {
 
         # Estimate the density per marker that needs imputation
-        dens <- apply(complete_obs[which(complete_obs_som==s), impute_channels], 2, function(x) {density(x)$bw})
+        dens <- apply(complete_obs[which(complete_obs_som==s), impute_channels], 2, function(x) {stats::density(x)$bw})
 
         # Performing the imputation
         set.seed(seed)
         imputed[which(impute_obs_som==s),] <- complete_obs[which(complete_obs_som==s),] %>%
           dplyr::select(dplyr::all_of(impute_channels)) %>%
           dplyr::slice_sample(n = sum(impute_obs_som==s), replace = T) %>%
-          as.matrix() + sapply(impute_channels, function(ch) {rnorm(sum(impute_obs_som==s), 0, dens[ch])})
+          as.matrix() + sapply(impute_channels, function(ch) {stats::rnorm(sum(impute_obs_som==s), 0, dens[ch])})
 
         # Fix values outside input range (per marker)
         for (m in impute_channels) {
@@ -210,7 +210,7 @@ impute_across_panels <- function(dataset1,
     impute_for[,impute_channels] <- imputed
 
     impute_for <- impute_for %>%
-      dplyr::relocate(dplyr::any_of(cyCombine::non_markers), .after = dplyr::all_of(impute_channels))
+      dplyr::relocate(dplyr::any_of(non_markers), .after = dplyr::all_of(impute_channels))
 
     imputed_dfs[[paste0('dataset', i)]] <- impute_for
   }

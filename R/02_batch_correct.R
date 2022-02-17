@@ -39,7 +39,7 @@ normalize <- function(df,
   else if(norm_method == "qnorm") {
     # message("Quantile normalizing expression data..")
     # Run quantile normalization
-    df_normed <- quantile_norm(df, markers = markers)
+    df_normed <- cyCombine::quantile_norm(df, markers = markers)
     return(df_normed)
     } else stop("Please use either 'scale', 'rank', or 'qnorm' as normalization method." )
 
@@ -90,14 +90,14 @@ quantile_norm <- function(df, markers = NULL){
   refq <- list()
   for (m in markers) {
     # Determine the quantiles
-    refq[[m]] <- quantile(unlist(df[,m]), probs=seq(0,1,length.out=5), names = F)
+    refq[[m]] <- stats::quantile(unlist(df[,m]), probs=seq(0,1,length.out=5), names = F)
   }
 
   qnormed_expr <- df
   for (b in unique(df$batch)) {
     for (m in markers) {
-      qx <- quantile(unlist(df[df$batch == b, m]), probs=seq(0,1,length.out=5), names = F)
-      spf <- splinefun(x=qx, y=refq[[m]], method="monoH.FC", ties=min)
+      qx <- stats::quantile(unlist(df[df$batch == b, m]), probs=seq(0,1,length.out=5), names = F)
+      spf <- stats::splinefun(x=qx, y=refq[[m]], method="monoH.FC", ties=min)
 
       # Apply the spline function to adjust quantiles
       qnormed_expr[qnormed_expr$batch == b, m] <- spf(unlist(df[df$batch==b, m]))
@@ -189,8 +189,7 @@ correct_data <- function(df,
                          parametric = TRUE){
   message("Batch correcting data..")
   # Check for batch column
-  check_colname(colnames(df), "batch", "df")
-  check_colname(colnames(df), "sample", "df")
+  cyCombine:::check_colname(colnames(df), "batch", "df")
   if (is.null(markers)){
     # Get markers
     markers <- df %>%
@@ -202,7 +201,7 @@ correct_data <- function(df,
 
   # Add label to df
   if(length(label) == 1){
-    check_colname(colnames(df), label, "df")
+    cyCombine:::check_colname(colnames(df), label, "df")
   }else{
     df$label <- label
     label <- "label"
@@ -211,7 +210,7 @@ correct_data <- function(df,
   # Add covar to df, if given
   if(!is.null(covar)){
     if(length(covar) == 1){
-      check_colname(colnames(df), covar, "df")
+      cyCombine:::check_colname(colnames(df), covar, "df")
       df[[covar]] <- as.factor(df[[covar]])
     } else{
       # Covar was given as a vector
@@ -219,7 +218,7 @@ correct_data <- function(df,
       covar <- "covar"
     }
     # Ensure there is more than 1 factor level
-    if(nlevels(df[[covar]]) == 1) covar <- NULL; num_covar <- 1
+    if(nlevels(df[[covar]]) == 1){covar <- NULL; num_covar <- 1}
   } else {
     # No covar is given
     num_covar <- 1
@@ -228,7 +227,7 @@ correct_data <- function(df,
   # Add anchor to df, if given
   if(!is.null(anchor)){
     if(length(anchor) == 1){
-      check_colname(colnames(df), anchor)
+      cyCombine:::check_colname(colnames(df), anchor)
       df[[anchor]] <- as.factor(df[[anchor]])
     } else{
       # Anchor was given as a vector
@@ -236,7 +235,10 @@ correct_data <- function(df,
       anchor <- "anchor"
     }
     # Ensure there is more than 1 factor level
-    if(nlevels(df[[anchor]]) == 1) anchor <- NULL
+    if(nlevels(df[[anchor]]) == 1) {anchor <- NULL; num_anchor <- 1}
+  } else {
+    # No anchor is given
+    num_anchor <- 1
   }
 
   corrected_data <- df %>%
@@ -245,8 +247,8 @@ correct_data <- function(df,
     dplyr::group_modify(.keep = TRUE, function(df, ...){
       # Detect if only one batch is present in the node
       num_batches <- df$batch %>%
-        unique() %>%
-        length()
+        factor() %>%
+        nlevels()
       lab <- df[[label]][1] # Current label group
       if(num_batches == 1){
         batch <- df$batch[1]
@@ -258,8 +260,8 @@ correct_data <- function(df,
       # Calculate number of covars in the node
       if(!is.null(covar)){
         num_covar <- df[[covar]] %>%
-          unique() %>%
-          length()
+          factor() %>%
+          nlevels()
 
         # If a node is heavily skewed to a single covar, it should be treated as having only 1 covar.
         # Get number of cells in the condition with most cells
@@ -272,19 +274,19 @@ correct_data <- function(df,
         }
       }
       # Do a similar check on anchor
-      if(!is.null(anchor) & num_covar == 1){
-        num_covar <- df[[anchor]] %>%
-          unique() %>%
-          length()
+      if(!is.null(anchor)){
+        num_anchor <- df[[anchor]] %>%
+          factor() %>%
+          nlevels()
 
         # If a node is heavily skewed to a single anchor, it should be treated as having only 1 covar.
         # Get number of cells in the anchor with most cells
-        covar_counts <- df %>%
+        anchor_counts <- df %>%
           dplyr::count(.data[[anchor]]) %>%
           dplyr::pull(n)
 
-        if(sum(covar_counts) < max(covar_counts) + num_covar*5){
-          num_covar <- 1
+        if(sum(anchor_counts) < max(anchor_counts) + num_anchor*5){
+          num_anchor <- 1
         }
       }
 
@@ -293,22 +295,23 @@ correct_data <- function(df,
         dplyr::select(dplyr::all_of(markers)) %>%
         t() %>%
         # The as.character is to remove factor levels not present in the SOM node
-        purrr::when(num_covar > 1 & is.null(anchor) ~
+        purrr::when(num_covar > 1 & num_anchor == 1 ~
                       sva::ComBat(.,
                                   batch = as.character(df$batch),
                                   mod = stats::model.matrix(~ df[[covar]]),
                                   par.prior = parametric),
-                    num_covar > 1 & !is.null(anchor) & !is.null(covar) ~
+                    num_covar > 1 & num_anchor > 1 ~
                       sva::ComBat(.,
                                   batch = as.character(df$batch),
                                   mod = stats::model.matrix(~df[[covar]] + df[[anchor]]),
                                   par.prior = parametric),
-                    num_covar > 1 & !is.null(anchor) & is.null(covar) ~
+                    num_covar == 1 & num_anchor > 1 ~
                       sva::ComBat(.,
                                   batch = as.character(df$batch),
                                   mod = stats::model.matrix(~df[[anchor]]),
                                   par.prior = parametric),
-                    ~ sva::ComBat(.,
+                    num_covar == 1 & num_anchor == 1 ~
+                      sva::ComBat(.,
                                   batch = as.character(df$batch),
                                   par.prior = parametric)
         ) %>%
@@ -335,7 +338,7 @@ correct_data <- function(df,
     }) %>%
     dplyr::ungroup() %>%
     dplyr::arrange(id) %>%
-    dplyr::select(id, everything())
+    dplyr::select(id, dplyr::everything())
   return(corrected_data)
 }
 
@@ -349,7 +352,6 @@ correct_data <- function(df,
 #' @examples
 #' corrected <- uncorrected %>%
 #'   correct_data(mod = stats::model.matrix(~df$covar+df$label))
-#' @export
 correct_data_alt <- function(df,
                              mod,
                              markers = NULL,
@@ -364,7 +366,7 @@ correct_data_alt <- function(df,
 
   corrected_data <- df %>%
       # Compute ComBat correction
-    dplyr::select(all_of(markers)) %>%
+    dplyr::select(dplyr::all_of(markers)) %>%
     t() %>%
     # The as.character is to remove factor levels not present in the SOM node
     sva::ComBat(batch = as.character(df$batch),
@@ -384,7 +386,7 @@ correct_data_alt <- function(df,
                                   x <- ifelse(x > max, max, x)
                                   return(x)
                                 })) %>%
-    dplyr::select(id, everything())
+    dplyr::select(id, dplyr::everything())
   return(corrected_data)
 }
 
@@ -418,13 +420,19 @@ batch_correct <- function(df,
                           norm_method = "scale",
                           ties.method = "average"){
   # A batch column is required
-  check_colname(colnames(df), "batch", "df")
+  cyCombine:::check_colname(colnames(df), "batch", "df")
+  if(any(is.na(df$batch))){ # Check for NAs
+    message("Some batches contain NAs. These will be removed")
+    warning("Some batches contain NAs. These will be removed")
+    df <- df %>%
+      dplyr::filter(!is.na(batch))
+    }
 
   ### Check for confoundedness
   # Add covar to df, if given
   if(!is.null(covar)){
     if(length(covar) == 1 ){
-      check_colname(colnames(df), covar)
+      cyCombine:::check_colname(colnames(df), covar)
       df[[covar]] <- as.factor(df[[covar]])
     } else{
       # Covar was given as a vector
@@ -436,7 +444,7 @@ batch_correct <- function(df,
   # Add anchor to df, if given
   if(!is.null(anchor)){
     if(length(anchor) == 1){
-      check_colname(colnames(df), anchor)
+      cyCombine:::check_colname(colnames(df), anchor)
       df[[anchor]] <- as.factor(df[[anchor]])
     } else{
       # Anchor was given as a vector
@@ -456,31 +464,31 @@ batch_correct <- function(df,
     mod <- stats::model.matrix(~df[[anchor]])
   }
   # Confound check
-  if(!is.null(covar) | !is.null(anchor)) check_confound(df, markers = markers, batch = df$batch, mod = mod)
+  if(!is.null(covar) | !is.null(anchor)) cyCombine:::check_confound(batch = df$batch, mod = mod)
 
 
 
   # Create SOM on scaled data
   if(is.null(label)) {
     label <- df %>%
-      normalize(markers = markers,
-                norm_method = norm_method,
-                ties.method = ties.method) %>%
-      create_som(markers = markers,
-                 rlen = rlen,
-                 seed = seed,
-                 xdim = xdim,
-                 ydim = ydim)
+      cyCombine::normalize(markers = markers,
+                           norm_method = norm_method,
+                           ties.method = ties.method) %>%
+      cyCombine::create_som(markers = markers,
+                            rlen = rlen,
+                            seed = seed,
+                            xdim = xdim,
+                            ydim = ydim)
   }
 
 
   # Run batch correction
   corrected <- df %>%
-    correct_data(label = label,
-                 covar = covar,
-                 anchor = anchor,
-                 markers = markers,
-                 parametric = parametric)
+    cyCombine::correct_data(label = label,
+                            covar = covar,
+                            anchor = anchor,
+                            markers = markers,
+                            parametric = parametric)
   message("Done!")
   return(corrected)
 }

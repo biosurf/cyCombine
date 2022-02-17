@@ -30,9 +30,9 @@ plot_density <- function(uncorrected,
                          format = 1) {
 
   # Check for packages
-  missing_package("ggridges", "CRAN")
-  missing_package("ggplot2", "CRAN")
-  missing_package("cowplot", "CRAN")
+  cyCombine:::missing_package("ggridges", "CRAN")
+  cyCombine:::missing_package("ggplot2", "CRAN")
+  cyCombine:::missing_package("cowplot", "CRAN")
 
   # Get markers
   if (is.null(markers)) {
@@ -76,11 +76,11 @@ plot_density <- function(uncorrected,
     for (c in 1:length(markers)) {
 
       p[[c]] <- df %>%
-        ggplot(aes_string(x = paste0('`', markers[c], '`'), y = 'batch')) +
+        ggplot2::ggplot(ggplot2::aes_string(x = paste0('`', markers[c], '`'), y = 'batch')) +
         ggridges::geom_density_ridges(aes(color = .data$Type, fill = .data$Type), alpha = 0.4) +
-        coord_cartesian(xlim = xlims) +
-        labs(y = y) +
-        theme_bw()
+        ggplot2::coord_cartesian(xlim = xlims) +
+        ggplot2::labs(y = y) +
+        ggplot2::theme_bw()
     }
 
     height_factor <- 1.3
@@ -91,11 +91,11 @@ plot_density <- function(uncorrected,
     for (c in 1:length(markers)) {
 
       p[[c]] <- df %>%
-        ggplot(aes_string(x = paste0('`', markers[c], '`'), y = 'Type')) +
-        ggridges::geom_density_ridges(aes(color = batch, fill = batch), alpha = 0.4) +
-        coord_cartesian(xlim = xlims) +
-        labs(y = y) +
-        theme_bw()
+        ggplot2::ggplot(ggplot2::aes_string(x = paste0('`', markers[c], '`'), y = 'Type')) +
+        ggridges::geom_density_ridges(ggplot2::aes(color = batch, fill = batch), alpha = 0.4) +
+        ggplot2::coord_cartesian(xlim = xlims) +
+        ggplot2::labs(y = y) +
+        ggplot2::theme_bw()
     }
 
     height_factor <- 2
@@ -104,12 +104,12 @@ plot_density <- function(uncorrected,
   # Extract the legend from one of the plots
   legend <- cowplot::get_legend(
     # create some space to the left of the legend
-    p[[1]] + theme(legend.box.margin = margin(0, 0, 0, 12))
+    p[[1]] + ggplot2::theme(legend.box.margin = margin(0, 0, 0, 12))
   )
 
   # Make a shared legend
   for (i in 1:length(p)) {
-    p[[i]] <- p[[i]] + theme(legend.position="none")
+    p[[i]] <- p[[i]] + ggplot2::theme(legend.position="none")
   }
 
   if (!is.null(filename)) {
@@ -145,9 +145,9 @@ plot_dimred <- function(df,
                         return_coord = FALSE) {
 
   # Check for missing packages
-  if(type == "umap") missing_package("uwot", "CRAN")
-  missing_package("ggridges", "CRAN")
-  if(plot != "batch") missing_package("viridis", "CRAN")
+  if(type == "umap") cyCombine:::missing_package("uwot", "CRAN")
+  if(plot != "batch") cyCombine:::missing_package("viridis", "CRAN")
+  cyCombine:::missing_package("ggridges", "CRAN")
 
   if (!(type %in% c('pca', 'umap'))) {
     stop("Error, please use either type = 'pca' or type = 'umap'.")
@@ -201,26 +201,26 @@ plot_dimred <- function(df,
   # Make the plot
   if (plot == "batch") {
     plot <- df %>%
-      ggplot(aes_string(x = colnames(df)[1],
-                        y = colnames(df)[2])) +
-      geom_point(aes_string(color = "Batch"),
-                 alpha = 0.3,
-                 size = 0.4,
-                 shape = 1) +
-      guides(color = guide_legend(override.aes = list(alpha = 1, size = 1))) +
-      theme_bw() + theme(plot.title = element_text(hjust = 0.5)) +
-      ggtitle(paste(toupper(type), "-", name))
+      ggplot2::ggplot(ggplot2::aes_string(x = colnames(df)[1],
+                                          y = colnames(df)[2])) +
+      ggplot2::geom_point(aes_string(color = "Batch"),
+                          alpha = 0.3,
+                          size = 0.4,
+                          shape = 1) +
+      ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(alpha = 1, size = 1))) +
+      ggplot2::theme_bw() + ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5)) +
+      ggplot2::ggtitle(paste(toupper(type), "-", name))
   } else {
     plot <- df %>%
-      ggplot(aes_string(x = colnames(df)[1],
-                        y = colnames(df)[2])) +
-      geom_point(aes_string(color = plot),
-                 alpha = 0.3,
-                 size = 0.4) +
+      ggplot2::ggplot(ggplot2::aes_string(x = colnames(df)[1],
+                                          y = colnames(df)[2])) +
+      ggplot2::geom_point(ggplot2::aes_string(color = plot),
+                          alpha = 0.3,
+                          size = 0.4) +
       #guides(colour = guide_legend(override.aes = list(alpha = 1, size = 1))) +
-      theme_bw() + theme(plot.title = element_text(hjust = 0.5)) +
-      ggtitle(paste(toupper(type), "-", name)) +
-      scale_color_viridis_c()
+      ggplot2::theme_bw() + ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5)) +
+      ggplot2::ggtitle(paste(toupper(type), "-", name)) +
+      ggplot2::scale_color_viridis_c()
   }
 
 
@@ -251,14 +251,17 @@ plot_dimred_full <- function(df,
                              seed = 473,
                              out_dir = NULL) {
 
-  if(type == "umap") missing_package("uwot", "CRAN")
-  missing_package("ggridges", "CRAN")
-  missing_package("grDevices", "CRAN")
-  missing_package("RColorBrewer", "CRAN")
+  if(type == "umap") cyCombine:::missing_package("uwot", "CRAN")
+  cyCombine:::missing_package("ggridges", "CRAN")
+  cyCombine:::missing_package("grDevices", "CRAN")
+  cyCombine:::missing_package("RColorBrewer", "CRAN")
 
   # Check out dir
   if (is.null(out_dir)) {
     stop('Error! Please speicify output directory.')
+  } else{
+    # Create output directory if missing
+    cyCombine:::check_make_dir(out_dir)
   }
 
   if(is.null(markers)){
@@ -293,45 +296,45 @@ plot_dimred_full <- function(df,
 
   # Make the plots
   batch_plot <- df %>%
-    ggplot(aes_string(x = colnames(df)[1],
-                      y = colnames(df)[2])) +
-    geom_point(aes_string(color = "Batch"),
-               alpha = 0.3,
-               size = 0.4,
-               shape = 1) +
-    guides(color = guide_legend(override.aes = list(alpha = 1, size = 1))) +
-    theme_bw() + theme(plot.title = element_text(hjust = 0.5)) +
-    ggtitle(paste(toupper(type), "-", name))
+    ggplot2::ggplot(ggplot2::aes_string(x = colnames(df)[1],
+                                        y = colnames(df)[2])) +
+    ggplot2::geom_point(ggplot2::aes_string(color = "Batch"),
+                        alpha = 0.3,
+                        size = 0.4,
+                        shape = 1) +
+    ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(alpha = 1, size = 1))) +
+    ggplot2::theme_bw() + ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5)) +
+    ggplot2::ggtitle(paste(toupper(type), "-", name))
 
   label_plot <- df %>%
-    ggplot(aes_string(x = colnames(df)[1],
-                      y = colnames(df)[2])) +
-    geom_point(aes_string(color = "Label"),
-               alpha = 0.3,
-               size = 0.4,
-               shape = 1) +
-    guides(color = guide_legend(override.aes = list(alpha = 1, size = 1))) +
-    theme_bw() + theme(plot.title = element_text(hjust = 0.5)) +
-    ggtitle(paste(toupper(type), "-", name))
+    ggplot2::ggplot(ggplot2::aes_string(x = colnames(df)[1],
+                                        y = colnames(df)[2])) +
+    ggplot2::geom_point(ggplot2::aes_string(color = "Label"),
+                        alpha = 0.3,
+                        size = 0.4,
+                        shape = 1) +
+    ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(alpha = 1, size = 1))) +
+    ggplot2::theme_bw() + ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5)) +
+    ggplot2::ggtitle(paste(toupper(type), "-", name))
 
   # Saving plots
   cyCombine::plot_save_two(batch_plot, label_plot, paste0(out_dir, '/UMAP_batches_labels.png'))
 
   # Marker plots
-  cyCombine::check_make_dir(paste0(out_dir, '/UMAP_markers'))
+  cyCombine:::check_make_dir(paste0(out_dir, '/UMAP_markers'))
 
   marker_plots <- list()
   for (m in markers) {
-    p <- ggplot(df, aes_string(x = colnames(df)[1],
-                               y = colnames(df)[2])) +
-      geom_point(aes_string(color = m),
-                 alpha = 0.3,
-                 size = 0.4) +
-      scale_color_gradientn(m, colors = grDevices::colorRampPalette(rev(RColorBrewer::brewer.pal(n = 11, name = "Spectral")))(50)) +
-      theme_bw() + theme(plot.title = element_text(hjust = 0.5)) +
-      ggtitle(paste(toupper(type), "-", name))
+    p <- ggplot2::ggplot(df, ggplot2::aes_string(x = colnames(df)[1],
+                                                 y = colnames(df)[2])) +
+      ggplot2::geom_point(ggplot2::aes_string(color = m),
+                          alpha = 0.3,
+                          size = 0.4) +
+      ggplot2::scale_color_gradientn(m, colors = grDevices::colorRampPalette(rev(RColorBrewer::brewer.pal(n = 11, name = "Spectral")))(50)) +
+      ggplot2::theme_bw() + ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5)) +
+      ggplot2::ggtitle(paste(toupper(type), "-", name))
 
-    suppressMessages(ggsave(p, filename = paste0(out_dir, '/UMAP_markers/UMAP_batches_labels', m, '.png')))
+    suppressMessages(ggplot2::ggsave(p, filename = paste0(out_dir, '/UMAP_markers/UMAP_batches_labels', m, '.png')))
   }
 
 }
@@ -348,9 +351,9 @@ plot_umap_labels <- function(uncorrected,
                              seed = 473) {
 
 
-  missing_package("uwot", "CRAN")
-  missing_package("ggridges", "CRAN")
-  missing_package("cowplot", "CRAN")
+  cyCombine:::missing_package("uwot", "CRAN")
+  cyCombine:::missing_package("ggridges", "CRAN")
+  cyCombine:::missing_package("cowplot", "CRAN")
 
 
   # Check if two-batch data and extract batch names
@@ -406,16 +409,16 @@ plot_umap_labels <- function(uncorrected,
     # Make the plot
     if (nplots == 1) {
       plot <- df %>%
-        ggplot(aes_string(x = colnames(df)[1],
-                          y = colnames(df)[2])) +
-        geom_point(aes_string(color = plot),
-                   alpha = 0.3,
-                   size = 0.4,
-                   shape = 1) +
-        labs(plot) +
-        guides(color = guide_legend(override.aes = list(alpha = 1, size = 1))) +
-        theme_bw() + theme(plot.title = element_text(hjust = 0.5)) +
-        ggtitle(paste("UMAP -", name))
+        ggplot2::ggplot(ggplot2::aes_string(x = colnames(df)[1],
+                                            y = colnames(df)[2])) +
+        ggplot2::geom_point(ggplot2::aes_string(color = plot),
+                            alpha = 0.3,
+                            size = 0.4,
+                            shape = 1) +
+        ggplot2::labs(plot) +
+        ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(alpha = 1, size = 1))) +
+        ggplot2::theme_bw() + ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5)) +
+        ggplot2::ggtitle(paste("UMAP -", name))
 
       plots[[plot_count]] <- plot
       plot_count <- plot_count + 1
@@ -424,33 +427,33 @@ plot_umap_labels <- function(uncorrected,
 
       # Together plot
       plot <- df %>%
-        ggplot(aes_string(x = colnames(df)[1],
-                          y = colnames(df)[2])) +
-        geom_point(aes_string(color = plot),
-                   alpha = 0.3,
-                   size = 0.4,
-                   shape = 1) +
-        guides(color = guide_legend(override.aes = list(alpha = 1, size = 1))) +
-        labs(plot) +
-        theme_bw() + theme(plot.title = element_text(hjust = 0.5)) +
-        ggtitle(paste("UMAP -", name))
+        ggplot2::ggplot(ggplot2::aes_string(x = colnames(df)[1],
+                                            y = colnames(df)[2])) +
+        ggplot2::geom_point(ggplot2::aes_string(color = plot),
+                            alpha = 0.3,
+                            size = 0.4,
+                            shape = 1) +
+        ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(alpha = 1, size = 1))) +
+        ggplot2::labs(plot) +
+        ggplot2::theme_bw() + ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5)) +
+        ggplot2::ggtitle(paste("UMAP -", name))
 
       plots[[plot_count]] <- plot
       plot_count <- plot_count + 1
 
       # Faceted plots
       plot <- df %>%
-        ggplot(aes_string(x = colnames(df)[1],
-                          y = colnames(df)[2])) +
-        facet_wrap(~Batch) +
-        geom_point(aes_string(color = Label),
-                   alpha = 0.3,
-                   size = 0.4,
-                   shape = 1) +
-        guides(color = guide_legend(override.aes = list(alpha = 1, size = 1))) +
-        labs(colour = 'Label') +
-        theme_bw() + theme(plot.title = element_text(hjust = 0.5)) +
-        ggtitle(paste("UMAP -", name))
+        ggplot2::ggplot(ggplot2::aes_string(x = colnames(df)[1],
+                                            y = colnames(df)[2])) +
+        ggplot2::facet_wrap(~Batch) +
+        ggplot2::geom_point(ggplot2::aes_string(color = Label),
+                            alpha = 0.3,
+                            size = 0.4,
+                            shape = 1) +
+        ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(alpha = 1, size = 1))) +
+        ggplot2::labs(colour = 'Label') +
+        ggplot2::theme_bw() + ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5)) +
+        ggplot2::ggtitle(paste("UMAP -", name))
 
       plots2[[plot_count2]] <- plot
       plot_count2 = plot_count2 + 1
@@ -483,7 +486,7 @@ plot_umap_labels <- function(uncorrected,
 #' @family plot
 #' @export
 plot_save_two <- function(plot1, plot2, filename) {
-  missing_package("cowplot", "CRAN")
+  cyCombine:::missing_package("cowplot", "CRAN")
 
   plot <- cowplot::plot_grid(plot1, plot2, align = "v", scale = 0.9)
   cowplot::save_plot(filename = filename, plot, base_width = 12, base_height = 6)
@@ -499,7 +502,7 @@ plot_save_two <- function(plot1, plot2, filename) {
 #' @family plot
 #' @export
 plot_save_four <- function(plot1, plot2, plot3, plot4, filename) {
-  missing_package("cowplot", "CRAN")
+  cyCombine:::missing_package("cowplot", "CRAN")
 
   plot <- cowplot::plot_grid(plot1, plot2, plot3, plot4, align = "v", scale = 0.9, nrow = 2)
   cowplot::save_plot(filename = filename, plot, base_width = 12, base_height = 12)
