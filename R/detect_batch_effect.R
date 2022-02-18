@@ -40,6 +40,7 @@ detect_batch_effect_express <- function(df,
   if (batch_col != 'batch') {
     df$batch <- df[, batch_col]
   }
+  df$batch <- as.factor(df$batch)
 
   # This works without clustering the data, so we set all labels to 1
   df$label <- 1
@@ -234,6 +235,7 @@ detect_batch_effect <- function(df,
   if (batch_col != 'batch') {
     df$batch <- df[, batch_col]
   }
+  df$batch <- as.factor(df$batch)
 
   # Check out dir
   if (is.null(out_dir)) {
