@@ -31,6 +31,10 @@ detect_batch_effect_express <- function(df,
                                         seed = 472) {
 
   cyCombine:::missing_package("Matrix")
+  cyCombine:::missing_package("ggridges", "CRAN")
+  cyCombine:::missing_package("ggplot2", "CRAN")
+  cyCombine:::missing_package("cowplot", "CRAN")
+
   message('Starting the quick(er) detection of batch effects.')
   # Create output directory if missing
   cyCombine:::check_make_dir(out_dir)
@@ -129,7 +133,7 @@ detect_batch_effect_express <- function(df,
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, vjust = 0.5, hjust=1)) +
     ggplot2::ylab('Mean EMD') + ggplot2::xlab('') +
     ggplot2::geom_errorbar(ggplot2::aes(ymin=mean-sd, ymax=mean+sd), width=.2,
-                           position=position_dodge(.9))
+                           position=ggplot2::position_dodge(.9))
   suppressMessages(ggplot2::ggsave(p, filename = paste0(out_dir, '/emd_per_marker.png')))
 
   message(paste0('Saved EMD plot here: ', out_dir, '/emd_per_marker.png.\n'))
@@ -144,7 +148,7 @@ detect_batch_effect_express <- function(df,
   for (m in emd_markers$marker[emd_markers$mean > median(emd_markers$mean)]) {
     if (any(batch_means[[m]] > (quantile(batch_means[[m]], 0.75) + stats::IQR(batch_means[[m]])*3))) {
       outliers <- which(batch_means[[m]] > (quantile(batch_means[[m]], 0.75) + stats::IQR(batch_means[[m]])*3))
-      message(paste0(m, ' has clear outlier batch(es): ', paste0(names(outliers))))
+      message(paste0(m, ' has clear outlier batch(es): ', paste(names(outliers), collapse = ', ')))
 
       summary_non <- df %>% dplyr::filter(!(batch %in% names(outliers))) %>% dplyr::pull(m) %>% summary()
       summary_out <- df %>% dplyr::filter(batch %in% names(outliers)) %>% dplyr::pull(m) %>% summary()
@@ -171,14 +175,14 @@ detect_batch_effect_express <- function(df,
     dplyr::group_by(sample) %>%
     dplyr::summarise_at(cyCombine::get_markers(df), median)
 
-  dist_mat <- as.matrix(stat::dist(median_expr[, all_markers]))   # Euclidean distance
+  dist_mat <- as.matrix(stats::dist(median_expr[, all_markers]))   # Euclidean distance
   rownames(dist_mat) <- colnames(dist_mat) <- median_expr$sample
 
   mds <- as.data.frame(stats::cmdscale(dist_mat, k = 2))
   mds$sample <- as.factor(rownames(mds))
   mds$batch <- as.factor(df$batch[match(mds$sample, df$sample)])
 
-  p <- ggplot2::ggplot(mds, aes(V1, V2)) +
+  p <- ggplot2::ggplot(mds, ggplot2::aes(V1, V2)) +
     ggplot2::geom_point(ggplot2::aes(colour = batch), size = 2) +
     ggplot2::labs(x = "MDS1", y = "MDS2", title = "MDS plot") +
     ggplot2::theme_bw()
@@ -226,7 +230,11 @@ detect_batch_effect <- function(df,
                                 label_col = "label",
                                 name = 'raw data') {
 
-  missing_package("outliers")
+  cyCombine:::missing_package("outliers")
+  cyCombine:::missing_package("Matrix")
+  cyCombine:::missing_package("ggplot2", "CRAN")
+  cyCombine:::missing_package("cowplot", "CRAN")
+
   # Create output directory if missing
   cyCombine:::check_make_dir(out_dir)
 
@@ -274,7 +282,7 @@ detect_batch_effect <- function(df,
 
   } else {
     message('Using existig cell type labels.')
-    df$label <- df[, label_col]
+    df$label <- df[[label_col]]
 
   }
 
@@ -294,16 +302,12 @@ detect_batch_effect <- function(df,
     marker_emd <- do.call(rbind, marker_emd)
     marker_emd <- Matrix::colMeans(as.matrix(marker_emd), na.rm = T)
 
-    # print(m)
-    # print(marker_emd)
     markers_emd[[m]] <- marker_emd
   }
 
   marker_emd <- which(stats::p.adjust(sapply(markers_emd, function(x) {outliers::dixon.test(x, opposite=F)$p.value}), method = 'BH') < 0.05 | p.adjust(sapply(markers_emd,  function(x) {outliers::dixon.test(x, opposite=T)$p.value}), method = 'BH') < 0.05)
   message(paste0('\nThere are ', length(marker_emd), ' markers that appear to be outliers in a single batch:'))
   message(paste(markers[marker_emd], collapse = ', '))
-
-  ### Let us think about how we should process this
 
 
   # Look for cluster over- and under-representation
@@ -321,7 +325,8 @@ detect_batch_effect <- function(df,
 
     exp_markers <- df %>%
       dplyr::filter(label == cl) %>%
-      dplyr::summarise_at(cyCombine::get_markers(df), median) %>%
+      dplyr::summarise(across(cyCombine::get_markers(df), median)) %>%
+      unlist() %>%
       sort(decreasing = T)
 
     message(paste0('The cluster expresses ', paste(names(exp_markers[which(exp_markers > 1)]), collapse = ', ')), '.')
