@@ -31,6 +31,8 @@ compute_emd <- function(df,
   # Define cell columns as characters to avoid problems with factors
   df[[cell_col]] <- df[[cell_col]] %>%
     as.character()
+  df[[batch_col]] <- df[[batch_col]] %>%
+    as.character()
 
   # Get markers if not given
   if(is.null(markers)){
@@ -143,11 +145,6 @@ evaluate_emd <- function(uncorrected,
   cyCombine:::check_colname(colnames(corrected), 'id', "corrected set")
   cyCombine:::check_colname(colnames(uncorrected), 'id', "uncorrected set")
 
-  # Define cell columns as characters to avoid problems with factors
-  corrected[[cell_col]] <- corrected[[cell_col]] %>%
-    as.character()
-  uncorrected[[cell_col]] <- uncorrected[[cell_col]] %>%
-    as.character()
 
   message("Computing EMD for corrected data..")
   emd_corrected <- corrected %>%

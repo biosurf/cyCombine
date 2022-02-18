@@ -338,7 +338,8 @@ correct_data <- function(df,
     }) %>%
     dplyr::ungroup() %>%
     dplyr::arrange(id) %>%
-    dplyr::select(id, dplyr::everything())
+    dplyr::select(id, dplyr::everything()) %>%
+    dplyr::mutate(batch = as.factor(batch))
   return(corrected_data)
 }
 
