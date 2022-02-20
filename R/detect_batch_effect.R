@@ -46,6 +46,12 @@ detect_batch_effect_express <- function(df,
   }
   df$batch <- as.factor(df$batch)
 
+  # Check multiple batches
+  if (length(levels(df$batch)) < 2) {
+    stop('Error! Please provide a datasets with more than one batch.')
+  }
+
+
   # This works without clustering the data, so we set all labels to 1
   df$label <- 1
 
@@ -201,6 +207,7 @@ detect_batch_effect_express <- function(df,
 #'   The function applies a SOM-based clustering to a dataset in order to compare not only marker expression differences across batches,
 #'   but also the cluster percentages in each batch to detect possible populations that are over-/under-represented in a single batch.
 #'   This is coupled with UMAP plots to assist the interpretation of the results.
+#'   However, this is primarily meaningful for sets with 3-30 batches - in cases outside this range, only the UMAPs will be generated.
 #'
 #' @param df Tibble containing the expression data and batch information. See prepare_data.
 #' @param downsample Number of cells to include in detection. If not specified all cells will be used. One should be careful with the downsampling here as too strong downsampling leads to spurious results.
@@ -245,6 +252,11 @@ detect_batch_effect <- function(df,
   }
   df$batch <- as.factor(df$batch)
 
+  # Check multiple batches
+  if (length(levels(df$batch)) < 2) {
+    stop('Error! Please provide a datasets with more than one batch.')
+  }
+
   # Check out dir
   if (is.null(out_dir)) {
     stop('Error! Please speicify output directory.')
@@ -286,52 +298,54 @@ detect_batch_effect <- function(df,
 
   }
 
-  # Perform EMD calculations - this is probably very useful - but we need to filter carefully
-  emd <- df %>%
-    dplyr::mutate(label = as.character(label)) %>%
-    cyCombine::compute_emd()
+  # Perform EMD and cluster percentage calculations - and filter to get outliers (only for sets with 3-30 batches)
+  if (length(levels(df$batch)) >= 3 & length(levels(df$batch)) <= 30) {
+    emd <- df %>%
+      dplyr::mutate(label = as.character(label)) %>%
+      cyCombine::compute_emd()
 
-  markers_emd <- list()
-  # Looking through EMDs to find culprits - using loops
-  for (m in markers) {
+    markers_emd <- list()
+    # Looking through EMDs to find culprits - using loops
+    for (m in markers) {
 
-    # Calculation of the mean per batch across all clusters for each marker
-    marker_emd <- lapply(emd, function(x) {x[[m]]})
-    marker_emd <- lapply(marker_emd, function(x) {Matrix::forceSymmetric(x, uplo='U')})
+      # Calculation of the mean per batch across all clusters for each marker
+      marker_emd <- lapply(emd, function(x) {x[[m]]})
+      marker_emd <- lapply(marker_emd, function(x) {Matrix::forceSymmetric(x, uplo='U')})
 
-    marker_emd <- do.call(rbind, marker_emd)
-    marker_emd <- Matrix::colMeans(as.matrix(marker_emd), na.rm = T)
+      marker_emd <- do.call(rbind, marker_emd)
+      marker_emd <- Matrix::colMeans(as.matrix(marker_emd), na.rm = T)
 
-    markers_emd[[m]] <- marker_emd
+      markers_emd[[m]] <- marker_emd
+    }
+
+    marker_emd <- which(stats::p.adjust(sapply(markers_emd, function(x) {outliers::dixon.test(x, opposite=F)$p.value}), method = 'BH') < 0.05 | p.adjust(sapply(markers_emd,  function(x) {outliers::dixon.test(x, opposite=T)$p.value}), method = 'BH') < 0.05)
+    message(paste0('\nThere are ', length(marker_emd), ' markers that appear to be outliers in a single batch:'))
+    message(paste(markers[marker_emd], collapse = ', '))
+
+    # Look for cluster over- and under-representation
+    counts <- table(df$batch, df$label)
+    perc <- (counts / Matrix::rowSums(counts))*100
+
+    # use the Dixon test to look for outliers (test whether a single low or high value is an outlier)
+    out_cl <- which(stats::p.adjust(apply(perc, 2, function(x) {outliers::dixon.test(x, opposite=F)$p.value}), method = 'BH') < 0.05 | p.adjust(apply(perc, 2, function(x) {outliers::dixon.test(x, opposite=T)$p.value}), method = 'BH') < 0.05)
+
+    message(paste0('\nThere are ', length(out_cl), ' clusters, in which a single cluster is strongly over- or underrepresented.'))
+
+    for (cl in out_cl) {
+      message(paste0('The cluster percentages for each batch in cluster ', cl, ' are:'))
+      message(paste(names(perc[,cl]), '=', round(perc[,cl], 2), '%', collapse = ', '))
+
+      exp_markers <- df %>%
+        dplyr::filter(label == cl) %>%
+        dplyr::summarise(across(cyCombine::get_markers(df), median)) %>%
+        unlist() %>%
+        sort(decreasing = T)
+
+      message(paste0('The cluster expresses ', paste(names(exp_markers[which(exp_markers > 1)]), collapse = ', ')), '.')
+      cat('\n')
+    }
   }
 
-  marker_emd <- which(stats::p.adjust(sapply(markers_emd, function(x) {outliers::dixon.test(x, opposite=F)$p.value}), method = 'BH') < 0.05 | p.adjust(sapply(markers_emd,  function(x) {outliers::dixon.test(x, opposite=T)$p.value}), method = 'BH') < 0.05)
-  message(paste0('\nThere are ', length(marker_emd), ' markers that appear to be outliers in a single batch:'))
-  message(paste(markers[marker_emd], collapse = ', '))
-
-
-  # Look for cluster over- and under-representation
-  counts <- table(df$batch, df$label)
-  perc <- (counts / Matrix::rowSums(counts))*100
-
-  # use the Dixon test to look for outliers (test whether a single low or high value is an outlier)
-  out_cl <- which(stats::p.adjust(apply(perc, 2, function(x) {outliers::dixon.test(x, opposite=F)$p.value}), method = 'BH') < 0.05 | p.adjust(apply(perc, 2, function(x) {outliers::dixon.test(x, opposite=T)$p.value}), method = 'BH') < 0.05)
-
-  message(paste0('\nThere are ', length(out_cl), ' clusters, in which a single cluster is strongly over- or underrepresented.'))
-
-  for (cl in out_cl) {
-    message(paste0('The cluster percentages for each batch in cluster ', cl, ' are:'))
-    message(paste(names(perc[,cl]), '=', round(perc[,cl], 2), '%', collapse = ', '))
-
-    exp_markers <- df %>%
-      dplyr::filter(label == cl) %>%
-      dplyr::summarise(across(cyCombine::get_markers(df), median)) %>%
-      unlist() %>%
-      sort(decreasing = T)
-
-    message(paste0('The cluster expresses ', paste(names(exp_markers[which(exp_markers > 1)]), collapse = ', ')), '.')
-    cat('\n')
-  }
 
   # Making a set of UMAP plots to help the diagnostics
   message('Making UMAP plots for up to 50,000 cells.')
@@ -355,3 +369,4 @@ detect_batch_effect <- function(df,
 
   message('Done!')
 }
+
