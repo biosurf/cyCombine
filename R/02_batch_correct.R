@@ -173,7 +173,7 @@ create_som <- function(df,
 #' @param label The cluster or cell type label. Either as a column name or vector.
 #' @param covar The covariate ComBat should use. Can be a vector or a column name in the input tibble.
 #'   If NULL, no covar will be used
-#' @param anchor Optional: A column or vector specifying which samples are replicates and which are not. If specified, this column will be used as a covariate in ComBat. Be aware that it may be confounded with the condition.
+#' @param anchor Experimental: A column or vector specifying which samples are replicates and which are not. If specified, this column will be used as a covariate in ComBat. Be aware that it may be confounded with the condition.
 #' @param parametric Default: TRUE. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used.
 #' @inheritParams normalize
 #' @family batch
@@ -218,10 +218,7 @@ correct_data <- function(df,
       covar <- "covar"
     }
     # Ensure there is more than 1 factor level
-    if(nlevels(df[[covar]]) == 1){covar <- NULL; num_covar <- 1}
-  } else {
-    # No covar is given
-    num_covar <- 1
+    if(nlevels(df[[covar]]) == 1) covar <- NULL
   }
 
   # Add anchor to df, if given
@@ -235,16 +232,16 @@ correct_data <- function(df,
       anchor <- "anchor"
     }
     # Ensure there is more than 1 factor level
-    if(nlevels(df[[anchor]]) == 1) {anchor <- NULL; num_anchor <- 1}
-  } else {
-    # No anchor is given
-    num_anchor <- 1
+    if(nlevels(df[[anchor]]) == 1) anchor <- NULL
   }
 
   corrected_data <- df %>%
     dplyr::group_by(.data[[label]]) %>%
     # Correct (modify) each label group with ComBat
     dplyr::group_modify(.keep = TRUE, function(df, ...){
+      # Initiate anchor and covar counter
+      num_covar <- 1
+      num_anchor <- 1
       # Detect if only one batch is present in the node
       num_batches <- df$batch %>%
         factor() %>%
@@ -259,37 +256,55 @@ correct_data <- function(df,
       message(paste("Correcting Label group", lab))
       # Calculate number of covars in the node
       if(!is.null(covar)){
-        num_covar <- df[[covar]] %>%
-          factor() %>%
-          nlevels()
 
-        # If a node is heavily skewed to a single covar, it should be treated as having only 1 covar.
-        # Get number of cells in the condition with most cells
-        covar_counts <- df %>%
-          dplyr::count(.data[[covar]]) %>%
-          dplyr::pull(n)
+        # Only use covar, if it does not confound with batch
+        if(!cyCombine:::check_confound(df$batch, stats::model.matrix(~df[[covar]]))){
+          num_covar <- df[[covar]] %>%
+            factor() %>%
+            nlevels()
 
-        if(sum(covar_counts) < max(covar_counts) + num_covar*5){
-          num_covar <- 1
+          # If a node is heavily skewed to a single covar, it should be treated as having only 1 covar.
+          # Get number of cells in the condition with most cells
+          covar_counts <- df %>%
+            dplyr::count(.data[[covar]]) %>%
+            dplyr::pull(n)
+
+          if(sum(covar_counts) < max(covar_counts) + num_covar*5){
+            message("The label group almost exclusively consists of cells from a single covar. Therefore, covar is ignored for this label group")
+            num_covar <- 1
+          }
+        } else{
+          message("Covar is confounded with batch. Ignoring covar in this label group")
         }
       }
       # Do a similar check on anchor
       if(!is.null(anchor)){
-        num_anchor <- df[[anchor]] %>%
-          factor() %>%
-          nlevels()
+        if(!cyCombine:::check_confound(df$batch, stats::model.matrix(~df[[anchor]]))){
+          num_anchor <- df[[anchor]] %>%
+            factor() %>%
+            nlevels()
 
-        # If a node is heavily skewed to a single anchor, it should be treated as having only 1 covar.
-        # Get number of cells in the anchor with most cells
-        anchor_counts <- df %>%
-          dplyr::count(.data[[anchor]]) %>%
-          dplyr::pull(n)
+          # If a node is heavily skewed to a single anchor, it should be treated as having only 1 covar.
+          # Get number of cells in the anchor with most cells
+          anchor_counts <- df %>%
+            dplyr::count(.data[[anchor]]) %>%
+            dplyr::pull(n)
 
-        if(sum(anchor_counts) < max(anchor_counts) + num_anchor*5){
-          num_anchor <- 1
+          if(sum(anchor_counts) < max(anchor_counts) + num_anchor*5){
+            message("The label group almost exclusively consists of cells from a single anchor group. Therefore, anchor is ignored for this label group")
+            num_anchor <- 1
+          }
+        } else{
+          message("Anchor is confounded with batch. Ignoring anchor in this label group")
         }
       }
-
+      if(num_covar > 1 & num_anchor > 1){
+        # If neither covar nor anchor confounds with batch but they do each other, prioritise covar
+        if(cyCombine:::check_confound(df$batch, stats::model.matrix(~df[[covar]] + df[[anchor]]))){
+          num_anchor <- 1
+          message("Anchor and covar are confounded. Ignoring anchor in this label group")
+        }
+      }
       # Compute ComBat correction
       ComBat_output <- df %>%
         dplyr::select(dplyr::all_of(markers)) %>%
@@ -428,46 +443,6 @@ batch_correct <- function(df,
     df <- df %>%
       dplyr::filter(!is.na(batch))
     }
-
-  ### Check for confoundedness
-  # Add covar to df, if given
-  if(!is.null(covar)){
-    if(length(covar) == 1 ){
-      cyCombine:::check_colname(colnames(df), covar)
-      df[[covar]] <- as.factor(df[[covar]])
-    } else{
-      # Covar was given as a vector
-      df$covar <- as.factor(covar)
-      covar <- "covar"
-    }
-    if(nlevels(df[[covar]]) == 1) covar <- NULL
-  }
-  # Add anchor to df, if given
-  if(!is.null(anchor)){
-    if(length(anchor) == 1){
-      cyCombine:::check_colname(colnames(df), anchor)
-      df[[anchor]] <- as.factor(df[[anchor]])
-    } else{
-      # Anchor was given as a vector
-      df$anchor <- as.factor(anchor)
-      anchor <- "anchor"
-    }
-    if(nlevels(df[[anchor]]) == 1) anchor <- NULL
-  }
-  # Check if covariates confound with batch or each other
-  if(!is.null(covar)){
-    if(!is.null(anchor)){
-      mod <- stats::model.matrix(~df[[covar]] + df[[anchor]])
-    } else{
-      mod <- stats::model.matrix(~df[[covar]])
-    }
-  } else if(!is.null(anchor)){
-    mod <- stats::model.matrix(~df[[anchor]])
-  }
-  # Confound check
-  if(!is.null(covar) | !is.null(anchor)) cyCombine:::check_confound(batch = df$batch, mod = mod)
-
-
 
   # Create SOM on scaled data
   if(is.null(label)) {

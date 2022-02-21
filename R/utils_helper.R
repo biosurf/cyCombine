@@ -127,15 +127,19 @@ check_confound <- function(batch, mod = NULL) {
   if(qr(design)$rank < ncol(design)) {
     ## if(ncol(design)<=(n.batch)){stop("Batch variables are redundant! Remove one or more of the batch variables so they are no longer confounded")}
     if(ncol(design)==(n.batch+1)) {
-      stop("The covariate is confounded with batch! Remove the covariate")
+      # message("The covariate is confounded with batch!") # Remove the covariate")
+      return(TRUE)
     }
     if(ncol(design)>(n.batch+1)) {
       if((qr(design[,-c(1:n.batch)])$rank<ncol(design[,-c(1:n.batch)]))){
-        stop('The covariates are confounded! Please remove one or more of the covariates so the design is not confounded')
+        # message("The covariates are confounded!") # Please remove one or more of the covariates so the design is not confounded")
+        return(TRUE)
       } else {
-        stop("At least one covariate is confounded with batch! Please remove confounded covariates")
+        # message("At least one covariate is confounded with batch!") # Please remove confounded covariates")
+        return(TRUE)
       }
     }
   }
+  return(FALSE)
 }
 
