@@ -167,7 +167,7 @@ convert_flowset <- function(flowset,
 
     # Get sample ids
     if (is.null(sample_ids)){
-      sample_ids <- metadata[[filename_col]] %>%
+      sample_ids <- files %>%
         stringr::str_remove(".fcs") %>%
         rep(nrows)
     } else if (length(sample_ids) == 1){
