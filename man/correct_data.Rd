@@ -21,7 +21,7 @@ correct_data(
 \item{covar}{The covariate ComBat should use. Can be a vector or a column name in the input tibble.
 If NULL, no covar will be used}
 
-\item{anchor}{Optional: A column or vector specifying which samples are replicates and which are not. If specified, this column will be used as a covariate in ComBat. Be aware that it may be confounded with the condition.}
+\item{anchor}{Experimental: A column or vector specifying which samples are replicates and which are not. If specified, this column will be used as a covariate in ComBat. Be aware that it may be confounded with the condition.}
 
 \item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 
