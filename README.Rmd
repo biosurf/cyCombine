@@ -38,7 +38,7 @@ knitr::opts_chunk$set(
 <!-- renv::restore() -->
 <!-- ``` -->
 
-## Install from github
+## Install from GitHub
 
 ``` {r, eval = FALSE}
 # To ensure Rstudio looks up BioConductor packages run:
@@ -46,6 +46,9 @@ setRepositories(ind = c(1:6, 8))
 # Then install package with
 devtools::install_github("biosurf/cyCombine")
 ```
+
+## Article
+The article introducing cyCombine is published in [Nature Communications](https://doi.org/10.1038/s41467-022-29383-5).
 
 ## Vignettes
 Vignettes are available at [biosurf](https://biosurf.org/cyCombine).
@@ -60,6 +63,9 @@ There is a total of eight vignettes, which cover a range of different topics:
 6. An [example vignette](https://biosurf.org/cyCombine_CyTOF_2panels.html) covering how to process a 2-panel mass cytometry (CyTOF) dataset.
 7. A [vignette](https://biosurf.org/cyCombine_Spectralflow_CyTOF.html) showing an example with integration of datasets from spectral flow cytometry (SFC) and mass cytometry (CyTOF).
 8. A [vignette](https://biosurf.org/cyCombine_CITEseq_Spectral_CyTOF.html) covering an example with integration of datasets from spectral flow cytometry (SFC), CITE-seq, and mass cytometry (CyTOF).
+
+If you have any issues or questions regarding the use of cyCombine, please do not hesitate to raise an issue on GitHub. In this way, others may also benefit from the answers and discussions.
+
 
 ## Usage
 
