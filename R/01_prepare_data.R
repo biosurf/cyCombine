@@ -6,17 +6,14 @@
 #' A simple function to compile a directory of FCS files into a flowSet object using flowCore::read.flowSet().
 #'  Use the pattern argument to select only a subset of FCS files.
 #'
-#' @importFrom readxl read_xlsx
-#' @importFrom readr read_csv
-#' @import dplyr
-#' @importFrom magrittr %>%
-#' @importFrom flowCore read.flowSet fsApply
 #' @param data_dir Directory containing the .fcs files
 #' @param pattern The pattern to use to find the files in the folder
 #' @inheritParams flowCore::read.FCS
 #' @family dataprep
 #' @examples
+#' \dontrun{
 #' fcs <- compile_fcs(data_dir = "_data/raw", pattern = "\\.fcs")
+#' }
 #' @export
 compile_fcs <- function(data_dir,
                         pattern = "\\.fcs",
@@ -63,12 +60,6 @@ compile_fcs <- function(data_dir,
 #'  \code{stringr::str_remove_all("^\\d+\[A-Za-z\]+_") %>% stringr::str_remove_all("\[ _-\]")}.
 #'
 #'
-#' @importFrom tibble as_tibble
-#' @importFrom stringr str_remove
-#' @importFrom purrr when
-#' @importFrom stringr str_remove_all
-#' @importFrom Biobase exprs pData
-#' @importFrom flowCore parameters
 #'
 #' @param flowset The flowset to convert
 #' @param metadata Optional: Can be either a filename or data.frame of the metadata file. Please give the full path from working directory to metadata file
@@ -86,12 +77,14 @@ compile_fcs <- function(data_dir,
 #' @param panel_antigen Optional: Only used if panel is given. It is the column name in the panel data.frame that contains the antigen names
 #' @family dataprep
 #' @examples
+#' \dontrun{
 #' df <- convert_flowset(flowset = flowset,
 #'  metadata = file.path(data_dir, "metadata.csv"),
 #'  filename_col = "FCS_files",
 #'  sample_ids = "sample_id",
 #'  batch_ids = "batch_ids",
 #'  down_sample = FALSE)
+#'  }
 #' @export
 convert_flowset <- function(flowset,
                             metadata = NULL,
@@ -146,7 +139,7 @@ convert_flowset <- function(flowset,
 
 
     # Extract info from metadata
-    if(!endsWith(metadata[[filename_col]][1], ".fcs")){
+    if(!endsWith(tolower(metadata[[filename_col]][1]), ".fcs")){
       metadata[[filename_col]] <- paste0(metadata[[filename_col]], ".fcs")
     }
     # Check that all metadata rows has a file
@@ -162,18 +155,21 @@ convert_flowset <- function(flowset,
       missing_files <- files[files %!in% metadata[[filename_col]]]
       warning(stringr::str_c("The sample ", missing_files, " was not found in the metadata file and will be ignored.\n"))
       files <- files[files %in% metadata[[filename_col]]]
-      nrows <- nrows[which(rownames(nrows) %in% files),] %>% as.matrix()
+      nrows <- nrows[rownames(nrows) %in% files,] %>% as.matrix()
+      flowset <- flowset[files]
     }
 
     # Get sample ids
     if (is.null(sample_ids)){
       sample_ids <- files %>%
         stringr::str_remove(".fcs") %>%
+        stringr::str_remove(".FCS") %>%
         rep(nrows)
     } else if (length(sample_ids) == 1){
       cyCombine:::check_colname(md_cols, sample_ids)
       sample_ids <- metadata[[sample_ids]][match(files, metadata[[filename_col]])] %>%
         stringr::str_remove(".fcs") %>%
+        stringr::str_remove(".FCS") %>%
         rep(nrows)
     }
 
@@ -210,6 +206,7 @@ convert_flowset <- function(flowset,
     if(is.null(sample_ids)){# Get sample ids from filenames
       sample_ids <- files %>%
         stringr::str_remove(".fcs") %>%
+        stringr::str_remove(".FCS") %>%
         rep(nrows)
     }
   }
@@ -256,7 +253,7 @@ convert_flowset <- function(flowset,
                 ~ flowCore::fsApply(., Biobase::exprs)) %>%
     tibble::as_tibble() %>%
     dplyr::mutate(id = ids) %>%
-    dplyr::select(id, everything())
+    dplyr::select(id, dplyr::everything())
 
   # Clean column names
   if (!is.null(panel)){
@@ -304,8 +301,6 @@ convert_flowset <- function(flowset,
 
 #' Extract from a flowset given a sample of indices
 #' @noRd
-#' @importFrom purrr accumulate
-#' @importFrom flowCore keyword
 fcs_sample <- function(flowframe, sample, nrows, seed = 473){
 
   # Determine which flowframe was given
@@ -343,11 +338,12 @@ fcs_sample <- function(flowframe, sample, nrows, seed = 473){
 #' @param cofactor The cofactor to use when transforming
 #' @param derand Derandomize. Should be TRUE for CyTOF data, otherwise FALSE.
 #' @param .keep Keep all channels. If FALSE, channels that are not transformed are removed
-#' @importFrom knitr combine_words
 #' @family dataprep
 #' @examples
+#' \dontrun{
 #' uncorrected <- df %>%
 #'   transform_asinh(markers = markers)
+#'   }
 #' @export
 transform_asinh <- function(df,
                             markers = NULL,
@@ -395,6 +391,7 @@ transform_asinh <- function(df,
 #' @param transform If TRUE, the data will be transformed; if FALSE, it will not.
 #' @family dataprep
 #' @examples
+#' \dontrun{
 #' uncorrected <- data_dir %>%
 #'   prepare_data(metadata = "metadata.csv",
 #'   markers = markers,
@@ -402,6 +399,7 @@ transform_asinh <- function(df,
 #'   batch_ids = "Batch",
 #'   condition = "condition",
 #'   down_sample = FALSE)
+#'   }
 #' @export
 prepare_data <- function(data_dir = NULL,
                          flowset = NULL,

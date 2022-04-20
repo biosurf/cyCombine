@@ -11,10 +11,13 @@
 #' @param channel Channel (marker) to impute
 #' @param sample_size Number of cells to base imputation on - defaults to all cells in df not in 'correct_batches'
 #' @param exclude Channels to exclude (e.g. other misstained channels not to be used for imputation)
+#' @inheritParams create_som
 #' @family merging
 #' @examples
+#' \dontrun{
 #' df_fixed <- df %>%
 #'   salvage_problematic(correct_batches = 1, channel = 'CD127')
+#'   }
 #' @export
 salvage_problematic <- function(df,
                                 correct_batches,
@@ -114,9 +117,14 @@ salvage_problematic <- function(df,
 #' @param overlap_channels Channels (markers) that overlap between impute_for and complete_obs, which can be used to base imputation on
 #' @param impute_channels1 Channels to impute and add to the impute_for dataset1 (must be present in dataset2)
 #' @param impute_channels2 Channels to impute and add to the impute_for dataset2 (must be present in dataset1)
+#' @inheritParams create_som
 #' @family merging
 #' @examples
-#' dfs_imputed <- impute_across_panels(dataset1 = df_panel1, dataset2 = df_panel2, overlap_channels = intersect(df_panel1_markers, df_panel2_markers), impute_channels1 = unique_df_panel2_markers, , impute_channels2 = unique_df_panel1_markers)
+#' \dontrun{
+#' dfs_imputed <- impute_across_panels(dataset1 = df_panel1, dataset2 = df_panel2,
+#'  overlap_channels = intersect(df_panel1_markers, df_panel2_markers),
+#'  impute_channels1 = unique_df_panel2_markers, , impute_channels2 = unique_df_panel1_markers)
+#' }
 #' @export
 impute_across_panels <- function(dataset1,
                                  dataset2,

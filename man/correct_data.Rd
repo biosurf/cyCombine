@@ -34,8 +34,10 @@ The covariate should preferable be the cell condition types but can be any colum
 The function assumes that the batch information is in the "batch" column and the data contains a "sample" column with sample information.
 }
 \examples{
+\dontrun{
 corrected <- uncorrected \%>\%
   correct_data(label = labels, covar = "condition")
+  }
 }
 \seealso{
 Other batch: 

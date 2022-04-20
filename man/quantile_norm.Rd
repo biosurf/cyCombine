@@ -16,8 +16,10 @@ This function quantile normalizes the data in a batch-wise manner.
 The purpose is to minimize the impact of batch correction when clustering the data prior to batch correction.
 }
 \examples{
+\dontrun{
 df_qnorm <- preprocessed \%>\%
   quantile_norm()
+  }
 }
 \seealso{
 Other batch: 

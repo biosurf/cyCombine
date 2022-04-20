@@ -10,10 +10,6 @@
 #'   3. A MultiDimensional Scaling plot based on the median marker expression per sample.
 #'   It can apply downsampling for a quicker analysis of larger datasets.
 #'
-#' @importFrom readxl read_xlsx
-#' @importFrom readr read_csv
-#' @importFrom magrittr %>%
-#' @importFrom flowCore read.flowSet fsApply
 #' @param df Tibble containing the expression data and batch information. See prepare_data.
 #' @param out_dir Directory for plot output
 #' @param batch_col Name of column containing batch information
@@ -21,8 +17,10 @@
 #' @param seed Random seed for reproducibility
 #' @family detect_batch_effect
 #' @examples
+#' \dontrun{
 #' detect_batch_effect_express(df = exprs, out_dir = '/my/cycombine/dir/')
 #' detect_batch_effect_express(df = exprs, downsample = 100000, out_dir = '/my/cycombine/dir/')
+#' }
 #' @export
 detect_batch_effect_express <- function(df,
                                         out_dir,
@@ -34,6 +32,7 @@ detect_batch_effect_express <- function(df,
   cyCombine:::missing_package("ggridges", "CRAN")
   cyCombine:::missing_package("ggplot2", "CRAN")
   cyCombine:::missing_package("cowplot", "CRAN")
+  cyCombine:::missing_package("grDevices", "CRAN")
 
   message('Starting the quick(er) detection of batch effects.')
   # Create output directory if missing
@@ -79,7 +78,7 @@ detect_batch_effect_express <- function(df,
   all_markers <- df %>% cyCombine::get_markers()
 
   # For each marker, make the plot
-  pdf(NULL)
+  grDevices::pdf(NULL)
   p <- list()
   for (c in 1:length(all_markers)) {
 
@@ -105,7 +104,7 @@ detect_batch_effect_express <- function(df,
     cyCombine::compute_emd()
 
   # Get summary per marker ACROSS batches
-  emd_markers <- cbind.data.frame(sapply(emd[[1]], mean, na.rm = T), sapply(emd[[1]], sd, na.rm = T))
+  emd_markers <- cbind.data.frame(sapply(emd[[1]], mean, na.rm = T), sapply(emd[[1]], stats::sd, na.rm = T))
 
   # Get mean PER BATCH per marker
   emd <- lapply(emd[[1]], function(x) {Matrix::forceSymmetric(x, uplo='U')}) # Contains the pairwise EMDs, now made symmetrical for easy extraction of values
@@ -151,9 +150,9 @@ detect_batch_effect_express <- function(df,
 
   # Flagging markers with clear outlier batches with STRONG effects
   any_outliers <- F
-  for (m in emd_markers$marker[emd_markers$mean > median(emd_markers$mean)]) {
-    if (any(batch_means[[m]] > (quantile(batch_means[[m]], 0.75) + stats::IQR(batch_means[[m]])*3))) {
-      outliers <- which(batch_means[[m]] > (quantile(batch_means[[m]], 0.75) + stats::IQR(batch_means[[m]])*3))
+  for (m in emd_markers$marker[emd_markers$mean > stats::median(emd_markers$mean)]) {
+    if (any(batch_means[[m]] > (stats::quantile(batch_means[[m]], 0.75) + stats::IQR(batch_means[[m]])*3))) {
+      outliers <- which(batch_means[[m]] > (stats::quantile(batch_means[[m]], 0.75) + stats::IQR(batch_means[[m]])*3))
       message(paste0(m, ' has clear outlier batch(es): ', paste(names(outliers), collapse = ', ')))
 
       summary_non <- df %>% dplyr::filter(!(batch %in% names(outliers))) %>% dplyr::pull(m) %>% summary()
@@ -179,7 +178,7 @@ detect_batch_effect_express <- function(df,
 
   median_expr <- df %>%
     dplyr::group_by(sample) %>%
-    dplyr::summarise_at(cyCombine::get_markers(df), median)
+    dplyr::summarise_at(cyCombine::get_markers(df), stats::median)
 
   dist_mat <- as.matrix(stats::dist(median_expr[, all_markers]))   # Euclidean distance
   rownames(dist_mat) <- colnames(dist_mat) <- median_expr$sample
@@ -222,8 +221,11 @@ detect_batch_effect_express <- function(df,
 #' @param name Name of dataset - used for plot titles
 #' @family detect_batch_effect
 #' @examples
+#' \dontrun{
 #' detect_batch_effect(df = exprs)
-#' detect_batch_effect(df = exprs, xdim = 8, ydim = 8, seed = 382, markers = c('CD3', 'CD4', 'CD8a', 'CD20', 'CD19', 'CD56', 'CD33'))
+#' detect_batch_effect(df = exprs, xdim = 8, ydim = 8, seed = 382,
+#'                     markers = c('CD3', 'CD4', 'CD8a', 'CD20', 'CD19', 'CD56', 'CD33'))
+#' }
 #' @export
 detect_batch_effect <- function(df,
                                 out_dir,
@@ -318,7 +320,7 @@ detect_batch_effect <- function(df,
       markers_emd[[m]] <- marker_emd
     }
 
-    marker_emd <- which(stats::p.adjust(sapply(markers_emd, function(x) {outliers::dixon.test(x, opposite=F)$p.value}), method = 'BH') < 0.05 | p.adjust(sapply(markers_emd,  function(x) {outliers::dixon.test(x, opposite=T)$p.value}), method = 'BH') < 0.05)
+    marker_emd <- which(stats::p.adjust(sapply(markers_emd, function(x) {outliers::dixon.test(x, opposite=F)$p.value}), method = 'BH') < 0.05 | stats::p.adjust(sapply(markers_emd,  function(x) {outliers::dixon.test(x, opposite=T)$p.value}), method = 'BH') < 0.05)
     message(paste0('\nThere are ', length(marker_emd), ' markers that appear to be outliers in a single batch:'))
     message(paste(markers[marker_emd], collapse = ', '))
 
@@ -327,7 +329,7 @@ detect_batch_effect <- function(df,
     perc <- (counts / Matrix::rowSums(counts))*100
 
     # use the Dixon test to look for outliers (test whether a single low or high value is an outlier)
-    out_cl <- which(stats::p.adjust(apply(perc, 2, function(x) {outliers::dixon.test(x, opposite=F)$p.value}), method = 'BH') < 0.05 | p.adjust(apply(perc, 2, function(x) {outliers::dixon.test(x, opposite=T)$p.value}), method = 'BH') < 0.05)
+    out_cl <- which(stats::p.adjust(apply(perc, 2, function(x) {outliers::dixon.test(x, opposite=F)$p.value}), method = 'BH') < 0.05 | stats::p.adjust(apply(perc, 2, function(x) {outliers::dixon.test(x, opposite=T)$p.value}), method = 'BH') < 0.05)
 
     message(paste0('\nThere are ', length(out_cl), ' clusters, in which a single cluster is strongly over- or underrepresented.'))
 
@@ -337,7 +339,7 @@ detect_batch_effect <- function(df,
 
       exp_markers <- df %>%
         dplyr::filter(label == cl) %>%
-        dplyr::summarise(across(cyCombine::get_markers(df), median)) %>%
+        dplyr::summarise(dplyr::across(cyCombine::get_markers(df), stats::median)) %>%
         unlist() %>%
         sort(decreasing = T)
 

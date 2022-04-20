@@ -1,6 +1,6 @@
 Package: cyCombine
 Title: Robust integration of single-cell cytometry datasets within and across technologies
-Version: 0.2.6
+Version: 0.2.7
 Authors@R: 
     c(person(given = "Christina Bligaard",
            family = "Pedersen",
@@ -24,7 +24,6 @@ RoxygenNote: 7.1.2
 Imports: 
     magrittr,
     flowCore,
-    RColorBrewer,
     kohonen,
     tibble,
     sva,
@@ -34,10 +33,7 @@ Imports:
     Biobase,
     purrr,
     stringr,
-    tidyr,
-    ggplot2,
     knitr,
-    cytolib,
     stats
 Suggests: 
     rmarkdown,
@@ -47,10 +43,15 @@ Suggests:
     uwot,
     plyr,
     graphics,
-    outliers,
     SingleCellExperiment,
     grDevices,
-    viridis
+    viridis,
+    tidyr,
+    Matrix,
+    ggplot2,
+    RColorBrewer,
+    cowplot,
+    prettydoc
 VignetteBuilder: knitr
 Depends: 
     R (>= 4.0)

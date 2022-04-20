@@ -12,10 +12,13 @@
 #' @param panel_antigen Optional: Only used if panel is given. It is the column name in the panel data that contains the antigen names
 #' @param panel_type Optional: Only used if panel is given. It is the column name in the panel data that contains the antigen types (none, state, type).
 #'  "none" will be excluded from SCE.
+#' @param sample_col The name of the column containing sample IDs
 #' @family export
 #' @examples
+#' \dontrun{
 #' sce <- df %>%
 #'   df2SCE(markers = markers, non_markers = NULL, panel = panel)
+#'   }
 #' @export
 df2SCE <- function(df, markers = NULL, non_markers = NULL, sample_col = 'sample', panel = NULL,
                    panel_channel = 'Channel', panel_antigen = 'Marker', panel_type = 'Type') {
@@ -75,7 +78,7 @@ df2SCE <- function(df, markers = NULL, non_markers = NULL, sample_col = 'sample'
   stable_cols <- c('sample_id', stable_cols[stable_cols != 'sample_id'])
 
   experiment_info <- colData %>%
-    dplyr::select(all_of(stable_cols)) %>%
+    dplyr::select(dplyr::all_of(stable_cols)) %>%
     dplyr::group_by(sample_id) %>%
     dplyr::mutate(n_cells = dplyr::n()) %>%
     dplyr::distinct(sample_id, .keep_all = TRUE) %>%
@@ -89,7 +92,7 @@ df2SCE <- function(df, markers = NULL, non_markers = NULL, sample_col = 'sample'
     sapply(c(panel_channel, panel_antigen, panel_type), function(x) {cyCombine:::check_colname(colnames(panel), x, "panel")})
 
     # Exclude none's
-    rowData = panel %>%
+    rowData <- panel %>%
       dplyr::filter(.data[[panel_type]] != "none")
 
 

@@ -22,6 +22,8 @@ df2SCE(
 
 \item{non_markers}{Non-markers to include as colData in SCE. If NULL, non_markers will be based on cyCombine::non_markers.}
 
+\item{sample_col}{The name of the column containing sample IDs}
+
 \item{panel}{Optional: Panel as a data.frame. Should have colnames Channel, Marker, Type unless otherwise specified in the panel_ args.}
 
 \item{panel_channel}{Optional: Only used if panel is given. It is the column name in the panel data that contains the channel names}
@@ -36,7 +38,9 @@ Conversion of dataframe into separate data and metadata objects for subsequent t
 Rename variable names to fit the requirements of SCE-based tools
 }
 \examples{
+\dontrun{
 sce <- df \%>\%
   df2SCE(markers = markers, non_markers = NULL, panel = panel)
+  }
 }
 \concept{export}

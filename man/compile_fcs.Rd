@@ -29,7 +29,9 @@ A simple function to compile a directory of FCS files into a flowSet object usin
 Use the pattern argument to select only a subset of FCS files.
 }
 \examples{
+\dontrun{
 fcs <- compile_fcs(data_dir = "_data/raw", pattern = "\\\\.fcs")
+}
 }
 \seealso{
 Other dataprep: 

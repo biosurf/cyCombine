@@ -28,8 +28,10 @@ It is used to segregate the cells for the batch correction to make the correctio
 by samples with high abundances of a particular cell type.
 }
 \examples{
+\dontrun{
 labels <- uncorrected \%>\%
   create_som()
+  }
 }
 \seealso{
 Other batch: 

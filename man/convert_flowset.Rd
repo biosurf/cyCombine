@@ -60,12 +60,14 @@ Bear in mind the column names will be altered with the following:
 \code{stringr::str_remove_all("^\\d+[A-Za-z]+_") \%>\% stringr::str_remove_all("[ _-]")}.
 }
 \examples{
+\dontrun{
 df <- convert_flowset(flowset = flowset,
  metadata = file.path(data_dir, "metadata.csv"),
  filename_col = "FCS_files",
  sample_ids = "sample_id",
  batch_ids = "batch_ids",
  down_sample = FALSE)
+ }
 }
 \seealso{
 Other dataprep: 

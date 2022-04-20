@@ -33,7 +33,9 @@ plot_dimred(
 Dimensionality reduction plot
 }
 \examples{
+\dontrun{
 uncor_umap <- plot_dimred(uncorrected, "Uncorrected", markers = markers)
+}
 }
 \seealso{
 Other plot: 

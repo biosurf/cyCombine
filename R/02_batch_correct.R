@@ -16,8 +16,10 @@
 #' @param ties.method The method to handle ties, when using rank. Default: 'average'. See ?rank for other options.
 #' @family batch
 #' @examples
+#' \dontrun{
 #' df_normed <- df %>%
 #'   normalize()
+#'   }
 #' @export
 normalize <- function(df,
                       markers = NULL,
@@ -39,7 +41,7 @@ normalize <- function(df,
   else if(norm_method == "qnorm") {
     # message("Quantile normalizing expression data..")
     # Run quantile normalization
-    df_normed <- cyCombine::quantile_norm(df, markers = markers)
+    df_normed <- cyCombine:::quantile_norm(df, markers = markers)
     return(df_normed)
     } else stop("Please use either 'scale', 'rank', or 'qnorm' as normalization method." )
 
@@ -75,9 +77,10 @@ normalize <- function(df,
 #' @param markers Markers to correct. If NULL, markers will be found using the \code{\link{get_markers}} function.
 #' @family batch
 #' @examples
+#' \dontrun{
 #' df_qnorm <- preprocessed %>%
 #'   quantile_norm()
-#' @export
+#'   }
 quantile_norm <- function(df, markers = NULL){
   message("Quantile normalizing expression data..")
   if(is.null(markers)){
@@ -118,8 +121,6 @@ quantile_norm <- function(df, markers = NULL){
 #'  It is used to segregate the cells for the batch correction to make the correction less affected
 #'  by samples with high abundances of a particular cell type.
 #'
-#' @importFrom kohonen som somgrid
-#' @importFrom stats predict
 #' @inheritParams normalize
 #' @param seed The seed to use when creating the SOM.
 #' @param xdim The x-dimension size of the SOM.
@@ -127,8 +128,10 @@ quantile_norm <- function(df, markers = NULL){
 #' @param rlen Number of times the data is presented to the SOM network
 #' @family batch
 #' @examples
+#' \dontrun{
 #' labels <- uncorrected %>%
 #'   create_som()
+#'   }
 #' @export
 #' @return A vector of clustering labels
 create_som <- function(df,
@@ -168,8 +171,6 @@ create_som <- function(df,
 #'  The covariate should preferable be the cell condition types but can be any column that infers heterogeneity in the data.
 #'  The function assumes that the batch information is in the "batch" column and the data contains a "sample" column with sample information.
 #'
-#' @importFrom sva ComBat
-#' @importFrom stats model.matrix
 #' @param label The cluster or cell type label. Either as a column name or vector.
 #' @param covar The covariate ComBat should use. Can be a vector or a column name in the input tibble.
 #'   If NULL, no covar will be used
@@ -178,8 +179,10 @@ create_som <- function(df,
 #' @inheritParams normalize
 #' @family batch
 #' @examples
+#' \dontrun{
 #' corrected <- uncorrected %>%
 #'   correct_data(label = labels, covar = "condition")
+#'   }
 #' @export
 correct_data <- function(df,
                          label,
@@ -366,8 +369,10 @@ correct_data <- function(df,
 #' @inheritParams correct_data
 #' @param mod Covariate model to use in ComBat.
 #' @examples
+#' \dontrun{
 #' corrected <- uncorrected %>%
 #'   correct_data(mod = stats::model.matrix(~df$covar+df$label))
+#'   }
 correct_data_alt <- function(df,
                              mod,
                              markers = NULL,
@@ -419,9 +424,11 @@ correct_data_alt <- function(df,
 #' @inheritParams normalize
 #' @family batch
 #' @examples
+#' \dontrun{
 #' corrected <- uncorrected %>%
 #'   batch_correct(markers = markers,
 #'   covar = "condition")
+#'   }
 #' @export
 batch_correct <- function(df,
                           label = NULL,

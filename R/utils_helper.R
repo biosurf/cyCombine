@@ -14,12 +14,12 @@ missing_package <- function(package, repo = "CRAN", git_repo = ""){
   if (repo == "CRAN"){
     install_function <- "install.packages('"
   } else if (repo == "github") {
-    install_function <- paste0("devtools::install_github('", git_rep, "/")
+    install_function <- paste0("devtools::install_github('", git_repo, "/")
   } else if (repo == "Bioc"){
     install_function <- "BiocManager::install('"
   }
 
-  if(package %!in% rownames(installed.packages())){
+  if(!requireNamespace(package, quietly = TRUE)){
     stop(paste0("Package ", package," is not installed.\n",
          "Please run: ", install_function, package, "')"))
   }
@@ -34,7 +34,6 @@ missing_package <- function(package, repo = "CRAN", git_repo = ""){
 #'   If the output contains markers you did not expect, you can add to non_markers like this:
 #'   \code{non_markers <- c(non_markers, "remove1", "remove2")} and rerun get_markers()
 #' @param df dataframe to get the markers from
-#' @importFrom stringr str_to_lower
 #' @export
 get_markers <- function(df){
   marker_pos <- stringr::str_to_lower(colnames(df)) %!in% non_markers
@@ -54,7 +53,6 @@ check_colname <- function(df_colnames, col_name, location = "metadata"){
 
 
 #' Run PCA analysis
-#' @importFrom stats prcomp
 #' @noRd
 run_pca <- function(df, pcs = 20){
   missing_package("stats", "CRAN")
@@ -73,27 +71,10 @@ check_make_dir <- function(dir.path) {
   if (!dir.exists(dir.path)) {dir.create(dir.path)}
 }
 
-col_max <- function(df, m){
-  for (ma in m){
-    val <- cor %>%
-      dplyr::select(dplyr::all_of(ma)) %>%
-      max()
-    message(ma, ": ", round(val, 2))
-  }
-}
-
-
-col_min <- function(df, m){
-  for (ma in m){
-    val <- cor %>%
-      dplyr::select(dplyr::all_of(ma)) %>%
-      min()
-    message(ma, ": ", round(val, 2))
-  }
-}
-
 
 #' Check if the batch is confounded with the provided model
+#'
+#' Code adapted from sva::ComBat
 #'
 #' @noRd
 check_confound <- function(batch, mod = NULL) {
@@ -103,7 +84,7 @@ check_confound <- function(batch, mod = NULL) {
 
   ## Create batch model
   batch <- as.factor(batch)
-  batchmod <- model.matrix(~-1+batch)
+  batchmod <- stats::model.matrix(~-1+batch)
 
 
   ## A few other characteristics on the batches

@@ -75,6 +75,7 @@ prepare_data(
 This is a wrapper function that takes you from a directory of .fcs files or a flowset to a transformed tibble.
 }
 \examples{
+\dontrun{
 uncorrected <- data_dir \%>\%
   prepare_data(metadata = "metadata.csv",
   markers = markers,
@@ -82,6 +83,7 @@ uncorrected <- data_dir \%>\%
   batch_ids = "Batch",
   condition = "condition",
   down_sample = FALSE)
+  }
 }
 \seealso{
 Other dataprep: 

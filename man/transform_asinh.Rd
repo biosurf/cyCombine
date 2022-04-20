@@ -22,8 +22,10 @@ Inverse sine transformation of a tibble.
 This function can also de-randomize data.
 }
 \examples{
+\dontrun{
 uncorrected <- df \%>\%
   transform_asinh(markers = markers)
+  }
 }
 \seealso{
 Other dataprep: 

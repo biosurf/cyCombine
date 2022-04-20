@@ -34,8 +34,10 @@ It can apply downsampling for a quicker analysis of larger datasets.
 }
 }
 \examples{
+\dontrun{
 detect_batch_effect_express(df = exprs, out_dir = '/my/cycombine/dir/')
 detect_batch_effect_express(df = exprs, downsample = 100000, out_dir = '/my/cycombine/dir/')
+}
 }
 \seealso{
 Other detect_batch_effect: 

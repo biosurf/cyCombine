@@ -39,6 +39,8 @@ run_analysis(
 
 \item{variant}{Optional: A parameter to set a variant name of an experiment}
 
+\item{uncorrected_variant}{Optional: A parameter to set a variant specific to the uncorrected data}
+
 \item{use_cycombine_uncor}{If TRUE, the uncorrected data made by cyCombine will be used.}
 
 \item{restart}{If TRUE, the SOM grid will be calculated even if it has been computed and stored previously}
@@ -53,11 +55,15 @@ run_analysis(
 
 \item{segment}{Optional: Run only a specific segment of the analysis. Options include: "emd", "density", "umap"}
 
+\item{binSize}{The size of bins to use when binning data}
+
 \item{rlen}{Number of times the data is presented to the SOM network}
 
 \item{gridsize}{The gridsize to use when clustering. Only used if no celltype_col is given}
 
 \item{seed}{The seed to use when creating the UMAP}
+
+\item{umap_size}{Number of cells to include in UMAP}
 }
 \description{
 This function only runs under the assumption that the batch correction has been run with the cyCombine workflow in mind.
@@ -67,6 +73,7 @@ the corrected data is stored with the name \code{"{data_dir}/{tool}_{data}{varia
 The analysis currently encompass marker-wise density plots, UMAP of corrected vs uncorrected, and Earth Movers Distance.
 }
 \examples{
+\dontrun{
 run_analysis(tool = "cycombine",
  data = "dfci1",
  data_dir = "_data")
@@ -75,4 +82,5 @@ run_analysis(tool = "cycombine",
  data_dir = "_data",
  variant = "_p3",
  panel = "/attachments/MC_panel3.xlsx")
+ }
 }

@@ -20,6 +20,8 @@ This function allows running ComBat with a custom covar mod matrix.
 A model could look like \code{stats::model.matrix(~df$covar+df$label)}
 }
 \examples{
+\dontrun{
 corrected <- uncorrected \%>\%
   correct_data(mod = stats::model.matrix(~df$covar+df$label))
+  }
 }

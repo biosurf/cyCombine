@@ -4,7 +4,6 @@
 #' Density ridges for two sets
 #'
 #' Compare densities between each batch both before and after correction
-#' @import ggplot2
 #' @param format Plotting format (1 = 1 row per batch, 2 = all batches in same row.)
 #' @param uncorrected tibble with uncorrected data
 #' @param corrected tibble with corrected data
@@ -16,8 +15,11 @@
 #' @param ncol Number of density plots in a single row of plots. Default: 6
 #' @family plot
 #' @examples
+#' \dontrun{
 #' plot_density(uncorrected, corrected, y = 'batch', filename = 'my/dir/batchcor_plot.pdf')
-#' plot_density(imputed1, imputed2, y = 'Type', dataset_names = paste('Panel', 1:2), filename = 'my/dir/merging_plot.pdf')
+#' plot_density(imputed1, imputed2, y = 'Type', dataset_names = paste('Panel', 1:2),
+#'              filename = 'my/dir/merging_plot.pdf')
+#' }
 #' @export
 plot_density <- function(uncorrected,
                          corrected,
@@ -64,7 +66,7 @@ plot_density <- function(uncorrected,
 
   # Combine uncorrected and corrected data
   df <- corrected %>%
-    dplyr::select(all_of(markers)) %>%
+    dplyr::select(dplyr::all_of(markers)) %>%
     dplyr::mutate(Type = dataset_names[2],
                   batch = batch2) %>%
     dplyr::bind_rows(uncorrected)
@@ -77,7 +79,7 @@ plot_density <- function(uncorrected,
 
       p[[c]] <- df %>%
         ggplot2::ggplot(ggplot2::aes_string(x = paste0('`', markers[c], '`'), y = 'batch')) +
-        ggridges::geom_density_ridges(aes(color = .data$Type, fill = .data$Type), alpha = 0.4) +
+        ggridges::geom_density_ridges(ggplot2::aes(color = .data$Type, fill = .data$Type), alpha = 0.4) +
         ggplot2::coord_cartesian(xlim = xlims) +
         ggplot2::labs(y = y) +
         ggplot2::theme_bw()
@@ -104,7 +106,7 @@ plot_density <- function(uncorrected,
   # Extract the legend from one of the plots
   legend <- cowplot::get_legend(
     # create some space to the left of the legend
-    p[[1]] + ggplot2::theme(legend.box.margin = margin(0, 0, 0, 12))
+    p[[1]] + ggplot2::theme(legend.box.margin = ggplot2::margin(0, 0, 0, 12))
   )
 
   # Make a shared legend
@@ -131,10 +133,11 @@ plot_density <- function(uncorrected,
 #' @param markers Markers to include in dimensionality reduction
 #' @param seed For reproducibility
 #' @param return_coord Return coordinates and not just the plot
-#' @importFrom stats prcomp
 #' @family plot
 #' @examples
+#' \dontrun{
 #' uncor_umap <- plot_dimred(uncorrected, "Uncorrected", markers = markers)
+#' }
 #' @export
 plot_dimred <- function(df,
                         name,
@@ -148,6 +151,7 @@ plot_dimred <- function(df,
   if(type == "umap") cyCombine:::missing_package("uwot", "CRAN")
   if(plot != "batch") cyCombine:::missing_package("viridis", "CRAN")
   cyCombine:::missing_package("ggridges", "CRAN")
+  cyCombine:::missing_package("ggplot2", "CRAN")
 
   if (!(type %in% c('pca', 'umap'))) {
     stop("Error, please use either type = 'pca' or type = 'umap'.")
@@ -203,7 +207,7 @@ plot_dimred <- function(df,
     plot <- df %>%
       ggplot2::ggplot(ggplot2::aes_string(x = colnames(df)[1],
                                           y = colnames(df)[2])) +
-      ggplot2::geom_point(aes_string(color = "Batch"),
+      ggplot2::geom_point(ggplot2::aes_string(color = "Batch"),
                           alpha = 0.3,
                           size = 0.4,
                           shape = 1) +
@@ -255,6 +259,7 @@ plot_dimred_full <- function(df,
   cyCombine:::missing_package("ggridges", "CRAN")
   cyCombine:::missing_package("grDevices", "CRAN")
   cyCombine:::missing_package("RColorBrewer", "CRAN")
+  cyCombine:::missing_package("ggplot2", "CRAN")
 
   # Check out dir
   if (is.null(out_dir)) {
@@ -342,6 +347,7 @@ plot_dimred_full <- function(df,
 
 
 #' Dimensionality reduction plots for a two-batch dataset before and after correction - colored by batch and label
+#' @inheritParams plot_density
 #' @inheritParams plot_dimred
 #' @family plot
 #' @export
@@ -354,6 +360,7 @@ plot_umap_labels <- function(uncorrected,
   cyCombine:::missing_package("uwot", "CRAN")
   cyCombine:::missing_package("ggridges", "CRAN")
   cyCombine:::missing_package("cowplot", "CRAN")
+  cyCombine:::missing_package("ggplot2", "CRAN")
 
 
   # Check if two-batch data and extract batch names

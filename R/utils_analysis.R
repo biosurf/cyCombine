@@ -13,6 +13,7 @@
 #' @param uncorrected_extension The extension used to name the uncorrected data. Default: "_uncorrected
 #' @param corrected_extension The extension used to name the corrected data. Default: "_corrected"
 #' @param variant Optional: A parameter to set a variant name of an experiment
+#' @param uncorrected_variant Optional: A parameter to set a variant specific to the uncorrected data
 #' @param use_cycombine_uncor If TRUE, the uncorrected data made by cyCombine will be used.
 #' @param restart If TRUE, the SOM grid will be calculated even if it has been computed and stored previously
 #' @param md Optional: Metadata filename. Currently not useful
@@ -22,9 +23,12 @@
 #' @param segment Optional: Run only a specific segment of the analysis. Options include: "emd", "density", "umap"
 #' @param gridsize The gridsize to use when clustering. Only used if no celltype_col is given
 #' @param seed The seed to use when creating the UMAP
+#' @param umap_size Number of cells to include in UMAP
 #' @inheritParams create_som
+#' @inheritParams evaluate_emd
 #'
 #' @examples
+#' \dontrun{
 #' run_analysis(tool = "cycombine",
 #'  data = "dfci1",
 #'  data_dir = "_data")
@@ -33,7 +37,7 @@
 #'  data_dir = "_data",
 #'  variant = "_p3",
 #'  panel = "/attachments/MC_panel3.xlsx")
-#' @export
+#'  }
 run_analysis <- function(tool,
                          data,
                          data_dir,
@@ -168,7 +172,7 @@ run_analysis <- function(tool,
 
     if(celltype_col %!in% colnames(uncorrected)){
       uncorrected <- corrected %>%
-        dplyr::select(id, all_of(celltype_col)) %>%
+        dplyr::select(id, dplyr::all_of(celltype_col)) %>%
         dplyr::left_join(uncorrected, by = "id")
     }
 
@@ -182,25 +186,25 @@ run_analysis <- function(tool,
                               cell_col = celltype_col)
 
     message("Saving results..")
-    ggsave(filename = paste0(data_dir, "/figs/", project, "_violin.png"),
+    ggplot2::ggsave(filename = paste0(data_dir, "/figs/", project, "_violin.png"),
            plot = emd_val$violin, device = "png")
-    ggsave(filename = paste0(data_dir, "/figs/", project, "_scatterplot.png"),
+    ggplot2::ggsave(filename = paste0(data_dir, "/figs/", project, "_scatterplot.png"),
            plot = emd_val$scatterplot, device = "png")
     saveRDS(emd_val, file = paste0(projdir, "_emd.RDS"))
-    
-    
-    
+
+
+
     message("Evaluating Median Absolute Deviation..")
     mad_val <- uncorrected %>%
       cyCombine::evaluate_mad(corrected,
                               markers = markers,
                               cell_col = celltype_col,
                               filter_limit = NULL)
-    
+
     message("Saving results..")
     saveRDS(mad_val, file = paste0(projdir, "_mad.RDS"))
-    
-    
+
+
   }
 
   message("Done!")

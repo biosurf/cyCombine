@@ -25,14 +25,22 @@ salvage_problematic(
 \item{sample_size}{Number of cells to base imputation on - defaults to all cells in df not in 'correct_batches'}
 
 \item{exclude}{Channels to exclude (e.g. other misstained channels not to be used for imputation)}
+
+\item{xdim}{The x-dimension size of the SOM.}
+
+\item{ydim}{The y-dimension size of the SOM.}
+
+\item{seed}{The seed to use when creating the SOM.}
 }
 \description{
 This function imputes the expression values for a single channel based on the information in the other channels.
 The purpose is to be able to salvage a misstained channel in single batches of an experiment
 }
 \examples{
+\dontrun{
 df_fixed <- df \%>\%
   salvage_problematic(correct_batches = 1, channel = 'CD127')
+  }
 }
 \seealso{
 Other merging: 

@@ -28,7 +28,9 @@ Given a dataframe, the Earth Movers Distance is computed, using the emdist packa
 A matrix is returned containing the EMD for each marker for each group of cells.
 }
 \examples{
+\dontrun{
 emd <- compute_emd(df, markers = markers)
+}
 }
 \seealso{
 Other emd: 

@@ -39,8 +39,11 @@ plot_density(
 Compare densities between each batch both before and after correction
 }
 \examples{
+\dontrun{
 plot_density(uncorrected, corrected, y = 'batch', filename = 'my/dir/batchcor_plot.pdf')
-plot_density(imputed1, imputed2, y = 'Type', dataset_names = paste('Panel', 1:2), filename = 'my/dir/merging_plot.pdf')
+plot_density(imputed1, imputed2, y = 'Type', dataset_names = paste('Panel', 1:2),
+             filename = 'my/dir/merging_plot.pdf')
+}
 }
 \seealso{
 Other plot: 

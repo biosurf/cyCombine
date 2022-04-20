@@ -50,9 +50,11 @@ This is a wrapper function for the cyCombine batch correction workflow.
 To run the workflow manually, type "batch_correct" to see the source code of this wrapper and follow along or read the vignettes on the GitHub page \url{https://github.com/biosurf/cyCombine}.
 }
 \examples{
+\dontrun{
 corrected <- uncorrected \%>\%
   batch_correct(markers = markers,
   covar = "condition")
+  }
 }
 \seealso{
 Other batch: 

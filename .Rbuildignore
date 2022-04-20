@@ -1,10 +1,7 @@
-^renv$
-^renv\.lock$
 ^cyCombine\.Rproj$
 ^\.Rproj\.user$
 ^LICENSE\.md$
 ^README\.Rmd$
-^_data$
 ^doc$
 ^Meta$
 ^figs$

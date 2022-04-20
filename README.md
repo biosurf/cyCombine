@@ -1,10 +1,9 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# cyCombine <img src="cyCombine.png" width="200" align="right" />
+# cyCombine <img src="inst/cyCombine.png" width="200" align="right" />
 
 <!-- badges: start -->
-
 <!-- [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental) -->
 
 [![Lifecycle:
@@ -12,29 +11,17 @@ stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://
 <!-- badges: end -->
 
 <!-- ## Clone github repository -->
-
 <!-- ``` {sh, eval = FALSE} -->
-
 <!-- # Run in terminal -->
-
 <!-- git clone git@github.com:shdam/cyCombine.git -->
-
 <!-- ``` -->
-
 <!-- ## Restore renv library -->
-
 <!-- ``` {r, eval = FALSE} -->
-
 <!-- # Open project in Rstudio -->
-
 <!-- # Install renv and restore library -->
-
 <!-- install.packages("renv") -->
-
 <!-- library(renv) -->
-
 <!-- renv::restore() -->
-
 <!-- ``` -->
 
 ## Install from GitHub
@@ -129,7 +116,7 @@ saveRDS(corrected, file = "_data/cycombine_raw_corrected.RDS")
 If your data is in another format than FCS files or a flowset, please
 convert your data to a *tibble*, add the relevant columns (*sample*,
 *batch*, *covar*/*condition*/*anchor*), and begin from
-*transform\_asinh()* (if your data is not yet transformed; otherwise,
+*transform_asinh()* (if your data is not yet transformed; otherwise,
 skip that step as well).
 
 ``` r
@@ -174,41 +161,23 @@ saveRDS(corrected, file = "_data/cycombine_raw_corrected.RDS")
 ```
 
 <!-- ### From a flowset -->
-
 <!-- ```{r, eval = FALSE} -->
-
 <!-- library(cyCombine) -->
-
 <!-- library(magrittr) -->
-
 <!-- # Load data -->
-
 <!-- # Should contain the flowset, sample_ids, batch_ids, and markers of interest -->
-
 <!-- load("data/flowset.Rdata") -->
-
 <!-- # Convert flowset to workable datafram and transform data -->
-
 <!-- uncorrected <- flowset %>% -->
-
 <!--   convert_flowset(batch_ids = batch_ids, -->
-
 <!--                   sample_ids = sample_ids, -->
-
 <!--                   down_sample = TRUE, -->
-
 <!--                   sample_size = 100000, -->
-
 <!--                   seed = 473) %>%  -->
-
 <!--   transform_asinh(markers = markers) -->
-
 <!-- # Run batch correction -->
-
 <!-- corrected <- uncorrected %>% -->
-
 <!--   batch_correct(seed = 473) -->
-
 <!-- ``` -->
 
 ## Plotting

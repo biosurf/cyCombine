@@ -24,8 +24,10 @@ Rank is recommend in cases where data from different studies/experiments are mer
 Quantile is not recommended.
 }
 \examples{
+\dontrun{
 df_normed <- df \%>\%
   normalize()
+  }
 }
 \seealso{
 Other batch: 

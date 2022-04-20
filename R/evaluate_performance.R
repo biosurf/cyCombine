@@ -12,8 +12,9 @@
 #' @param markers Vector of the markers to calculate EMD for. If NULL, \code{\link{get_markers}} will be used to find markers
 #' @family emd
 #' @examples
+#' \dontrun{
 #' emd <- compute_emd(df, markers = markers)
-#' @export
+#' }
 compute_emd <- function(df,
                         binSize = 0.1,
                         cell_col = "label",
@@ -109,7 +110,6 @@ compute_emd <- function(df,
 #' The function computes the Earth Mover's Distance of the two given datasets.
 #'   Then the reduction is calculated as the relative change in total EMD.
 #'
-#' @importFrom tidyr pivot_longer
 #' @inheritParams compute_emd
 #' @param uncorrected Dataframe of uncorrected data
 #' @param corrected Dataframe of corrected data
@@ -129,7 +129,10 @@ evaluate_emd <- function(uncorrected,
 
   # Check for package
   cyCombine:::missing_package("emdist", "CRAN")
-  if(!plots) cyCombine:::missing_package("plyr", "CRAN")
+  if(!plots){
+    cyCombine:::missing_package("plyr", "CRAN")
+    cyCombine:::missing_package("tidyr", "CRAN")
+  }
 
   # Get markers if not given
   if(is.null(markers)){
@@ -149,18 +152,18 @@ evaluate_emd <- function(uncorrected,
   message("Computing EMD for corrected data..")
   emd_corrected <- corrected %>%
     dplyr::arrange(id) %>%
-    cyCombine::compute_emd(binSize = binSize,
-                           cell_col = cell_col,
-                           batch_col = batch_col,
-                           markers = markers)
+    cyCombine:::compute_emd(binSize = binSize,
+                            cell_col = cell_col,
+                            batch_col = batch_col,
+                            markers = markers)
 
   message("Computing EMD for uncorrected data..")
   emd_uncorrected <- uncorrected %>%
     dplyr::arrange(id) %>%
-    cyCombine::compute_emd(binSize = binSize,
-                           cell_col = cell_col,
-                           batch_col = batch_col,
-                           markers = markers)
+    cyCombine:::compute_emd(binSize = binSize,
+                            cell_col = cell_col,
+                            batch_col = batch_col,
+                            markers = markers)
 
 
   # Extracting EMD values
@@ -248,7 +251,6 @@ evaluate_emd <- function(uncorrected,
 #' @param batch_col Column name of df that contains batch numbers
 #' @param markers Vector of the markers to calculate EMD for. If NULL, \code{\link{get_markers}} will be used to find markers
 #' @family mad
-#' @export
 compute_mad <- function(df,
                         cell_col = "label",
                         batch_col = "batch",
@@ -343,16 +345,16 @@ evaluate_mad <- function(uncorrected,
   message("Computing MAD for corrected data..")
   mad_corrected <- corrected %>%
     dplyr::arrange(id) %>%
-    cyCombine::compute_mad(markers = markers,
-                           batch_col = batch_col,
-                           cell_col = cell_col)
+    cyCombine:::compute_mad(markers = markers,
+                            batch_col = batch_col,
+                            cell_col = cell_col)
 
   message("Computing MAD for uncorrected data..")
   mad_uncorrected <- uncorrected %>%
     dplyr::arrange(id) %>%
-    cyCombine::compute_mad(markers = markers,
-                           batch_col = batch_col,
-                           cell_col = cell_col)
+    cyCombine:::compute_mad(markers = markers,
+                            batch_col = batch_col,
+                            cell_col = cell_col)
 
 
   # Extracting MAD values
@@ -379,7 +381,7 @@ evaluate_mad <- function(uncorrected,
   }
 
   # Calculate combined MAD score (median of all aboslute differences between uncor/cor)
-  score <- median(mads_filtered$Difference, na.rm = T) %>% round(2)
+  score <- stats::median(mads_filtered$Difference, na.rm = T) %>% round(2)
 
   message("The MAD score is: ", score)
 

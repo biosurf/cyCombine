@@ -49,8 +49,11 @@ This is coupled with UMAP plots to assist the interpretation of the results.
 However, this is primarily meaningful for sets with 3-30 batches - in cases outside this range, only the UMAPs will be generated.
 }
 \examples{
+\dontrun{
 detect_batch_effect(df = exprs)
-detect_batch_effect(df = exprs, xdim = 8, ydim = 8, seed = 382, markers = c('CD3', 'CD4', 'CD8a', 'CD20', 'CD19', 'CD56', 'CD33'))
+detect_batch_effect(df = exprs, xdim = 8, ydim = 8, seed = 382,
+                    markers = c('CD3', 'CD4', 'CD8a', 'CD20', 'CD19', 'CD56', 'CD33'))
+}
 }
 \seealso{
 Other detect_batch_effect: 

@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# cyCombine <img src="cyCombine.png" width="200" align="right" />
+# cyCombine <img src="inst/cyCombine.png" width="200" align="right" />
 
 
 <!-- badges: start -->

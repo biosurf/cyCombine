@@ -7,6 +7,12 @@
 plot_umap_labels(uncorrected, corrected, filename = NULL, seed = 473)
 }
 \arguments{
+\item{uncorrected}{tibble with uncorrected data}
+
+\item{corrected}{tibble with corrected data}
+
+\item{filename}{Output figure filename. If NULL plots are returned}
+
 \item{seed}{For reproducibility}
 }
 \description{
