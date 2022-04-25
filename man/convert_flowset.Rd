@@ -16,6 +16,7 @@ convert_flowset(
   sample_size = 5e+05,
   sampling_type = "random",
   seed = 473,
+  clean_colnames = TRUE,
   panel = NULL,
   panel_channel = "fcs_colname",
   panel_antigen = "antigen"
@@ -43,6 +44,8 @@ convert_flowset(
 \item{sampling_type}{The type of down-sampling to use. "random" to randomly select cells across the entire dataset, "batch_ids" to sample evenly (sample_size) from each batch, or "sample_ids" sample evenly (sample_size) from each sample.}
 
 \item{seed}{The seed to use for down-sampling}
+
+\item{clean_colnames}{(Default: TRUE). A logical defining whether column names should be cleaned or not. Cleaning involves removing isotope tags, spaces, dashes, and underscores.}
 
 \item{panel}{Optional: Panel as a filename or data.frame. Is used to define colnames from the panel_antigen column}
 

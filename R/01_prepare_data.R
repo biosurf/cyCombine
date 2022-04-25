@@ -72,6 +72,7 @@ compile_fcs <- function(data_dir,
 #' @param sample_size The size to down-sample to
 #' @param sampling_type The type of down-sampling to use. "random" to randomly select cells across the entire dataset, "batch_ids" to sample evenly (sample_size) from each batch, or "sample_ids" sample evenly (sample_size) from each sample.
 #' @param seed The seed to use for down-sampling
+#' @param clean_colnames (Default: TRUE). A logical defining whether column names should be cleaned or not. Cleaning involves removing isotope tags, spaces, dashes, and underscores.
 #' @param panel Optional: Panel as a filename or data.frame. Is used to define colnames from the panel_antigen column
 #' @param panel_channel Optional: Only used if panel is given. It is the column name in the panel data.frame that contains the channel names
 #' @param panel_antigen Optional: Only used if panel is given. It is the column name in the panel data.frame that contains the antigen names
@@ -97,6 +98,7 @@ convert_flowset <- function(flowset,
                             sample_size = 500000,
                             sampling_type = "random",
                             seed = 473,
+                            clean_colnames = TRUE,
                             panel = NULL,
                             panel_channel = "fcs_colname",
                             panel_antigen = "antigen"){
@@ -270,9 +272,7 @@ convert_flowset <- function(flowset,
     }
     cols <- match(colnames(fcs_data), panel[[panel_channel]]) %>%
       .[!is.na(.)]
-    col_names <- panel[[panel_antigen]][cols] %>%
-      stringr::str_remove_all("^\\d+[A-Za-z]+_") %>%
-      stringr::str_remove_all("[ _-]")
+    col_names <- panel[[panel_antigen]][cols]
 
     fcs_data <- fcs_data %>%
       dplyr::select(id, dplyr::all_of(panel[[panel_channel]][cols]))
@@ -280,10 +280,13 @@ convert_flowset <- function(flowset,
     col_names <- flowset[[1]] %>%
       flowCore::parameters() %>%
       Biobase::pData() %>%
-      dplyr::pull(desc) %>%
+      dplyr::pull(desc)
+  }
+  if(clean_colnames) {
+    col_names <- col_names %>%
       stringr::str_remove_all("^\\d+[A-Za-z]+_") %>%
       stringr::str_remove_all("[ _-]")
-  }
+    }
   colnames(fcs_data) <- c("id", col_names)
 
   # Add optional columns
@@ -356,12 +359,14 @@ transform_asinh <- function(df,
   }
   if(any(markers %!in% colnames(df))){
     mes <- stringr::str_c("Not all given markers are in the data.\nCheck if the markers contain a _ or -:",
-                 knitr::combine_words(markers),
-                 "Columns:",
-                 knitr::combine_words(colnames(df)),
-                 sep = "\n"
+                          stringr::str_c(markers, collapse = ", "),
+                          "Columns:",
+                          stringr::str_c(colnames(df), collapse = ", "),
+                          sep = "\n"
     )
     stop(mes)
+  } else if(.keep & any(colnames(df) %!in% unique(colnames(df)))){
+    stop("Your data contains non-unique column names. Please ensure they are unique. The column names are: ", stringr::str_c(colnames(df), collapse = ", "))
   }
   message(paste0("Transforming data using asinh with a cofactor of ", cofactor, ".."))
   transformed <- df %>%
@@ -421,7 +426,8 @@ prepare_data <- function(data_dir = NULL,
                          transform = TRUE,
                          cofactor = 5,
                          derand = TRUE,
-                         .keep = FALSE){
+                         .keep = FALSE,
+                         clean_colnames = TRUE){
 
   # Stop if no data is given
   if(is.null(data_dir) & is.null(flowset)) stop("No data given.")
@@ -457,7 +463,8 @@ prepare_data <- function(data_dir = NULL,
                                seed = seed,
                                panel = panel,
                                panel_channel = panel_channel,
-                               panel_antigen = panel_antigen) %>%
+                               panel_antigen = panel_antigen,
+                               clean_colnames = clean_colnames) %>%
     # Transform dataset with asinh
     purrr::when(transform ~ cyCombine::transform_asinh(., markers = markers,
                                                        cofactor = cofactor,
