@@ -43,6 +43,8 @@ salvage_problematic <- function(df,
     complete_obs <- complete_obs[sample(nrow(complete_obs),sample_size),]
   }
 
+  # Use global non_markers if available
+  if(!is.null(.GlobalEnv$non_markers)) non_markers <- .GlobalEnv$non_markers
   # Combine the data to impute for and from based on the overlapping markers
   overlapping_data <- rbind(complete_obs[,!colnames(complete_obs) %in% c(channel, non_markers, exclude)],
                             impute_for[,!colnames(impute_for) %in% c(non_markers, exclude)])

@@ -152,11 +152,11 @@ detect_batch_effect_express <- function(df,
   any_outliers <- F
   for (m in emd_markers$marker[emd_markers$mean > stats::median(emd_markers$mean)]) {
     if (any(batch_means[[m]] > (stats::quantile(batch_means[[m]], 0.75) + stats::IQR(batch_means[[m]])*3))) {
-      outliers <- which(batch_means[[m]] > (stats::quantile(batch_means[[m]], 0.75) + stats::IQR(batch_means[[m]])*3))
-      message(paste0(m, ' has clear outlier batch(es): ', paste(names(outliers), collapse = ', ')))
+      found_outliers <- which(batch_means[[m]] > (stats::quantile(batch_means[[m]], 0.75) + stats::IQR(batch_means[[m]])*3))
+      message(paste0(m, ' has clear outlier batch(es): ', paste(names(found_outliers), collapse = ', ')))
 
-      summary_non <- df %>% dplyr::filter(!(batch %in% names(outliers))) %>% dplyr::pull(m) %>% summary()
-      summary_out <- df %>% dplyr::filter(batch %in% names(outliers)) %>% dplyr::pull(m) %>% summary()
+      summary_non <- df %>% dplyr::filter(!(batch %in% names(found_outliers))) %>% dplyr::pull(m) %>% summary()
+      summary_out <- df %>% dplyr::filter(batch %in% names(found_outliers)) %>% dplyr::pull(m) %>% summary()
 
       message('Summary of the distribution in the OUTLIER batch(es):')
       message(paste(names(summary_out), '=', round(summary_out,2), collapse = ', '))

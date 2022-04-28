@@ -357,6 +357,9 @@ transform_asinh <- function(df,
     markers <- df %>%
       cyCombine::get_markers()
   }
+  # Use global non_markers if available
+  if(!is.null(.GlobalEnv$non_markers)) non_markers <- .GlobalEnv$non_markers
+
   if(any(markers %!in% colnames(df))){
     mes <- stringr::str_c("Not all given markers are in the data.\nCheck if the markers contain a _ or -:",
                           stringr::str_c(markers, collapse = ", "),
