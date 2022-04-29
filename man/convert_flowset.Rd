@@ -39,7 +39,7 @@ convert_flowset(
 
 \item{down_sample}{If TRUE, the output will be down-sampled to size sample_size}
 
-\item{sample_size}{The size to down-sample to}
+\item{sample_size}{The size to down-sample to. If a non-random sampling type is used and a group contains fewer cells than the sample_size, all cells of that group will be used.}
 
 \item{sampling_type}{The type of down-sampling to use. "random" to randomly select cells across the entire dataset, "batch_ids" to sample evenly (sample_size) from each batch, or "sample_ids" sample evenly (sample_size) from each sample.}
 

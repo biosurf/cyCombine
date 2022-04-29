@@ -69,7 +69,7 @@ compile_fcs <- function(data_dir,
 #' @param condition Optional: The column in the metadata containing the condition. Will be used as the covariate in ComBat, but can be specified later. You may use this to add a different column of choice, in case you want to use a custom column in the ComBat model matrix.
 #' @param anchor Experimental: The column in the metadata referencing the anchor samples (control references). Will be used as a covariate in ComBat, if specified. Please be aware that this column may be confounded with the condition column. You may use this to add a different column of choice, in case you want to use a custom column in the ComBat model matrix. You may use a custom column name, but it is good practice to add the name to the 'non_markers' object exported by cyCombine, to reduce the risk of unexpected errors.
 #' @param down_sample If TRUE, the output will be down-sampled to size sample_size
-#' @param sample_size The size to down-sample to
+#' @param sample_size The size to down-sample to. If a non-random sampling type is used and a group contains fewer cells than the sample_size, all cells of that group will be used.
 #' @param sampling_type The type of down-sampling to use. "random" to randomly select cells across the entire dataset, "batch_ids" to sample evenly (sample_size) from each batch, or "sample_ids" sample evenly (sample_size) from each sample.
 #' @param seed The seed to use for down-sampling
 #' @param clean_colnames (Default: TRUE). A logical defining whether column names should be cleaned or not. Cleaning involves removing isotope tags, spaces, dashes, and underscores.
@@ -129,9 +129,8 @@ convert_flowset <- function(flowset,
         metadata <- suppressMessages(file.path(metadata) %>%
                                        readr::read_csv())
       } else {
-        stop(stringr::str_c("Sorry, file", metadata, "is not in a supported format. Please use a .xlsx or .csv file.\n",
-                            "Alternatively, a data.frame of the metadata can be used.",
-                            sep = " "))
+        stop("Sorry, the given metadata is not in a supported format. Please use a .xlsx or .csv file.\n",
+                            "Alternatively, a data.frame of the metadata can be used.")
       }
     }
 
@@ -147,7 +146,7 @@ convert_flowset <- function(flowset,
     # Check that all metadata rows has a file
     if(any(metadata[[filename_col]] %!in% files)){
       missing_files <- metadata[[filename_col]][metadata[[filename_col]] %!in% files]
-      warning(stringr::str_c("The sample ", missing_files, " in the metadata was not found in the provided folder and will be ignored.\n"))
+      warning("The following samples in the metadata were not found in the provided folder and will be ignored.\n", stringr::str_c(missing_files, collapse = ", "))
       # Remove files from metadata
       metadata <- metadata[metadata[[filename_col]] %in% files,]
     }
@@ -155,7 +154,7 @@ convert_flowset <- function(flowset,
     # Check that all files are represented in metadata
     if(any(files %!in% metadata[[filename_col]])){
       missing_files <- files[files %!in% metadata[[filename_col]]]
-      warning(stringr::str_c("The sample ", missing_files, " was not found in the metadata file and will be ignored.\n"))
+      warning("The samples were not found in the metadata file and will be ignored.\n", stringr::str_c(missing_files, collapse = ", "))
       files <- files[files %in% metadata[[filename_col]]]
       nrows <- nrows[rownames(nrows) %in% files,] %>% as.matrix()
       flowset <- flowset[files]
@@ -218,26 +217,36 @@ convert_flowset <- function(flowset,
   # Down sampling setup
   if(down_sample){
     set.seed(seed)
+    # Sorting here enables major resource savings when down-sampling
+    # For non-random sampling, the dplyr::slice allows down-sampling to group size if there are less cells than sample_size.
     if(sampling_type == "random"){
-      message(paste("Down sampling to", sample_size, "cells"))
+      message("Down sampling to ", sample_size, " cells")
       sample <- sample(ids, sample_size) %>%
-        # Sorting here enables major resource savings when down-sampling
         sort()
     } else if(sampling_type == "batch_ids" & !is.null(batch_ids)){ # even down-sampling from batches
       message(paste("Down sampling to", sample_size, "cells per batch"))
       sample <- tibble::tibble(batch_ids, ids) %>%
         dplyr::group_by(batch_ids) %>%
-        dplyr::slice_sample(n = sample_size) %>%
+        dplyr::slice(sample(dplyr::n(), min(sample_size, dplyr::n()))) %>%
         dplyr::pull(ids) %>%
         sort()
+      tiny_batches <- table(batch_ids) < sample_size
+      if(any(tiny_batches)) message("Please be aware that batches the following batches contained less than ",
+                                    sample_size, " cells:\n",
+                                    stringr::str_c(names(tiny_batches), collapse = ", "))
     } else{ # Even down-sampling from samples
       message(paste("Down sampling to", sample_size, "cells per sample"))
       sample <- tibble::tibble(sample_ids, ids) %>%
         dplyr::group_by(sample_ids) %>%
-        dplyr::slice_sample(n = sample_size) %>%
+        dplyr::slice(sample(dplyr::n(), min(sample_size, dplyr::n()))) %>%
         dplyr::pull(ids) %>%
         sort()
+      tiny_samples <- table(sample_ids) < sample_size
+      if(any(tiny_samples)) message("Please be aware that batches the following batches contained less than",
+                                    sample_size, "cells:\n",
+                                    stringr::str_c(names(tiny_samples), collapse = ", "))
     }
+
 
     # Down-sample metadata columns
     ids <- ids[sample]
@@ -267,7 +276,7 @@ convert_flowset <- function(flowset,
         panel <- suppressMessages(file.path(panel) %>%
                                        readr::read_csv())
       } else {
-        stop(paste("Sorry, file", panel, "is not in a supported format. Please use a .xlsx or .csv file."))
+        stop("Sorry, the panel file is not in a supported format. Please use a .xlsx or .csv file.")
       }
     }
     cols <- match(colnames(fcs_data), panel[[panel_channel]]) %>%
@@ -371,7 +380,7 @@ transform_asinh <- function(df,
   } else if(.keep & any(colnames(df) %!in% unique(colnames(df)))){
     stop("Your data contains non-unique column names. Please ensure they are unique. The column names are: ", stringr::str_c(colnames(df), collapse = ", "))
   }
-  message(paste0("Transforming data using asinh with a cofactor of ", cofactor, ".."))
+  message("Transforming data using asinh with a cofactor of ", cofactor, "..")
   transformed <- df %>%
     purrr::when(.keep ~ .,
                 ~ dplyr::select_if(., colnames(.) %in% c(markers, non_markers))) %>%
