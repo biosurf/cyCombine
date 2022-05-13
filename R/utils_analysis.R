@@ -26,6 +26,7 @@
 #' @param umap_size Number of cells to include in UMAP
 #' @inheritParams create_som
 #' @inheritParams evaluate_emd
+#' @export
 #'
 #' @examples
 #' \dontrun{

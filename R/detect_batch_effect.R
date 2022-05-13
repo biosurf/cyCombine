@@ -101,7 +101,7 @@ detect_batch_effect_express <- function(df,
   # Perform EMD calculations
   emd <- df %>%
     dplyr::arrange(id) %>%
-    cyCombine:::compute_emd()
+    cyCombine::compute_emd()
 
   # Get summary per marker ACROSS batches
   emd_markers <- cbind.data.frame(sapply(emd[[1]], mean, na.rm = T), sapply(emd[[1]], stats::sd, na.rm = T))
@@ -304,7 +304,7 @@ detect_batch_effect <- function(df,
   if (length(levels(df$batch)) >= 3 & length(levels(df$batch)) <= 30) {
     emd <- df %>%
       dplyr::mutate(label = as.character(label)) %>%
-      cyCombine:::compute_emd()
+      cyCombine::compute_emd()
 
     markers_emd <- list()
     # Looking through EMDs to find culprits - using loops

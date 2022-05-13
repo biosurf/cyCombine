@@ -45,7 +45,7 @@ convert_flowset(
 
 \item{seed}{The seed to use for down-sampling}
 
-\item{clean_colnames}{(Default: TRUE). A logical defining whether column names should be cleaned or not. Cleaning involves removing isotope tags, spaces, dashes, and underscores.}
+\item{clean_colnames}{(Default: TRUE). A logical defining whether column names should be cleaned or not. Cleaning involves removing isotope tags, spaces, dashes, underscores, and all bracket types.}
 
 \item{panel}{Optional: Panel as a filename or data.frame. Is used to define colnames from the panel_antigen column}
 

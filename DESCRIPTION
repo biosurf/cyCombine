@@ -1,6 +1,6 @@
 Package: cyCombine
 Title: Robust integration of single-cell cytometry datasets within and across technologies
-Version: 0.2.10
+Version: 0.2.11
 Authors@R: 
     c(person(given = "Christina Bligaard",
            family = "Pedersen",

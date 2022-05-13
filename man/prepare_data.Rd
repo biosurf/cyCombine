@@ -72,7 +72,7 @@ prepare_data(
 
 \item{.keep}{Keep all channels. If FALSE, channels that are not transformed are removed}
 
-\item{clean_colnames}{(Default: TRUE). A logical defining whether column names should be cleaned or not. Cleaning involves removing isotope tags, spaces, dashes, and underscores.}
+\item{clean_colnames}{(Default: TRUE). A logical defining whether column names should be cleaned or not. Cleaning involves removing isotope tags, spaces, dashes, underscores, and all bracket types.}
 }
 \description{
 This is a wrapper function that takes you from a directory of .fcs files or a flowset to a transformed tibble.

@@ -72,7 +72,7 @@ compile_fcs <- function(data_dir,
 #' @param sample_size The size to down-sample to. If a non-random sampling type is used and a group contains fewer cells than the sample_size, all cells of that group will be used.
 #' @param sampling_type The type of down-sampling to use. "random" to randomly select cells across the entire dataset, "batch_ids" to sample evenly (sample_size) from each batch, or "sample_ids" sample evenly (sample_size) from each sample.
 #' @param seed The seed to use for down-sampling
-#' @param clean_colnames (Default: TRUE). A logical defining whether column names should be cleaned or not. Cleaning involves removing isotope tags, spaces, dashes, and underscores.
+#' @param clean_colnames (Default: TRUE). A logical defining whether column names should be cleaned or not. Cleaning involves removing isotope tags, spaces, dashes, underscores, and all bracket types.
 #' @param panel Optional: Panel as a filename or data.frame. Is used to define colnames from the panel_antigen column
 #' @param panel_channel Optional: Only used if panel is given. It is the column name in the panel data.frame that contains the channel names
 #' @param panel_antigen Optional: Only used if panel is given. It is the column name in the panel data.frame that contains the antigen names
@@ -294,7 +294,7 @@ convert_flowset <- function(flowset,
   if(clean_colnames) {
     col_names <- col_names %>%
       stringr::str_remove_all("^\\d+[A-Za-z]+_") %>%
-      stringr::str_remove_all("[ _-]")
+      stringr::str_remove_all("[- _\\[\\](){}]")
     }
   colnames(fcs_data) <- c("id", col_names)
 

@@ -5,11 +5,8 @@
 
 <!-- badges: start -->
 <!-- [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental) -->
-
-[![Lifecycle:
-stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
+<!-- [![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable) -->
 <!-- badges: end -->
-
 <!-- ## Clone github repository -->
 <!-- ``` {sh, eval = FALSE} -->
 <!-- # Run in terminal -->
@@ -80,8 +77,8 @@ may also benefit from the answers and discussions.
 ### From a directory of uncorrected .fcs files
 
 ``` r
-library(cyCombine)
-library(magrittr)
+library("cyCombine")
+library("magrittr")
 # Directory containing .fcs files
 data_dir <- "data/raw"
 # Markers of interest

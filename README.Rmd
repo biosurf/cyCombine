@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 
 <!-- badges: start -->
 <!-- [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental) -->
-[![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
+<!-- [![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable) -->
 <!-- badges: end -->
 
 <!-- ## Clone github repository -->
@@ -71,8 +71,8 @@ If you have any issues or questions regarding the use of cyCombine, please do no
 
 ### From a directory of uncorrected .fcs files
 ```{r, eval = FALSE}
-library(cyCombine)
-library(magrittr)
+library("cyCombine")
+library("magrittr")
 # Directory containing .fcs files
 data_dir <- "data/raw"
 # Markers of interest
