@@ -1,15 +1,16 @@
 Package: cyCombine
 Title: Robust integration of single-cell cytometry datasets within and across technologies
-Version: 0.2.11
+Version: 0.2.12
 Authors@R: 
     c(person(given = "Christina Bligaard",
            family = "Pedersen",
-           role = c("aut", "cre"),
+           role = c("aut"),
            email = "chrbl@dtu.dk",
            comment = c(ORCID = "0000-0002-9895-0930")),
     person(given = "Søren Helweg",
            family = "Dam",
-           role = c("aut"),
+           role = c("aut", "cre"),
+           email = "sohdam@dtu.dk",
            comment = c(ORCID = "0000-0003-0755-0016")),
     person(given = "Lars Rønn",
            family = "Olsen",
@@ -19,7 +20,7 @@ Description: A package for combining single-cell cytometry datasets that increas
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.1
 Imports: 
     magrittr,
     flowCore,
@@ -51,7 +52,8 @@ Suggests:
     RColorBrewer,
     cowplot,
     prettydoc,
-    knitr
+    knitr,
+    CATALYST
 VignetteBuilder: knitr
 Depends: 
     R (>= 4.0)

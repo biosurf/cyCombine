@@ -4,7 +4,14 @@
 \alias{transform_asinh}
 \title{Transform data using asinh}
 \usage{
-transform_asinh(df, markers = NULL, cofactor = 5, derand = TRUE, .keep = FALSE)
+transform_asinh(
+  df,
+  markers = NULL,
+  cofactor = 5,
+  derand = TRUE,
+  .keep = FALSE,
+  reverse = FALSE
+)
 }
 \arguments{
 \item{df}{The tibble to transform}
@@ -16,6 +23,8 @@ transform_asinh(df, markers = NULL, cofactor = 5, derand = TRUE, .keep = FALSE)
 \item{derand}{Derandomize. Should be TRUE for CyTOF data, otherwise FALSE.}
 
 \item{.keep}{Keep all channels. If FALSE, channels that are not transformed are removed}
+
+\item{reverse}{Reverses the asinh transformation if TRUE}
 }
 \description{
 Inverse sine transformation of a tibble.

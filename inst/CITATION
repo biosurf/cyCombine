@@ -1,0 +1,24 @@
+citEntry(entry="ARTICLE",
+    Author = c(
+    person("Christina Bligaard", "Pedersen"),
+    person(paste("S\U00F8ren Helweg"), "Dam"),
+    person("Mike Bogetofte", "Barnkob"),
+    person("Noelia", "Purroy"),
+    person("Laura Z.", "Rassenti"),
+    person("Thomas J.", "Kipps"),
+    person("Jennifer", "Nguyen"),
+    person("James Arthur", "Lederer"),
+    person("Satyen Harish", "Gohil"),
+    person("Catherine J.", "Wu"),
+    person("Lars R\U00F8nn", "Olsen")
+    ),
+    title = "cyCombine allows for robust integration of single-cell cytometry datasets within and across technologies",
+    year = "2022",
+    doi = "10.1038/s41467-022-29383-5",
+    publisher = "Nature Research",
+    URL = "https://www.nature.com/articles/s41467-022-29383-5",
+    journal = "Nature Communications",
+    textVersion = paste("Pedersen, C.B., Dam, S.H., Barnkob, M.B. et al.",
+                        " cyCombine allows for robust integration of single-cell cytometry datasets within and across technologies",
+                        "Nat Commun 13, 1698 (2022). https://doi.org/10.1038/s41467-022-29383-5")
+)

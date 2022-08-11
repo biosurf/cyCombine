@@ -12,19 +12,20 @@ df2SCE(
   panel = NULL,
   panel_channel = "Channel",
   panel_antigen = "Marker",
-  panel_type = "Type"
+  panel_type = "Type",
+  transform_cofactor = 5
 )
 }
 \arguments{
 \item{df}{Tibble with expression values and metadata}
 
-\item{markers}{Markers to include in exprs object of SCE. If NULL, markers will be found using the \code{\link{get_markers}} function.}
+\item{markers}{Markers to include in exprs and counts object of SCE. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 
 \item{non_markers}{Non-markers to include as colData in SCE. If NULL, non_markers will be based on cyCombine::non_markers.}
 
-\item{sample_col}{The name of the column containing sample IDs}
+\item{sample_col}{It is the column name in the df that contains the sample names. Defaults to 'sample'.}
 
-\item{panel}{Optional: Panel as a data.frame. Should have colnames Channel, Marker, Type unless otherwise specified in the panel_ args.}
+\item{panel}{Optional: Panel as a data.frame. Should have colnames Channel, Marker, Type unless otherwise specified in the panel_ args. Should be included if you want to store FCS files}
 
 \item{panel_channel}{Optional: Only used if panel is given. It is the column name in the panel data that contains the channel names}
 
@@ -32,6 +33,8 @@ df2SCE(
 
 \item{panel_type}{Optional: Only used if panel is given. It is the column name in the panel data that contains the antigen types (none, state, type).
 "none" will be excluded from SCE.}
+
+\item{transform_cofactor}{The cofactor to use when reverse-transforming to raw counts}
 }
 \description{
 Conversion of dataframe into separate data and metadata objects for subsequent transformation.
@@ -42,5 +45,9 @@ Rename variable names to fit the requirements of SCE-based tools
 sce <- df \%>\%
   df2SCE(markers = markers, non_markers = NULL, panel = panel)
   }
+}
+\seealso{
+Other export: 
+\code{\link{sce2FCS}()}
 }
 \concept{export}

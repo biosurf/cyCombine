@@ -4,15 +4,15 @@
 #'  Rename variable names to fit the requirements of SCE-based tools
 #'
 #' @param df Tibble with expression values and metadata
-#' @param markers Markers to include in exprs object of SCE. If NULL, markers will be found using the \code{\link{get_markers}} function.
+#' @param markers Markers to include in exprs and counts object of SCE. If NULL, markers will be found using the \code{\link{get_markers}} function.
 #' @param non_markers Non-markers to include as colData in SCE. If NULL, non_markers will be based on cyCombine::non_markers.
-#' @param panel_channel It is the column name in the df that contains the sample names. Defaults to 'sample'.
-#' @param panel Optional: Panel as a data.frame. Should have colnames Channel, Marker, Type unless otherwise specified in the panel_ args.
+#' @param sample_col It is the column name in the df that contains the sample names. Defaults to 'sample'.
+#' @param panel Optional: Panel as a data.frame. Should have colnames Channel, Marker, Type unless otherwise specified in the panel_ args. Should be included if you want to store FCS files
 #' @param panel_channel Optional: Only used if panel is given. It is the column name in the panel data that contains the channel names
 #' @param panel_antigen Optional: Only used if panel is given. It is the column name in the panel data that contains the antigen names
 #' @param panel_type Optional: Only used if panel is given. It is the column name in the panel data that contains the antigen types (none, state, type).
 #'  "none" will be excluded from SCE.
-#' @param sample_col The name of the column containing sample IDs
+#' @param transform_cofactor The cofactor to use when reverse-transforming to raw counts
 #' @family export
 #' @examples
 #' \dontrun{
@@ -21,7 +21,7 @@
 #'   }
 #' @export
 df2SCE <- function(df, markers = NULL, non_markers = NULL, sample_col = 'sample', panel = NULL,
-                   panel_channel = 'Channel', panel_antigen = 'Marker', panel_type = 'Type') {
+                   panel_channel = 'Channel', panel_antigen = 'Marker', panel_type = 'Type', transform_cofactor = 5) {
 
   # Check for packages
   cyCombine:::missing_package("SingleCellExperiment", "Bioc")
@@ -47,7 +47,7 @@ df2SCE <- function(df, markers = NULL, non_markers = NULL, sample_col = 'sample'
     if (sample_col == 'sample') {
       non_markers <- cyCombine::non_markers
     } else {
-      non_markers <- c(cyCombine::non_markers, sample_col)
+      non_markers <- c(cyCombine::non_markers, dplyr::all_of(sample_col))
     }
   }
 
@@ -62,7 +62,7 @@ df2SCE <- function(df, markers = NULL, non_markers = NULL, sample_col = 'sample'
   }
 
   } else {
-    stop("Error, non of the non_markers/sample_col are available in the dataframe. You cannot make an SCE without sample names.")
+    stop("Error, none of the non_markers/sample_col are available in the dataframe. You cannot make an SCE without sample names.")
   }
 
 
@@ -89,7 +89,7 @@ df2SCE <- function(df, markers = NULL, non_markers = NULL, sample_col = 'sample'
   # Prepare row data if available
   if (!is.null(panel) & is.data.frame(panel)) {
     # Check presence of panel's data names
-    sapply(c(panel_channel, panel_antigen, panel_type), function(x) {cyCombine:::check_colname(colnames(panel), x, "panel")})
+    sapply(c(dplyr::all_of(panel_channel), dplyr::all_of(panel_antigen), dplyr::all_of(panel_type)), function(x) {cyCombine:::check_colname(colnames(panel), x, "panel")})
 
     # Exclude none's
     rowData <- panel %>%
@@ -116,19 +116,77 @@ df2SCE <- function(df, markers = NULL, non_markers = NULL, sample_col = 'sample'
       stringr::str_remove_all("[ _-]")
 
 
-  } else if (!is.null(rowData) & !is.data.frame(rowData)) {
-    stop("The provided panel is not a data frame.")
+  # } else if (!is.null(rowData) & !is.data.frame(rowData)) {
+  #   stop("The provided panel is not a data frame.")
 
   } else {
-    rowData = NULL
-
+    rowData <- NULL
+    warning("To store as FCS files later, you should include panel information at this step.")
   }
 
   # Creating the SCE
-  sce <- SingleCellExperiment::SingleCellExperiment(list(exprs = exprs),
+  sce <- SingleCellExperiment::SingleCellExperiment(list(exprs = exprs,
+                                                         counts = exprs %>%
+                                                           t() %>% tibble::as_tibble() %>%
+                                                           transform_asinh(reverse = TRUE,
+                                                                           cofactor = transform_cofactor,
+                                                                           derand = FALSE,
+                                                                           markers = markers) %>%
+                                                           t()),
                                                     colData = colData,
                                                     rowData = rowData,
                                                     metadata = list('experiment_info' = experiment_info))
+  message("Your SingleCellExperiment object is now created. The 'counts' assay contains reverse transformed expression values and 'exprs' contains expression values.")
 
   return(sce)
 }
+
+#' Convert SingelCellExperiment into flowSet and store as FCS files
+#'
+#' Wrapper function that makes it easier to go from a SCE to flowSet and written FCS files.
+#'   The function uses CATALYST::sce2fcs and flowCore::write.flowSet to store the FCS files.
+#'
+#' @inheritParams CATALYST::sce2fcs
+#' @inheritParams flowCore::write.flowSet
+#' @param sce SingleCellExperiment to write to FCS files
+#' @param outdir If given, the flowSet will be stored in FCS files
+#' @family export
+#' @examples
+#' \dontrun{
+#'  write_sce2FCS(sce, outdir = "fcs_files")
+#'   }
+#' @export
+sce2FCS <- function(sce, outdir = NULL,
+                    split_by = "sample_id",
+                    assay = "counts",
+                    keep_dr = TRUE,
+                    keep_cd = TRUE){
+
+
+  # Check CATALYST is installed
+  cyCombine:::missing_package("CATALYST", repo = "Bioc")
+
+  # If no panel information is available
+  stopifnot("Your SingleCellExperiment should contain channel information to be stored.\n
+            Consider rerunning df2sce with a panel to continue." = !is.null(CATALYST::channels(sce)))
+
+  # Convert to flowset
+  fcs <- CATALYST::sce2fcs(sce,
+                           keep_dr = keep_dr,
+                           keep_cd = keep_cd,
+                           split_by = split_by,
+                           assay = assay)
+
+  # Create output directory
+  cyCombine:::check_make_dir(outdir)
+
+  # Write FCS files
+  if(!is.null(outdir)) {
+
+    message("Writing FCS files to ", outdir)
+    flowCore::write.flowSet(fcs, outdir = outdir)
+    }
+
+  return(fcs)
+}
+

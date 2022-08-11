@@ -350,6 +350,7 @@ fcs_sample <- function(flowframe, sample, nrows, seed = 473){
 #' @param cofactor The cofactor to use when transforming
 #' @param derand Derandomize. Should be TRUE for CyTOF data, otherwise FALSE.
 #' @param .keep Keep all channels. If FALSE, channels that are not transformed are removed
+#' @param reverse Reverses the asinh transformation if TRUE
 #' @family dataprep
 #' @examples
 #' \dontrun{
@@ -361,7 +362,8 @@ transform_asinh <- function(df,
                             markers = NULL,
                             cofactor = 5,
                             derand = TRUE,
-                            .keep = FALSE){
+                            .keep = FALSE,
+                            reverse = FALSE){
   if(is.null(markers)){
     markers <- df %>%
       cyCombine::get_markers()
@@ -387,7 +389,8 @@ transform_asinh <- function(df,
     # Transform all data on those markers
     dplyr::mutate(dplyr::across(dplyr::all_of(markers),
                      .fns = function(x){
-                       if(derand) asinh(ceiling(x)/cofactor) else asinh(x/cofactor)
+                       if(derand) x <- ceiling(x)
+                       if(reverse) sinh(x)*cofactor else asinh(x/cofactor)
                      }))
   return(transformed)
 }
