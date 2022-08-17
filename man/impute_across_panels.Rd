@@ -22,9 +22,9 @@ impute_across_panels(
 
 \item{overlap_channels}{Channels (markers) that overlap between impute_for and complete_obs, which can be used to base imputation on}
 
-\item{impute_channels1}{Channels to impute and add to the impute_for dataset1 (must be present in dataset2)}
+\item{impute_channels1}{Channels to impute and add to the impute_for dataset1 (must be present in dataset2). Alternatively can be set to NULL.}
 
-\item{impute_channels2}{Channels to impute and add to the impute_for dataset2 (must be present in dataset1)}
+\item{impute_channels2}{Channels to impute and add to the impute_for dataset2 (must be present in dataset1). Alternatively can be set to NULL.}
 
 \item{xdim}{The x-dimension size of the SOM.}
 

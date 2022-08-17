@@ -117,8 +117,8 @@ salvage_problematic <- function(df,
 #' @param dataset1 Dataframe with expression values 1
 #' @param dataset2 Dataframe with expression values 2
 #' @param overlap_channels Channels (markers) that overlap between impute_for and complete_obs, which can be used to base imputation on
-#' @param impute_channels1 Channels to impute and add to the impute_for dataset1 (must be present in dataset2)
-#' @param impute_channels2 Channels to impute and add to the impute_for dataset2 (must be present in dataset1)
+#' @param impute_channels1 Channels to impute and add to the impute_for dataset1 (must be present in dataset2). Alternatively can be set to NULL.
+#' @param impute_channels2 Channels to impute and add to the impute_for dataset2 (must be present in dataset1). Alternatively can be set to NULL.
 #' @inheritParams create_som
 #' @family merging
 #' @examples
@@ -152,6 +152,13 @@ impute_across_panels <- function(dataset1,
     stop("Error: Some of your overlap_channels are not found among the dataset2 column names.")
   }
 
+  # Checking if choice is to not impute for one dataset
+  if (is.null(impute_channels1) & is.null(impute_channels2)) {
+    stop("Error: You have not specified any channels to impute!")
+  } else if (is.null(impute_channels1) | is.null(impute_channels2)) {
+    message("Be aware that one of your panels will not have any imputed markers.")
+  }
+
 
   # Get SOM classes for datasets on overlapping channels
   overlapping_data <- rbind(dataset1[,overlap_channels], dataset2[,overlap_channels])
@@ -162,7 +169,7 @@ impute_across_panels <- function(dataset1,
                           ydim = ydim,
                           seed = seed)
 
-    # Split SOM classes to each original dataset
+  # Split SOM classes to each original dataset
   dataset1_som <- som_classes[1:nrow(dataset1)]
   dataset2_som <- som_classes[(nrow(dataset1)+1):length(som_classes)]
 
@@ -180,6 +187,17 @@ impute_across_panels <- function(dataset1,
     complete_obs <- eval(parse(text=paste0('dataset', other_set[i])))
     complete_obs_som <- eval(parse(text=paste0('dataset', other_set[i], '_som')))
 
+
+    # Check if impute_channels is NULL, in that case - skip imputation for the panel
+    if (is.null(impute_channels)) {
+      message(paste0('Skipping imputation for dataset', i, '.'))
+
+      impute_for <- impute_for %>%
+        dplyr::relocate(dplyr::any_of(non_markers), .after = dplyr::last_col())
+
+      imputed_dfs[[paste0('dataset', i)]] <- impute_for
+      next
+    }
 
 
     # For each missing event in each cluster, impute values based on density draws in the same cluster

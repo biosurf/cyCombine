@@ -389,7 +389,7 @@ transform_asinh <- function(df,
     # Transform all data on those markers
     dplyr::mutate(dplyr::across(dplyr::all_of(markers),
                      .fns = function(x){
-                       if(derand) x <- ceiling(x)
+                       if(derand & !reverse) x <- ceiling(x)
                        if(reverse) sinh(x)*cofactor else asinh(x/cofactor)
                      }))
   return(transformed)
