@@ -205,3 +205,30 @@ plot2 <- plot_dimred(corrected[sample,], type = 'umap', name = 'Corrected')
 save_two_plots(plot1, plot2, filename = 'figs/umap.png')
 ```
 
+
+## Anchor-based correction
+After user requests, we have looked into a method by which anchor-based (i.e. using replicates) correction can be performed with cyCombine. We have implemented an **experimental** option for this in the function `correct_data()`. Anchor sample information will be used in the same way as any other covariate for ComBat. Be aware that anchor status is very likely to be confounded with the experimental condition, and as such, these two parameters typically cannot be used together. If you want to give anchors a try with cyCombine, you need to specify which samples are replicates and which are not. Therefore, one needs to give "non-replicates" a unique value for each sample. Otherwise, it will assume "non-replicates" are replicates of the other "non-replicates", which of course they are not.
+
+Example code to specify the anchor variable is shown below. The example is a scenario with three batches containing data from 10 healthy donors. The first sample (HD01) is replicated in all batches, and the others are unique to a batch, making the sample IDs: HD01_batch1, HD01_batch2, HD01_batch3, HD02_batch1, HD03_batch1, HD04_batch1, HD05_batch2, HD06_batch2, HD07_batch2, HD08_batch3, HD09_batch3, and HD10_batch3.
+
+```{r, eval = FALSE}
+uncorrected$anchor <- ifelse(grepl("^HD01", uncorrected$sample), "HD01", uncorrected$sample)
+```
+
+If there are 10000 cells in each sample, the table of the batch vs.\ anchor parameters will look like the following:
+
+```{r, eval = FALSE}
+table(uncorrected$anchor, uncorrected$batch)
+
+#                   1     2     3
+#   HD01        10000 10000 10000
+#   HD02_batch1 10000     0     0
+#   HD03_batch1 10000     0     0
+#   HD04_batch1 10000     0     0
+#   HD05_batch2     0 10000     0
+#   HD06_batch2     0 10000     0
+#   HD07_batch2     0 10000     0
+#   HD08_batch3     0     0 10000
+#   HD09_batch3     0     0 10000
+#   HD10_batch3     0     0 10000
+```
