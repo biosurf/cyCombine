@@ -10,7 +10,8 @@ sce2FCS(
   split_by = "sample_id",
   assay = "counts",
   keep_dr = TRUE,
-  keep_cd = TRUE
+  keep_cd = TRUE,
+  randomize = FALSE
 )
 }
 \arguments{
@@ -29,6 +30,8 @@ When writing out FCS files, this should correspond to count-like data!}
 (stored in \code{colData(x)}) and dimension reductions 
 (stored in \code{reducedDims(x)}), respectively,
 should be kept or dropped.}
+
+\item{randomize}{(Default: FALSE) Logical determining whether counts are randomized for plotting purposes or not. Only works when assay = "counts" (default).}
 }
 \description{
 Wrapper function that makes it easier to go from a SCE to flowSet and written FCS files.
@@ -36,7 +39,7 @@ The function uses CATALYST::sce2fcs and flowCore::write.flowSet to store the FCS
 }
 \examples{
 \dontrun{
- write_sce2FCS(sce, outdir = "fcs_files")
+ sce2FCS(sce, outdir = "fcs_files")
   }
 }
 \seealso{

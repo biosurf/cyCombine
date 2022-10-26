@@ -124,6 +124,8 @@ df2SCE <- function(df, markers = NULL, non_markers = NULL, sample_col = 'sample'
     warning("To store as FCS files later, you should include panel information at this step.")
   }
 
+
+
   # Creating the SCE
   sce <- SingleCellExperiment::SingleCellExperiment(list(exprs = exprs,
                                                          counts = exprs %>%
@@ -150,17 +152,19 @@ df2SCE <- function(df, markers = NULL, non_markers = NULL, sample_col = 'sample'
 #' @inheritParams flowCore::write.flowSet
 #' @param sce SingleCellExperiment to write to FCS files
 #' @param outdir If given, the flowSet will be stored in FCS files
+#' @param randomize (Default: FALSE) Logical determining whether counts are randomized for plotting purposes or not. Only works when assay = "counts" (default).
 #' @family export
 #' @examples
 #' \dontrun{
-#'  write_sce2FCS(sce, outdir = "fcs_files")
+#'  sce2FCS(sce, outdir = "fcs_files")
 #'   }
 #' @export
 sce2FCS <- function(sce, outdir = NULL,
                     split_by = "sample_id",
                     assay = "counts",
                     keep_dr = TRUE,
-                    keep_cd = TRUE){
+                    keep_cd = TRUE,
+                    randomize = FALSE){
 
 
   # Check CATALYST is installed
@@ -169,6 +173,18 @@ sce2FCS <- function(sce, outdir = NULL,
   # If no panel information is available
   stopifnot("Your SingleCellExperiment should contain channel information to be stored.\n
             Consider rerunning df2sce with a panel to continue." = !is.null(CATALYST::channels(sce)))
+
+  # Randomize counts
+  if(randomize & assay == "counts"){
+    SummarizedExperiment::assay(sce, "counts") <- SummarizedExperiment::assay(sce, "counts") %>%
+      t() %>% tibble::as_tibble() %>%
+      dplyr::mutate(dplyr::across(dplyr::everything(),
+                                  function(x) stats::runif(length(x), ceiling(x)-1, ceiling(x))
+                                  )) %>%
+      t()
+  } else if(randomize & assay != "counts"){
+    warning("Please only use randomization with count values.")
+  }
 
   # Convert to flowset
   fcs <- CATALYST::sce2fcs(sce,
