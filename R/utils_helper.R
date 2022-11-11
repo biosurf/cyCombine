@@ -28,6 +28,27 @@ missing_package <- function(package, repo = "CRAN", git_repo = ""){
 
 
 
+#' Randomize a matrix of values
+#'
+#' Subtracts a random value between 0 and 1 from all values. Then convert negative values to zeros.
+#' @param mat A matrix to randomize
+randomize_matrix <- function(mat){
+  # Matrix dimensions
+  ncols <- ncol(mat)
+  nrows <- nrow(mat)
+
+  # Ceiling values
+  randomized <- ceiling(mat)
+  # Subtract random number
+  randomized <- randomized - matrix(stats::runif(n = ncols*nrows, min = 0, max = 0.9999),
+                                    nrow = nrows,
+                                    ncol = ncols)
+  # Ceiling negative values
+  randomized[randomized < 0] <- 0
+  return(randomized)
+}
+
+
 #' Get markers from a dataframe
 #'
 #' This function uses the global variable "non_markers".

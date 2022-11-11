@@ -177,11 +177,7 @@ sce2FCS <- function(sce, outdir = NULL,
   # Randomize counts
   if(randomize & assay == "counts"){
     SummarizedExperiment::assay(sce, "counts") <- SummarizedExperiment::assay(sce, "counts") %>%
-      t() %>% tibble::as_tibble() %>%
-      dplyr::mutate(dplyr::across(dplyr::everything(),
-                                  function(x) stats::runif(length(x), ceiling(x)-1, ceiling(x))
-                                  )) %>%
-      t()
+      cyCombine:::randomize_matrix()
   } else if(randomize & assay != "counts"){
     warning("Please only use randomization with count values.")
   }
