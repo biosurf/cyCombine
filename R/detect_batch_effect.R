@@ -11,7 +11,7 @@
 #'   It can apply downsampling for a quicker analysis of larger datasets.
 #'
 #' @param df Tibble containing the expression data and batch information. See prepare_data.
-#' @param out_dir Directory for plot output
+#' @param out_dir Directory for plot output, default = NULL will return plots as variable.
 #' @param batch_col Name of column containing batch information
 #' @param downsample Number of cells to include in detection. If not specified, all cells will be used.
 #' @param seed Random seed for reproducibility
@@ -23,7 +23,7 @@
 #' }
 #' @export
 detect_batch_effect_express <- function(df,
-                                        out_dir,
+                                        out_dir = NULL,
                                         batch_col = "batch",
                                         downsample = NULL,
                                         seed = 472) {
@@ -35,8 +35,13 @@ detect_batch_effect_express <- function(df,
   cyCombine:::missing_package("grDevices", "CRAN")
 
   message('Starting the quick(er) detection of batch effects.')
-  # Create output directory if missing
-  cyCombine:::check_make_dir(out_dir)
+  # Create output directory if missing, and not NULL
+  if (!is.null(out_dir)) {
+    cyCombine:::check_make_dir(out_dir)
+  } else {
+    message('Returning plots as variable.')
+    plots_return <- list()
+  }
 
   # Check batch_col and rename if necessary
   cyCombine:::check_colname(colnames(df), batch_col, location = "df")
@@ -90,10 +95,16 @@ detect_batch_effect_express <- function(df,
       ggplot2::theme_bw()
   }
 
-  # Save the plots
-  suppressMessages(cowplot::save_plot(paste0(out_dir, '/distributions_per_batch.png'), cowplot::plot_grid(plotlist = p, nrow = round(length(all_markers) / 6)), base_width = length(all_markers) / (4/3), base_height = length(all_markers)))
-  message(paste0('Saved marker distribution plots here: ', out_dir, '/distributions_per_batch.png.'))
+  # Combine plots
+  dist_plot <- suppressMessages(cowplot::plot_grid(plotlist = p, nrow = round(length(all_markers) / 6)))
 
+  # Save the plots if out_dir provided
+  if (!is.null(out_dir)) {
+    cowplot::save_plot(paste0(out_dir, '/distributions_per_batch.png'), dist_plot, base_width = length(all_markers) / (4/3), base_height = length(all_markers))
+    message(paste0('Saved marker distribution plots here: ', out_dir, '/distributions_per_batch.png.\n'))
+  } else {
+    plots_return[['distributions']] <- dist_plot
+  }
 
   ### Use EMD-based batch effect detection
   message('Applying global EMD-based batch effect detection.')
@@ -139,10 +150,14 @@ detect_batch_effect_express <- function(df,
     ggplot2::ylab('Mean EMD') + ggplot2::xlab('') +
     ggplot2::geom_errorbar(ggplot2::aes(ymin=mean-sd, ymax=mean+sd), width=.2,
                            position=ggplot2::position_dodge(.9))
-  suppressMessages(ggplot2::ggsave(p, filename = paste0(out_dir, '/emd_per_marker.png')))
 
-  message(paste0('Saved EMD plot here: ', out_dir, '/emd_per_marker.png.\n'))
-
+  # Save the plots if out_dir provided
+  if (!is.null(out_dir)) {
+    suppressMessages(ggplot2::ggsave(p, filename = paste0(out_dir, '/emd_per_marker.png')))
+    message(paste0('Saved EMD plot here: ', out_dir, '/emd_per_marker.png.\n'))
+  } else {
+    plots_return[['EMD']] <- p
+  }
 
   # The magnitude of expression also matters for the size EMD ?
   # marker_means <- df %>% select(get_markers(df)) %>% as.matrix() %>% matrixStats::colMeans()
@@ -192,10 +207,20 @@ detect_batch_effect_express <- function(df,
     ggplot2::labs(x = "MDS1", y = "MDS2", title = "MDS plot") +
     ggplot2::theme_bw()
 
-  suppressMessages(ggplot2::ggsave(p, filename = paste0(out_dir, '/MDS_per_batch.png')))
-  message(paste0('Saved MDS plot here: ', out_dir, '/MDS_per_batch.png'))
+  # Save the plots if out_dir provided
+  if (!is.null(out_dir)) {
+    suppressMessages(ggplot2::ggsave(p, filename = paste0(out_dir, '/MDS_per_batch.png')))
+    message(paste0('Saved MDS plot here: ', out_dir, '/MDS_per_batch.png\n'))
+  } else {
+    plots_return[['MDS']] <- p
+  }
 
   message('Done!')
+
+  # Return plots if out_dir not provided
+  if (is.null(out_dir)) {
+    return(plots_return)
+  }
 }
 
 
