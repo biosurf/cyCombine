@@ -1,6 +1,6 @@
 Package: cyCombine
 Title: Robust integration of single-cell cytometry datasets within and across technologies
-Version: 0.2.15
+Version: 0.2.16
 Authors@R: 
     c(person(given = "Christina Bligaard",
            family = "Pedersen",
@@ -20,7 +20,7 @@ Description: A package for combining single-cell cytometry datasets that increas
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.3
 Imports: 
     magrittr,
     flowCore,

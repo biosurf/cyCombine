@@ -47,6 +47,15 @@ setRepositories(ind = c(1:6, 8))
 devtools::install_github("biosurf/cyCombine")
 ```
 
+## Install with conda
+
+Thanks to [gartician](https://github.com/gartician) for the conda implementation.
+[Source](https://anaconda.org/gartician/r-cycombine).
+
+```{sh, eval = FALSE}
+conda install -c gartician r-cycombine
+```
+
 ## Article
 The article introducing cyCombine is published in [Nature Communications](https://doi.org/10.1038/s41467-022-29383-5).
 
@@ -182,10 +191,13 @@ saveRDS(corrected, file = "_data/cycombine_raw_corrected.RDS")
 run_analysis(tool = "cycombine", data = "raw", data_dir = "_data", markers = markers)
 
 # Otherwise, plots can be made like so:
-density_plots(uncorrected = uncorrected,
-              corrected = corrected,
-              markers = markers,
-              filename = 'figs/densities_withcovar.png')
+plot_density(uncorrected = uncorrected,
+             corrected = corrected,
+             markers = markers,
+             filename = 'figs/densities_withcovar.pdf',
+             markers_per_page = NULL, # Markers per pdf page - thanks to asongggg for the suggestion
+             ncol = 6 # Number of columns of plots
+             )
 
 # PCA plot uncorrected
 pca1 <- uncorrected %>%
@@ -194,7 +206,7 @@ pca1 <- uncorrected %>%
 # PCA plot corrected
 pca2 <- corrected %>%
   plot_dimred('corrected', type = 'pca')
-save_two_plots(pca1, pca2, filename = 'figs/pca.png')
+plot_save_two(pca1, pca2, filename = 'figs/pca.png')
 
 # UMAP
 # UMAP plot uncorrected
@@ -202,7 +214,7 @@ set.seed(473)
 sample <- sample(1:nrow(uncorrected), 20000)
 plot1 <- plot_dimred(uncorrected[sample,], type = 'umap', name = 'Uncorrected')
 plot2 <- plot_dimred(corrected[sample,], type = 'umap', name = 'Corrected')
-save_two_plots(plot1, plot2, filename = 'figs/umap.png')
+plot_save_two(plot1, plot2, filename = 'figs/umap.png')
 ```
 
 

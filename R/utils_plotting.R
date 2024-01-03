@@ -3,7 +3,8 @@
 
 #' Density ridges for two sets
 #'
-#' Compare densities between each batch both before and after correction
+#' Compare densities between each batch both before and after correction.
+#' Thanks to GitHub user asongggg for suggesting storing markers on separate pages and for suggesting an approach.
 #' @param format Plotting format (1 = 1 row per batch, 2 = all batches in same row.)
 #' @param uncorrected tibble with uncorrected data
 #' @param corrected tibble with corrected data
@@ -13,6 +14,9 @@
 #' @param xlims The limits of the x axis as a vector
 #' @param dataset_names Change the names of the datasets from Uncorrected and Corrected to something else. Format: c("Uncorrected", "Corrected")
 #' @param ncol Number of density plots in a single row of plots. Default: 6
+#' @param directory Folder to store figures in.
+#' @param markers_per_page Store figures on individual pages, with the number of markers as specified. Default: NULL.
+#' @param return_format Allows returning the raw plots for manual adjustments. This argument is mainly used when plots are not stored in files.
 #' @family plot
 #' @examples
 #' \dontrun{
@@ -21,25 +25,31 @@
 #'              filename = 'my/dir/merging_plot.pdf')
 #' }
 #' @export
-plot_density <- function(uncorrected,
-                         corrected,
-                         markers = NULL,
-                         filename = NULL,
-                         y = "batch",
-                         xlims = c(-1,10),
-                         dataset_names = NULL,
-                         ncol = 6,
-                         format = 1) {
-
+plot_density <- function(uncorrected, corrected, markers = NULL, directory = NULL,
+                         filename = NULL, y = "batch", dataset_names = NULL,
+                         xlims = c(-1, 10),
+                         ncol = 6, format = 1, markers_per_page = NULL,
+                         return_format = c("cowplot", "raw", "pdf")) {
+  return_format <- match.arg(return_format)
   # Check for packages
   cyCombine:::missing_package("ggridges", "CRAN")
   cyCombine:::missing_package("ggplot2", "CRAN")
-  cyCombine:::missing_package("cowplot", "CRAN")
+  if(return_format != "raw") cyCombine:::missing_package("cowplot", "CRAN")
+
+  if(return_format == "pdf" & is.null(filename)){
+    stop("Please provide a filename when returning as pdf.")
+  }
+  # Ensure ´markers_per_page´ is NULL when returning raw.
+  if(return_format == "raw" | is.null(filename)) markers_per_page <- NULL
 
   # Get markers
   if (is.null(markers)) {
-    markers <- uncorrected %>%
-      cyCombine::get_markers()
+    markers <- cyCombine::get_markers(uncorrected)
+  }
+
+  # Combine directory and filename in filename
+  if (!is.null(filename)) {
+    filename <- ifelse(is.null(directory), filename, file.path(directory, filename))
   }
 
   # Rename datasets
@@ -58,68 +68,80 @@ plot_density <- function(uncorrected,
     batch2 <- as.factor(corrected[[y]])
   }
 
-  # Isolate markers and add Type and batch columns
-  uncorrected <- uncorrected %>%
-    dplyr::select(dplyr::all_of(markers)) %>%
-    dplyr::mutate(Type = dataset_names[1],
-                  batch = batch1)
-
   # Combine uncorrected and corrected data
   df <- corrected %>%
     dplyr::select(dplyr::all_of(markers)) %>%
-    dplyr::mutate(Type = dataset_names[2],
-                  batch = batch2) %>%
-    dplyr::bind_rows(uncorrected)
+    dplyr::mutate(Type = dataset_names[2], batch = batch2) %>%
+    dplyr::bind_rows(uncorrected %>%
+                       dplyr::select(dplyr::all_of(markers)) %>%
+                       dplyr::mutate(Type = dataset_names[1], batch = batch1))
 
-  # 1 row per batch
-  if (format == 1) {
-    # For each marker, make the plot
-    p <- list()
-    for (c in 1:length(markers)) {
+  # Determine number of plots and pages
+  num_plots <- length(markers)
+  num_pages <- ifelse(is.null(markers_per_page), 1, ceiling(num_plots / markers_per_page))
 
-      p[[c]] <- df %>%
-        ggplot2::ggplot(ggplot2::aes_string(x = paste0('`', markers[c], '`'), y = 'batch')) +
-        ggridges::geom_density_ridges(ggplot2::aes(color = .data$Type, fill = .data$Type), alpha = 0.4) +
-        ggplot2::coord_cartesian(xlim = xlims) +
-        ggplot2::labs(y = y) +
-        ggplot2::theme_bw()
+  # Create a list to store the plots
+  plot_list <- list()
+
+  for (page in 1:num_pages) {
+    start_marker <- ifelse(is.null(markers_per_page), 1, (page - 1) * markers_per_page + 1)
+    end_marker <- ifelse(is.null(markers_per_page), num_plots, min(page * markers_per_page, num_plots))
+
+    for (c in start_marker:end_marker) {
+      if (format == 1) {
+        p <- df %>%
+          ggplot2::ggplot(ggplot2::aes_string(x = paste0('`', markers[c], '`'), y = 'batch')) +
+          ggridges::geom_density_ridges(ggplot2::aes(color = .data$Type, fill = .data$Type), alpha = 0.4) +
+          ggplot2::coord_cartesian(xlim = xlims) +
+          ggplot2::labs(y = y) +
+          ggplot2::theme_bw()
+      } else if (format == 2) {
+        p <- df %>%
+          ggplot2::ggplot(ggplot2::aes_string(x = paste0('`', markers[c], '`'), y = 'Type')) +
+          ggridges::geom_density_ridges(ggplot2::aes(color = batch, fill = batch), alpha = 0.4) +
+          ggplot2::coord_cartesian(xlim = xlims) +
+          ggplot2::labs(y = y) +
+          ggplot2::theme_bw()
+      }
+      plot_list[[c]] <- p
+    }
+    # Store or return plots
+    if (return_format == "raw"){
+      return(plot_list)
     }
 
-    height_factor <- 1.3
-
-  } else if (format == 2) { # all batches in same row
-    # For each marker, make the plot
-    p <- list()
-    for (c in 1:length(markers)) {
-
-      p[[c]] <- df %>%
-        ggplot2::ggplot(ggplot2::aes_string(x = paste0('`', markers[c], '`'), y = 'Type')) +
-        ggridges::geom_density_ridges(ggplot2::aes(color = batch, fill = batch), alpha = 0.4) +
-        ggplot2::coord_cartesian(xlim = xlims) +
-        ggplot2::labs(y = y) +
-        ggplot2::theme_bw()
+    # Store shared legend from first plot
+    if (page == 1){
+      legend <- cowplot::get_legend(
+        # create some space to the left of the legend
+        plot_list[[1]] + ggplot2::theme(legend.box.margin = ggplot2::margin(0, 0, 0, 12))
+      )
     }
 
-    height_factor <- 2
-  }
+    # Remove shared legend from plots
+    for (i in 1:length(plot_list)) {
+      plot_list[[i]] <- plot_list[[i]] + ggplot2::theme(legend.position="none")
+    }
 
-  # Extract the legend from one of the plots
-  legend <- cowplot::get_legend(
-    # create some space to the left of the legend
-    p[[1]] + ggplot2::theme(legend.box.margin = ggplot2::margin(0, 0, 0, 12))
-  )
+    if (is.null(filename)){
+      return(cowplot::plot_grid(cowplot::plot_grid(plotlist = plot_list, ncol = ncol), legend, rel_widths = c(2*ncol,1)))
+    } else{
+      current_markers <- markers[start_marker:end_marker]
+      marker_names <- paste(current_markers, collapse = "_")
 
-  # Make a shared legend
-  for (i in 1:length(p)) {
-    p[[i]] <- p[[i]] + ggplot2::theme(legend.position="none")
-  }
-
-  if (!is.null(filename)) {
-    cowplot::save_plot(filename, cowplot::plot_grid(cowplot::plot_grid(plotlist = p, ncol = ncol), legend, rel_widths = c(2*ncol,1)), base_width = 20, base_height = length(markers)/height_factor)
-  } else {
-    return(cowplot::plot_grid(cowplot::plot_grid(plotlist = p, ncol = ncol), legend, rel_widths = c(2*ncol,1)))
+      device <- tools::file_ext(filename)
+      if (device == "") device <- "pdf"
+      filename <- gsub(paste0(".", device), "", filename)
+      file <- ifelse(num_pages > 1,
+                     yes = file.path(sprintf("%s_page%d_%s.%s", filename, page, marker_names, device)),
+                     no = paste0(filename,".", device))
+      height_factor <- ifelse(format == 1, 1.3, 2)
+      cowplot::save_plot(file, cowplot::plot_grid(cowplot::plot_grid(plotlist = plot_list[start_marker:end_marker], ncol = ncol), legend, rel_widths = c(2*ncol,1)), base_width = 20, base_height = length(markers)/height_factor)
+    }
   }
 }
+
+
 
 
 
@@ -382,7 +404,6 @@ plot_umap_labels <- function(uncorrected,
                    list(df = corrected[corrected$batch == batch1,], plot = 'Label', nplots = 1, name = paste0('Corrected ', batch1)),
                    list(df = corrected[corrected$batch == batch2,], plot = 'Label', nplots = 1, name = paste0('Corrected ', batch2)))
 
-  seed <- seed
   plots <- plots2 <- list()
   plot_count <- plot_count2 <- 1
   markers <- cyCombine::get_markers(uncorrected)
