@@ -11,7 +11,7 @@
 #' @param panel_channel Optional: Only used if panel is given. It is the column name in the panel data that contains the channel names
 #' @param panel_antigen Optional: Only used if panel is given. It is the column name in the panel data that contains the antigen names
 #' @param panel_type Optional: Only used if panel is given. It is the column name in the panel data that contains the antigen types (none, state, type).
-#'  "none" will be excluded from SCE.
+#'  "none" will be excluded from SCE. Set to NULL to disregard.
 #' @param transform_cofactor The cofactor to use when reverse-transforming to raw counts
 #' @family export
 #' @examples
@@ -20,31 +20,23 @@
 #'   df2SCE(markers = markers, non_markers = NULL, panel = panel)
 #'   }
 #' @export
-df2SCE <- function(df, markers = NULL, non_markers = NULL, sample_col = 'sample', panel = NULL,
-                   panel_channel = 'Channel', panel_antigen = 'Marker', panel_type = 'Type', transform_cofactor = 5) {
+df2SCE <- function(
+    df,
+    markers = NULL, non_markers = NULL,
+    sample_col = "sample",
+    panel = NULL, panel_channel = "Channel",
+    panel_antigen = "Marker", panel_type = "Type",
+    transform_cofactor = 5) {
 
   # Check for packages
   cyCombine:::missing_package("SingleCellExperiment", "Bioc")
 
   message("Converting dataframe to SingleCellExperiment object...")
 
-  # Get markers and check
-  if (is.null(markers)){
-    # Get markers
-    markers <- df %>%
-      cyCombine::get_markers()
-  }
-
-  sapply(markers, function(x) {cyCombine:::check_colname(colnames(df), x, "df")})
-
-  # Extract expression data and transpose to fit SCE format
-  exprs <- t(dplyr::select(df, dplyr::all_of(markers)))
-
-
   # Get the non markers and prepare column data
-  if (is.null(non_markers)){
+  if (is.null(non_markers)) {
     # Get non markers
-    if (sample_col == 'sample') {
+    if (sample_col == "sample") {
       non_markers <- cyCombine::non_markers
     } else {
       non_markers <- c(cyCombine::non_markers, dplyr::all_of(sample_col))
@@ -65,6 +57,19 @@ df2SCE <- function(df, markers = NULL, non_markers = NULL, sample_col = 'sample'
     stop("Error, none of the non_markers/sample_col are available in the dataframe. You cannot make an SCE without sample names.")
   }
 
+  # Get markers and check
+  if (is.null(markers)) {
+    # Get markers
+    markers <- df %>%
+      cyCombine::get_markers()
+  }
+
+  sapply(markers, function(x) {
+    cyCombine:::check_colname(colnames(df), x, "df")})
+
+  # Extract expression data and transpose to fit SCE format
+  exprs <- t(dplyr::select(df, dplyr::all_of(markers)))
+
 
   # Prepare the experiment info table - first identify true meta data columns
   colCounting <- colData %>%
@@ -75,7 +80,7 @@ df2SCE <- function(df, markers = NULL, non_markers = NULL, sample_col = 'sample'
   stable_cols <- names(which(col_stability == length(colCounting)))
 
   # Swap ordering
-  stable_cols <- c('sample_id', stable_cols[stable_cols != 'sample_id'])
+  stable_cols <- c("sample_id", stable_cols[stable_cols != "sample_id"])
 
   experiment_info <- colData %>%
     dplyr::select(dplyr::all_of(stable_cols)) %>%
@@ -87,37 +92,43 @@ df2SCE <- function(df, markers = NULL, non_markers = NULL, sample_col = 'sample'
 
 
   # Prepare row data if available
-  if (!is.null(panel) & is.data.frame(panel)) {
+  if (!is.null(panel) && is.data.frame(panel)) {
     # Check presence of panel's data names
-    sapply(c(dplyr::all_of(panel_channel), dplyr::all_of(panel_antigen), dplyr::all_of(panel_type)), function(x) {cyCombine:::check_colname(colnames(panel), x, "panel")})
+    sapply(c(panel_channel, panel_antigen, panel_type), function(x) {
+      cyCombine:::check_colname(colnames(panel), x, "panel")})
 
+    rowData <- panel
+    rm(panel)
     # Exclude none's
-    rowData <- panel %>%
-      dplyr::filter(.data[[panel_type]] != "none")
+    if (!is(panel_type, "NULL")) {
+      rowData <- rowData %>%
+        dplyr::filter(.data[[panel_type]] != "none")
+    }
+
 
 
     # Change colnames to fit SCE standard
-    if (panel_channel != 'channel_name') {
+    if (panel_channel != "channel_name") {
       rowData <- rowData %>%
         dplyr::rename(channel_name = panel_channel)
     }
-    if (panel_antigen != 'marker_name') {
+    if (panel_antigen != "marker_name") {
       rowData <- rowData %>%
         dplyr::rename(marker_name = panel_antigen)
     }
-    if (panel_type != 'marker_class') {
+    if (panel_type != "marker_class" && !is(panel_type, "NULL")) {
       rowData <- rowData %>%
         dplyr::rename(marker_class = panel_type)
     }
 
     # Change marker names to exclude spaces and dashes
-    rowData[['marker_name']] <- rowData[['marker_name']] %>%
+    rowData[["marker_name"]] <- rowData[["marker_name"]] %>%
       stringr::str_remove_all("^\\d+[A-Za-z]+_") %>%
       stringr::str_remove_all("[ _-]")
 
-
-  # } else if (!is.null(rowData) & !is.data.frame(rowData)) {
-  #   stop("The provided panel is not a data frame.")
+    # Subset rowData to rows in exprs
+    rowData <- rowData %>%
+      dplyr::filter(.data[["marker_name"]] %in% rownames(exprs))
 
   } else {
     rowData <- NULL
@@ -125,19 +136,21 @@ df2SCE <- function(df, markers = NULL, non_markers = NULL, sample_col = 'sample'
   }
 
 
-
   # Creating the SCE
-  sce <- SingleCellExperiment::SingleCellExperiment(list(exprs = exprs,
-                                                         counts = exprs %>%
-                                                           t() %>% tibble::as_tibble() %>%
-                                                           transform_asinh(reverse = TRUE,
-                                                                           cofactor = transform_cofactor,
-                                                                           derand = FALSE,
-                                                                           markers = markers) %>%
-                                                           t()),
-                                                    colData = colData,
-                                                    rowData = rowData,
-                                                    metadata = list('experiment_info' = experiment_info))
+  sce <- SingleCellExperiment::SingleCellExperiment(
+    list(exprs = exprs,
+         counts = exprs %>%
+           t() %>%
+           tibble::as_tibble() %>%
+           transform_asinh(reverse = TRUE,
+                           cofactor = transform_cofactor,
+                           derand = FALSE,
+                           markers = markers) %>%
+           t()),
+    colData = colData,
+    rowData = rowData,
+    metadata = list("experiment_info" = experiment_info)
+    )
   message("Your SingleCellExperiment object is now created. The 'counts' assay contains reverse transformed expression values and 'exprs' contains expression values.")
 
   return(sce)
@@ -164,7 +177,7 @@ sce2FCS <- function(sce, outdir = NULL,
                     assay = "counts",
                     keep_dr = TRUE,
                     keep_cd = TRUE,
-                    randomize = FALSE){
+                    randomize = FALSE) {
 
 
   # Check CATALYST is installed
@@ -175,10 +188,10 @@ sce2FCS <- function(sce, outdir = NULL,
             Consider rerunning df2sce with a panel to continue." = !is.null(CATALYST::channels(sce)))
 
   # Randomize counts
-  if(randomize & assay == "counts"){
+  if (randomize && assay == "counts") {
     SummarizedExperiment::assay(sce, "counts") <- SummarizedExperiment::assay(sce, "counts") %>%
       cyCombine:::randomize_matrix()
-  } else if(randomize & assay != "counts"){
+  } else if (randomize && assay != "counts") {
     warning("Please only use randomization with count values.")
   }
 
@@ -189,16 +202,15 @@ sce2FCS <- function(sce, outdir = NULL,
                            split_by = split_by,
                            assay = assay)
 
-  # Create output directory
-  cyCombine:::check_make_dir(outdir)
 
   # Write FCS files
-  if(!is.null(outdir)) {
+  if (!is.null(outdir)) {
+    # Create output directory
+    cyCombine:::check_make_dir(outdir)
 
     message("Writing FCS files to ", outdir)
     flowCore::write.flowSet(fcs, outdir = outdir)
-    }
+  }
 
   return(fcs)
 }
-

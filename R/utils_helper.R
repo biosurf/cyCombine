@@ -9,19 +9,20 @@
 #' Wrapper for missing packages
 #'
 #' @noRd
-missing_package <- function(package, repo = "CRAN", git_repo = ""){
+missing_package <- function(package, repo = "CRAN", git_repo = "") {
 
-  if (repo == "CRAN"){
+  if (repo == "CRAN") {
     install_function <- "install.packages('"
   } else if (repo == "github") {
     install_function <- paste0("devtools::install_github('", git_repo, "/")
-  } else if (repo == "Bioc"){
+  } else if (repo == "Bioc") {
     install_function <- "BiocManager::install('"
   }
 
-  if(!requireNamespace(package, quietly = TRUE)){
-    stop(paste0("Package ", package," is not installed.\n",
-         "Please run: ", install_function, package, "')"))
+  if (!requireNamespace(package, quietly = TRUE)) {
+    stop(
+      paste0("Package ", package, " is not installed.\n",
+      "Please run: ", install_function, package, "')"))
   }
   requireNamespace(package, quietly = TRUE)
 }
@@ -32,7 +33,7 @@ missing_package <- function(package, repo = "CRAN", git_repo = ""){
 #'
 #' Subtracts a random value between 0 and 1 from all values. Then convert negative values to zeros.
 #' @param mat A matrix to randomize
-randomize_matrix <- function(mat){
+randomize_matrix <- function(mat) {
   # Matrix dimensions
   ncols <- ncol(mat)
   nrows <- nrow(mat)
@@ -56,9 +57,9 @@ randomize_matrix <- function(mat){
 #'   \code{non_markers <- c(non_markers, "remove1", "remove2")} and rerun get_markers()
 #' @param df dataframe to get the markers from
 #' @export
-get_markers <- function(df){
+get_markers <- function(df) {
   # Use global non_markers if available
-  if(!is.null(.GlobalEnv$non_markers)) non_markers <- .GlobalEnv$non_markers
+  if (!is.null(.GlobalEnv$non_markers)) non_markers <- .GlobalEnv$non_markers
 
   marker_pos <- stringr::str_to_lower(colnames(df)) %!in% non_markers
   markers <- colnames(df)[marker_pos]
@@ -68,9 +69,9 @@ get_markers <- function(df){
 
 #' Check colname
 #' @noRd
-check_colname <- function(df_colnames, col_name, location = "metadata"){
-  if(!is.null(col_name)){
-    if(col_name %!in% df_colnames){
+check_colname <- function(df_colnames, col_name, location = "metadata") {
+  if (!is.null(col_name)) {
+    if (col_name %!in% df_colnames) {
       stop("Column \"", col_name, "\" was not found in the ", location)
     }}
 }
@@ -78,7 +79,7 @@ check_colname <- function(df_colnames, col_name, location = "metadata"){
 
 #' Run PCA analysis
 #' @noRd
-run_pca <- function(df, pcs = 20){
+run_pca <- function(df, pcs = 20) {
   missing_package("stats", "CRAN")
   pca <- df %>%
     dplyr::select_if(names(.) %!in% non_markers) %>%
@@ -108,7 +109,7 @@ check_confound <- function(batch, mod = NULL) {
 
   ## Create batch model
   batch <- as.factor(batch)
-  batchmod <- stats::model.matrix(~-1+batch)
+  batchmod <- stats::model.matrix(~ -1 + batch)
 
 
   ## A few other characteristics on the batches
@@ -121,22 +122,22 @@ check_confound <- function(batch, mod = NULL) {
 
   n.array <- sum(n.batches)
   ## combine batch variable and covariates
-  design <- cbind(batchmod,mod)
+  design <- cbind(batchmod, mod)
 
   ## check for intercept in covariates, and drop if present
   check <- apply(design, 2, function(x) all(x == 1))
 
-  design <- as.matrix(design[,!check])
+  design <- as.matrix(design[, !check])
 
   ## Check if the design is confounded
-  if(qr(design)$rank < ncol(design)) {
+  if (qr(design)$rank < ncol(design)) {
     ## if(ncol(design)<=(n.batch)){stop("Batch variables are redundant! Remove one or more of the batch variables so they are no longer confounded")}
-    if(ncol(design)==(n.batch+1)) {
+    if (ncol(design) == (n.batch+1)) {
       # message("The covariate is confounded with batch!") # Remove the covariate")
       return(TRUE)
     }
-    if(ncol(design)>(n.batch+1)) {
-      if((qr(design[,-c(1:n.batch)])$rank<ncol(design[,-c(1:n.batch)]))){
+    if (ncol(design) > (n.batch+1)) {
+      if ((qr(design[, -c(1:n.batch)])$rank<ncol(design[, -c(1:n.batch)]))) {
         # message("The covariates are confounded!") # Please remove one or more of the covariates so the design is not confounded")
         return(TRUE)
       } else {

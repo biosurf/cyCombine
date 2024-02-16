@@ -3,7 +3,8 @@
 
 #' Compile all .fcs files in a directory to a flowset
 #'
-#' A simple function to compile a directory of FCS files into a flowSet object using flowCore::read.flowSet().
+#' A simple function to compile a directory of FCS files into a flowSet object
+#'  using flowCore::read.flowSet().
 #'  Use the pattern argument to select only a subset of FCS files.
 #'
 #' @param data_dir Directory containing the .fcs files
@@ -15,14 +16,17 @@
 #' fcs <- compile_fcs(data_dir = "_data/raw", pattern = "\\.fcs")
 #' }
 #' @export
-compile_fcs <- function(data_dir,
-                        pattern = "\\.fcs",
-                        column.pattern = NULL,
-                        invert.pattern = FALSE){
+compile_fcs <- function(
+    data_dir,
+    pattern = "\\.fcs",
+    column.pattern = NULL,
+    invert.pattern = FALSE
+    ) {
 
   # Error checking
-  if(data_dir %>% endsWith("/")) data_dir <- data_dir %>% stringr::str_sub(end = -2)
-
+  if (data_dir %>% endsWith("/")) {
+    data_dir <- stringr::str_sub(data_dir, end = -2)
+  }
 
   # Specifying files to use
   files <- list.files(data_dir,
@@ -30,7 +34,7 @@ compile_fcs <- function(data_dir,
                       recursive = FALSE,
                       full.names = TRUE) %>%
     sort()
-  if(length(files) == 0) stop("No files found in folder \"", data_dir, "\"")
+  if (length(files) == 0) stop("No files found in folder \"", data_dir, "\"")
 
   # Read the data files
   message(paste("Reading", length(files), "files to a flowSet.."))
@@ -51,8 +55,8 @@ compile_fcs <- function(data_dir,
 
 #' Convert a flowSet into a tibble
 #'
-#' Use this function to convert a flowSet into the tibble object that the remaining
-#'  functions in cyCombine relies on.
+#' Use this function to convert a flowSet into the tibble
+#'  object that the remaining functions in cyCombine relies on.
 #'  A tibble is a Tidyverse implementation of a data.frame and can be treated as a such.
 #'  The majority of arguments revolves adding relevant info from the metadata file/object.
 #'  The panel argument is included to adjust the output column names using a panel with channel and antigen columns.
@@ -215,15 +219,15 @@ convert_flowset <- function(flowset,
   tot_nrows <- sum(nrows)
   ids <- 1:tot_nrows
   # Down sampling setup
-  if(down_sample){
+  if (down_sample){
     set.seed(seed)
     # Sorting here enables major resource savings when down-sampling
     # For non-random sampling, the dplyr::slice allows down-sampling to group size if there are less cells than sample_size.
-    if(sampling_type == "random"){
+    if (sampling_type == "random"){
       message("Down sampling to ", sample_size, " cells")
       sample <- sample(ids, sample_size) %>%
         sort()
-    } else if(sampling_type == "batch_ids" & !is.null(batch_ids)){ # even down-sampling from batches
+    } else if ((sampling_type == "batch_ids") && !is.null(batch_ids)){ # even down-sampling from batches
       message(paste("Down sampling to", sample_size, "cells per batch"))
       sample <- tibble::tibble(batch_ids, ids) %>%
         dplyr::group_by(batch_ids) %>%
@@ -250,10 +254,10 @@ convert_flowset <- function(flowset,
 
     # Down-sample metadata columns
     ids <- ids[sample]
-    if(!is.null(sample_ids) & length(sample_ids) > 1) sample_ids <- sample_ids[sample]
-    if(!is.null(batch_ids) & length(batch_ids) > 1) batch_ids <- batch_ids[sample]
-    if(!is.null(condition) & length(condition) > 1) condition <- condition[sample]
-    if(!is.null(anchor) & length(anchor) > 1) anchor <- anchor[sample]
+    if(!is.null(sample_ids) && length(sample_ids) > 1) sample_ids <- sample_ids[sample]
+    if(!is.null(batch_ids) && length(batch_ids) > 1) batch_ids <- batch_ids[sample]
+    if(!is.null(condition) && length(condition) > 1) condition <- condition[sample]
+    if(!is.null(anchor) && length(anchor) > 1) anchor <- anchor[sample]
   }
 
   message("Extracting expression data..")

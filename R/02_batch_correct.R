@@ -24,28 +24,28 @@
 normalize <- function(df,
                       markers = NULL,
                       norm_method = "scale",
-                      ties.method = "average"){
+                      ties.method = "average") {
 
   # Remove case-sensitivity
   norm_method <- norm_method %>% stringr::str_to_lower()
   ties.method <- ties.method %>% stringr::str_to_lower()
 
   # Error check
-  if (norm_method == "rank" & ties.method %!in% c("average", "first", "last", "random", "max", "min")) {
+  if (norm_method == "rank" && ties.method %!in% c("average", "first", "last", "random", "max", "min")) {
     stop("When using norm_method = 'rank', please use an available ties.method (average, first, last, random, max, or min).")
   }
 
   # Messaging
-  if(norm_method == "rank") message("Ranking expression data..")
-  else if(norm_method == "scale") message("Scaling expression data..")
-  else if(norm_method == "qnorm") {
+  if (norm_method == "rank") {message("Ranking expression data..")
+  } else if (norm_method == "scale") {message("Scaling expression data..")
+  } else if (norm_method == "qnorm") {
     # message("Quantile normalizing expression data..")
     # Run quantile normalization
     df_normed <- cyCombine:::quantile_norm(df, markers = markers)
     return(df_normed)
-    } else stop("Please use either 'scale', 'rank', or 'qnorm' as normalization method." )
+  } else stop("Please use either 'scale', 'rank', or 'qnorm' as normalization method." )
 
-  if(is.null(markers)){
+  if (is.null(markers)) {
     # Get markers
     markers <- df %>%
       cyCombine::get_markers()
@@ -54,15 +54,17 @@ normalize <- function(df,
   # Scale or rank at marker positions individually for every batch
   df_normed <- df %>%
     dplyr::group_by(.data$batch) %>%
-    purrr::when(norm_method == "rank"  ~ dplyr::mutate(., dplyr::across(dplyr::all_of(markers),
-                                                                        .fns = ~{
-                                                                          if(sum(.x) == 0) stop("A marker is 0 for an entire batch. Please remove this marker.")
-                                                                          rank(.x, ties.method = ties.method) / length(.x)})),
-                norm_method == "scale" ~ dplyr::mutate(., dplyr::across(dplyr::all_of(markers),
-                                                                        .fns = ~{
-                                                                          if(sum(.x) == 0) stop("A marker is 0 for an entire batch. Please remove this marker.")
-                                                                          scale(.x)}))
-    ) %>%
+    purrr::when(
+      norm_method == "rank"  ~ dplyr::mutate(
+        ., dplyr::across(dplyr::all_of(markers),
+                         .fns = ~ {
+                           if(sum(.x) == 0) stop("A marker is 0 for an entire batch. Please remove this marker.")
+                           rank(.x, ties.method = ties.method) / length(.x)})),
+      norm_method == "scale" ~ dplyr::mutate(., dplyr::across(dplyr::all_of(markers),
+                                                              .fns = ~{
+                                                                if(sum(.x) == 0) stop("A marker is 0 for an entire batch. Please remove this marker.")
+                                                                scale(.x)}))
+      ) %>%
     dplyr::ungroup()
   return(df_normed)
 }
@@ -81,9 +83,9 @@ normalize <- function(df,
 #' df_qnorm <- preprocessed %>%
 #'   quantile_norm()
 #'   }
-quantile_norm <- function(df, markers = NULL){
+quantile_norm <- function(df, markers = NULL) {
   message("Quantile normalizing expression data..")
-  if(is.null(markers)){
+  if (is.null(markers)) {
     # Get markers
     markers <- df %>%
       cyCombine::get_markers()
@@ -139,8 +141,8 @@ create_som <- function(df,
                        seed = 473,
                        rlen = 10,
                        xdim = 8,
-                       ydim = 8){
-  if(is.null(markers)){
+                       ydim = 8) {
+  if (is.null(markers)) {
     # Get markers
     markers <- df %>%
       cyCombine::get_markers()
@@ -189,59 +191,59 @@ correct_data <- function(df,
                          covar = NULL,
                          anchor = NULL,
                          markers = NULL,
-                         parametric = TRUE){
+                         parametric = TRUE) {
   message("Batch correcting data..")
   # Check for batch column
   cyCombine:::check_colname(colnames(df), "batch", "df")
-  if (is.null(markers)){
+  if (is.null(markers)) {
     # Get markers
     markers <- df %>%
       cyCombine::get_markers()
   }
 
   # Add ID column to retain data order
-  if("id" %!in% colnames(df)) df$id <- 1:nrow(df)
+  if("id" %!in% colnames(df)) df$id <- seq_len(nrow(df))
 
   # Add label to df
-  if(length(label) == 1){
+  if (length(label) == 1) {
     cyCombine:::check_colname(colnames(df), label, "df")
-  }else{
+  } else {
     df$label <- label
     label <- "label"
   }
 
   # Add covar to df, if given
-  if(!is.null(covar)){
-    if(length(covar) == 1){
+  if (!is.null(covar)) {
+    if (length(covar) == 1) {
       cyCombine:::check_colname(colnames(df), covar, "df")
       df[[covar]] <- as.factor(df[[covar]])
-    } else{
+    } else {
       # Covar was given as a vector
       df$covar <- as.factor(covar)
       covar <- "covar"
     }
     # Ensure there is more than 1 factor level
-    if(nlevels(df[[covar]]) == 1) covar <- NULL
+    if (nlevels(df[[covar]]) == 1) covar <- NULL
   }
 
   # Add anchor to df, if given
-  if(!is.null(anchor)){
-    if(length(anchor) == 1){
+  if (!is.null(anchor)) {
+    if (length(anchor) == 1) {
       cyCombine:::check_colname(colnames(df), anchor)
       df[[anchor]] <- as.factor(df[[anchor]])
-    } else{
+    } else {
       # Anchor was given as a vector
       df$anchor <- as.factor(anchor)
       anchor <- "anchor"
     }
     # Ensure there is more than 1 factor level
-    if(nlevels(df[[anchor]]) == 1) anchor <- NULL
+    if (nlevels(df[[anchor]]) == 1) anchor <- NULL
   }
 
   corrected_data <- df %>%
     dplyr::group_by(.data[[label]]) %>%
     # Correct (modify) each label group with ComBat
-    dplyr::group_modify(.keep = TRUE, function(df, ...){
+    dplyr::group_modify(.keep = TRUE, function(df, ...) {
       # Initiate anchor and covar counter
       num_covar <- 1
       num_anchor <- 1
@@ -250,7 +252,7 @@ correct_data <- function(df,
         factor() %>%
         nlevels()
       lab <- df[[label]][1] # Current label group
-      if(num_batches == 1){
+      if (num_batches == 1) {
         batch <- df$batch[1]
         message(paste("Label group", lab, "only contains cells from batch", batch))
         df <- df %>% dplyr::select(-label) # Not removed from output, but removed here to prevent bug
@@ -258,10 +260,10 @@ correct_data <- function(df,
       }
       message(paste("Correcting Label group", lab))
       # Calculate number of covars in the node
-      if(!is.null(covar)){
+      if (!is.null(covar)) {
 
         # Only use covar, if it does not confound with batch
-        if(!cyCombine:::check_confound(df$batch, stats::model.matrix(~df[[covar]]))){
+        if (!cyCombine:::check_confound(df$batch, stats::model.matrix(~df[[covar]]))) {
           num_covar <- df[[covar]] %>%
             factor() %>%
             nlevels()
@@ -272,17 +274,17 @@ correct_data <- function(df,
             dplyr::count(.data[[covar]]) %>%
             dplyr::pull(n)
 
-          if(sum(covar_counts) < max(covar_counts) + num_covar*5){
+          if (sum(covar_counts) < max(covar_counts) + num_covar*5) {
             message("The label group almost exclusively consists of cells from a single covar. Therefore, covar is ignored for this label group")
             num_covar <- 1
           }
-        } else{
+        } else {
           message("Covar is confounded with batch. Ignoring covar in this label group")
         }
       }
       # Do a similar check on anchor
-      if(!is.null(anchor)){
-        if(!cyCombine:::check_confound(df$batch, stats::model.matrix(~df[[anchor]]))){
+      if (!is.null(anchor)) {
+        if (!cyCombine:::check_confound(df$batch, stats::model.matrix(~df[[anchor]]))) {
           num_anchor <- df[[anchor]] %>%
             factor() %>%
             nlevels()
@@ -293,17 +295,17 @@ correct_data <- function(df,
             dplyr::count(.data[[anchor]]) %>%
             dplyr::pull(n)
 
-          if(sum(anchor_counts) < max(anchor_counts) + num_anchor*5){
+          if (sum(anchor_counts) < max(anchor_counts) + num_anchor*5) {
             message("The label group almost exclusively consists of cells from a single anchor group. Therefore, anchor is ignored for this label group")
             num_anchor <- 1
           }
-        } else{
+        } else {
           message("Anchor is confounded with batch. Ignoring anchor in this label group")
         }
       }
-      if(num_covar > 1 & num_anchor > 1){
+      if (num_covar > 1 & num_anchor > 1) {
         # If neither covar nor anchor confounds with batch but they do each other, prioritise covar
-        if(cyCombine:::check_confound(df$batch, stats::model.matrix(~df[[covar]] + df[[anchor]]))){
+        if (cyCombine:::check_confound(df$batch, stats::model.matrix(~df[[covar]] + df[[anchor]]))) {
           num_anchor <- 1
           message("Anchor and covar are confounded. Ignoring anchor in this label group")
         }
@@ -348,9 +350,9 @@ correct_data <- function(df,
                                       return(x)
                                     }))
       # Only add covar column, if it is not null
-      if(!is.null(covar)) ComBat_output[[covar]] <- df[[covar]]
+      if (!is.null(covar)) ComBat_output[[covar]] <- df[[covar]]
       # Only add anchor column, if it is not null
-      if(!is.null(anchor)) ComBat_output[[anchor]] <- df[[anchor]]
+      if (!is.null(anchor)) ComBat_output[[anchor]] <- df[[anchor]]
 
       return(ComBat_output)
     }) %>%
@@ -376,7 +378,7 @@ correct_data <- function(df,
 correct_data_alt <- function(df,
                              mod,
                              markers = NULL,
-                             parametric = TRUE){
+                             parametric = TRUE) {
   message("Batch correcting data..")
   if (is.null(markers)){
     # Get markers
@@ -441,10 +443,10 @@ batch_correct <- function(df,
                           anchor = NULL,
                           markers = NULL,
                           norm_method = "scale",
-                          ties.method = "average"){
+                          ties.method = "average") {
   # A batch column is required
   cyCombine:::check_colname(colnames(df), "batch", "df")
-  if(any(is.na(df$batch))){ # Check for NAs
+  if (any(is.na(df$batch))) { # Check for NAs
     message("Some batches contain NAs. These will be removed")
     warning("Some batches contain NAs. These will be removed")
     df <- df %>%
@@ -452,7 +454,7 @@ batch_correct <- function(df,
     }
 
   # Create SOM on scaled data
-  if(is.null(label)) {
+  if (is.null(label)) {
     label <- df %>%
       cyCombine::normalize(markers = markers,
                            norm_method = norm_method,
