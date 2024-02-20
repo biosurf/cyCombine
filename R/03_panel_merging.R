@@ -9,6 +9,7 @@
 #' @param df Dataframe with expression values
 #' @param correct_batches Batches with misstaining (or other problem) for which to perform the imputation of 'channel'
 #' @param channel Channel (marker) to impute
+#' @param label (Optional) Column with group labels to base imputations on
 #' @param sample_size Number of cells to base imputation on - defaults to all cells in df not in 'correct_batches'
 #' @param exclude Channels to exclude (e.g. other misstained channels not to be used for imputation)
 #' @inheritParams create_som
@@ -19,16 +20,21 @@
 #'   salvage_problematic(correct_batches = 1, channel = 'CD127')
 #'   }
 #' @export
-salvage_problematic <- function(df,
-                                correct_batches,
-                                channel,
-                                sample_size = NULL,
-                                exclude = NULL,
-                                xdim = 8,
-                                ydim = 8,
-                                seed = 482) {
+salvage_problematic <- function(
+    df,
+    correct_batches,
+    channel,
+    label = NULL,
+    sample_size = NULL,
+    exclude = NULL,
+    xdim = 8,
+    ydim = 8,
+    seed = 482) {
 
-  message(paste('Started imputation for', channel, 'in batch(es)', paste(correct_batches, collapse = ', ')))
+
+  cyCombine:::check_colname(colnames(df), label, "df")
+
+  message(paste("Started imputation for", channel, "in batch(es)", paste(correct_batches, collapse = ", ")))
 
   # Get all other channels in samples to impute for
   impute_for <- df %>%
@@ -40,7 +46,7 @@ salvage_problematic <- function(df,
     dplyr::filter(batch %!in% correct_batches)
 
   if (!is.null(sample_size)) {
-    complete_obs <- complete_obs[sample(nrow(complete_obs),sample_size),]
+    complete_obs <- complete_obs[sample(nrow(complete_obs),sample_size), ]
   }
 
   # Use global non_markers if available
@@ -51,10 +57,15 @@ salvage_problematic <- function(df,
 
 
   # Get SOM classes for each event - on overlapping markers
-  som_classes <- overlapping_data %>%
-    cyCombine::create_som(xdim = xdim,
-                          ydim = ydim,
-                          seed = seed)
+  if (is(label, "NULL")){
+    som_classes <- overlapping_data %>%
+      cyCombine::create_som(xdim = xdim,
+                            ydim = ydim,
+                            seed = seed)
+  } else{
+    som_classes <- overlapping_data[[label]]
+  }
+
 
   # Split SOM classes to each original dataset
   complete_obs_som <- som_classes[1:nrow(complete_obs)]
@@ -66,7 +77,7 @@ salvage_problematic <- function(df,
   # For each missing event in each cluster, impute values based on density draws in respective cluster
   # (here represented by random sample and addition of a number with mean 0 and bandwidth sd)
 
-  message('Performing density draws.')
+  message("Performing density draws.")
 
   imputed <- rep(0, length(impute_obs_som))
 
@@ -76,13 +87,13 @@ salvage_problematic <- function(df,
     if (sum(complete_obs_som==s) >= 50) {
 
       # Estimate the density per marker that needs imputation
-      dens <- complete_obs[which(complete_obs_som==s),] %>%
+      dens <- complete_obs[which(complete_obs_som==s), ] %>%
         dplyr::pull(channel) %>%
         stats::density()
 
       # For each missing event in each cluster, impute values based on density draws in respective cluster (here represented by random sample and addition of a number with mean 0 and bandwidth sd)
       set.seed(seed)
-      imputed[which(impute_obs_som==s)] <- complete_obs[which(complete_obs_som==s),] %>%
+      imputed[which(impute_obs_som==s)] <- complete_obs[which(complete_obs_som==s), ] %>%
         dplyr::pull(channel) %>%
         sample(size = sum(impute_obs_som==s), replace = T) + stats::rnorm(sum(impute_obs_som==s), 0, dens$bw)
 
@@ -93,7 +104,7 @@ salvage_problematic <- function(df,
     } else {
 
       imputed[which(impute_obs_som==s)] <- NA
-      warning('Be aware that a cluster contains cells primarily from the dataset you wish to impute for. As a result, imputations were not made for those cells.')
+      warning("Be aware that a cluster contains cells primarily from the dataset you wish to impute for. As a result, imputations were not made for those cells.")
     }
   }
 
@@ -101,7 +112,7 @@ salvage_problematic <- function(df,
   df[df$batch %in% correct_batches, channel] <- imputed
 
   # Print statement warning users about directly interpreting imputed values
-  message('Caution! Analysis based on imputed values can lead to false inferences. We recommend only using imputed marker expressions for visualization and not for differential expression analysis.')
+  message("Caution! Analysis based on imputed values can lead to false inferences. We recommend only using imputed marker expressions for visualization and not for differential expression analysis.")
 
   return(df)
 }
@@ -128,14 +139,15 @@ salvage_problematic <- function(df,
 #'  impute_channels1 = unique_df_panel2_markers, , impute_channels2 = unique_df_panel1_markers)
 #' }
 #' @export
-impute_across_panels <- function(dataset1,
-                                 dataset2,
-                                 overlap_channels,
-                                 impute_channels1,
-                                 impute_channels2,
-                                 xdim = 8,
-                                 ydim = 8,
-                                 seed = 482) {
+impute_across_panels <- function(
+    dataset1,
+    dataset2,
+    overlap_channels,
+    impute_channels1,
+    impute_channels2,
+    xdim = 8,
+    ydim = 8,
+    seed = 482) {
 
 
   # Checking colnames
@@ -153,9 +165,9 @@ impute_across_panels <- function(dataset1,
   }
 
   # Checking if choice is to not impute for one dataset
-  if (is.null(impute_channels1) & is.null(impute_channels2)) {
+  if (is.null(impute_channels1) && is.null(impute_channels2)) {
     stop("Error: You have not specified any channels to impute!")
-  } else if (is.null(impute_channels1) | is.null(impute_channels2)) {
+  } else if (is.null(impute_channels1) || is.null(impute_channels2)) {
     message("Be aware that one of your panels will not have any imputed markers.")
   }
 
@@ -179,29 +191,29 @@ impute_across_panels <- function(dataset1,
   for (i in 1:2) {
 
     # Set the parameters for the loop to run
-    impute_for <- eval(parse(text=paste0('dataset', i)))
-    impute_channels <- eval(parse(text=paste0('impute_channels', i)))
-    impute_obs_som <- eval(parse(text=paste0('dataset', i, '_som')))
+    impute_for <- eval(parse(text=paste0("dataset", i)))
+    impute_channels <- eval(parse(text=paste0("impute_channels", i)))
+    impute_obs_som <- eval(parse(text=paste0("dataset", i, "_som")))
 
 
-    complete_obs <- eval(parse(text=paste0('dataset', other_set[i])))
-    complete_obs_som <- eval(parse(text=paste0('dataset', other_set[i], '_som')))
+    complete_obs <- eval(parse(text=paste0("dataset", other_set[i])))
+    complete_obs_som <- eval(parse(text=paste0("dataset", other_set[i], "_som")))
 
 
     # Check if impute_channels is NULL, in that case - skip imputation for the panel
     if (is.null(impute_channels)) {
-      message(paste0('Skipping imputation for dataset', i, '.'))
+      message(paste0("Skipping imputation for dataset", i, "."))
 
       impute_for <- impute_for %>%
         dplyr::relocate(dplyr::any_of(non_markers), .after = dplyr::last_col())
 
-      imputed_dfs[[paste0('dataset', i)]] <- impute_for
+      imputed_dfs[[paste0("dataset", i)]] <- impute_for
       next
     }
 
 
     # For each missing event in each cluster, impute values based on density draws in the same cluster
-    message(paste0('Performing density draws for dataset', i, '.'))
+    message(paste0("Performing density draws for dataset", i, "."))
     imputed <- matrix(nrow=nrow(impute_for), ncol=length(impute_channels), dimnames = list("rn"=NULL, "cn"=impute_channels))
 
     for (s in sort(unique(impute_obs_som))) {
@@ -214,21 +226,21 @@ impute_across_panels <- function(dataset1,
 
         # Performing the imputation
         set.seed(seed)
-        imputed[which(impute_obs_som==s),] <- complete_obs[which(complete_obs_som==s),] %>%
+        imputed[which(impute_obs_som==s), ] <- complete_obs[which(complete_obs_som==s), ] %>%
           dplyr::select(dplyr::all_of(impute_channels)) %>%
           dplyr::slice_sample(n = sum(impute_obs_som==s), replace = T) %>%
           as.matrix() + sapply(impute_channels, function(ch) {stats::rnorm(sum(impute_obs_som==s), 0, dens[ch])})
 
         # Fix values outside input range (per marker)
         for (m in impute_channels) {
-          imputed[which(impute_obs_som==s),m][imputed[which(impute_obs_som==s),m] < min(complete_obs[which(complete_obs_som==s),m])] <- min(complete_obs[which(complete_obs_som==s),m])
-          imputed[which(impute_obs_som==s),m][imputed[which(impute_obs_som==s),m] > max(complete_obs[which(complete_obs_som==s),m])] <- max(complete_obs[which(complete_obs_som==s),m])
+          imputed[which(impute_obs_som==s), m][imputed[which(impute_obs_som==s), m] < min(complete_obs[which(complete_obs_som==s), m])] <- min(complete_obs[which(complete_obs_som==s), m])
+          imputed[which(impute_obs_som==s), m][imputed[which(impute_obs_som==s), m] > max(complete_obs[which(complete_obs_som==s), m])] <- max(complete_obs[which(complete_obs_som==s), m])
         }
 
       } else {
 
         imputed[which(impute_obs_som==s),impute_channels] <- NA
-        warning('Be aware that a cluster contains cells primarily/only from the dataset you wish to impute for. As a result, imputations were not made for those cells.\n')
+        warning("Be aware that a cluster contains cells primarily/only from the dataset you wish to impute for. As a result, imputations were not made for those cells.\n")
       }
     }
 
@@ -240,11 +252,11 @@ impute_across_panels <- function(dataset1,
     impute_for <- impute_for %>%
       dplyr::relocate(dplyr::any_of(non_markers), .after = dplyr::all_of(impute_channels))
 
-    imputed_dfs[[paste0('dataset', i)]] <- impute_for
+    imputed_dfs[[paste0("dataset", i)]] <- impute_for
   }
 
   # Print statement warning users about directly interpreting imputed values
-  message('Caution! Analysis based on imputed values can lead to false inferences. We recommend only using imputed marker expressions for visualization and not for differential expression analysis.')
+  message("Caution! Analysis based on imputed values can lead to false inferences. We recommend only using imputed marker expressions for visualization and not for differential expression analysis.")
 
   return(imputed_dfs)
 }
