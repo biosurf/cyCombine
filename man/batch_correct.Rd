@@ -11,12 +11,15 @@ batch_correct(
   ydim = 8,
   rlen = 10,
   parametric = TRUE,
+  method = c("ComBat", "ComBat_seq"),
+  ref.batch = NULL,
   seed = 473,
   covar = NULL,
   anchor = NULL,
   markers = NULL,
   norm_method = "scale",
-  ties.method = "average"
+  ties.method = "average",
+  ...
 )
 }
 \arguments{
@@ -32,6 +35,10 @@ batch_correct(
 
 \item{parametric}{Default: TRUE. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used.}
 
+\item{method}{Default: "ComBat". Choose "ComBat" for cytometry data and "ComBat_seq" for bulk RNAseq data.}
+
+\item{ref.batch}{Optional. A string of the batch that should be used as the reference for batch adjustments.}
+
 \item{seed}{The seed to use when creating the SOM.}
 
 \item{covar}{The covariate ComBat should use. Can be a vector or a column name in the input tibble.
@@ -44,6 +51,8 @@ If NULL, no covar will be used}
 \item{norm_method}{Normalization method. Should be either 'rank', 'scale' or 'qnorm'. Default: 'scale'}
 
 \item{ties.method}{The method to handle ties, when using rank. Default: 'average'. See ?rank for other options.}
+
+\item{...}{Additional parameters to pass onto ComBat and ComBat_seq}
 }
 \description{
 This is a wrapper function for the cyCombine batch correction workflow.

@@ -7,10 +7,13 @@
 correct_data(
   df,
   label,
+  markers = NULL,
+  method = c("ComBat", "ComBat_seq"),
   covar = NULL,
   anchor = NULL,
-  markers = NULL,
-  parametric = TRUE
+  ref.batch = NULL,
+  parametric = TRUE,
+  ...
 )
 }
 \arguments{
@@ -18,14 +21,20 @@ correct_data(
 
 \item{label}{The cluster or cell type label. Either as a column name or vector.}
 
+\item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
+
+\item{method}{Default: "ComBat". Choose "ComBat" for cytometry data and "ComBat_seq" for bulk RNAseq data.}
+
 \item{covar}{The covariate ComBat should use. Can be a vector or a column name in the input tibble.
 If NULL, no covar will be used}
 
 \item{anchor}{Experimental: A column or vector specifying which samples are replicates and which are not. If specified, this column will be used as a covariate in ComBat. Be aware that it may be confounded with the condition.}
 
-\item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
+\item{ref.batch}{Optional. A string of the batch that should be used as the reference for batch adjustments.}
 
 \item{parametric}{Default: TRUE. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used.}
+
+\item{...}{Additional parameters to pass onto ComBat and ComBat_seq}
 }
 \description{
 Compute the batch correction on the data using the ComBat algorithm.

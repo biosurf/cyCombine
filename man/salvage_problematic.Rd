@@ -8,6 +8,7 @@ salvage_problematic(
   df,
   correct_batches,
   channel,
+  label = NULL,
   sample_size = NULL,
   exclude = NULL,
   xdim = 8,
@@ -21,6 +22,8 @@ salvage_problematic(
 \item{correct_batches}{Batches with misstaining (or other problem) for which to perform the imputation of 'channel'}
 
 \item{channel}{Channel (marker) to impute}
+
+\item{label}{(Optional) Column with group labels to base imputations on}
 
 \item{sample_size}{Number of cells to base imputation on - defaults to all cells in df not in 'correct_batches'}
 

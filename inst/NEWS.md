@@ -1,3 +1,8 @@
+# cyCombine 0.2.19
+
+* Revised data export functions
+* Experimental support of ComBat_seq
+
 # cyCombine 0.2.16
 
 * Added description for installing with conda. Closes #37

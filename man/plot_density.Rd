@@ -57,8 +57,8 @@ plot_density(imputed1, imputed2, y = 'Type', dataset_names = paste('Panel', 1:2)
 }
 \seealso{
 Other plot: 
-\code{\link{plot_dimred_full}()},
 \code{\link{plot_dimred}()},
+\code{\link{plot_dimred_full}()},
 \code{\link{plot_save_four}()},
 \code{\link{plot_save_two}()},
 \code{\link{plot_umap_labels}()}

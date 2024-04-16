@@ -23,9 +23,11 @@
 df2SCE <- function(
     df,
     markers = NULL, non_markers = NULL,
+    scatter = NULL,
+    clean_names = FALSE,
     sample_col = "sample",
     panel = NULL, panel_channel = "Channel",
-    panel_antigen = "Marker", panel_type = "Type",
+    panel_antigen = "Marker", panel_type = NULL,
     transform_cofactor = 5) {
 
   # Check for packages
@@ -68,7 +70,7 @@ df2SCE <- function(
     cyCombine:::check_colname(colnames(df), x, "df")})
 
   # Extract expression data and transpose to fit SCE format
-  exprs <- t(dplyr::select(df, dplyr::all_of(markers)))
+  exprs <- t(dplyr::select(df, dplyr::all_of(c(scatter, markers))))
 
 
   # Prepare the experiment info table - first identify true meta data columns
@@ -100,11 +102,10 @@ df2SCE <- function(
     rowData <- panel
     rm(panel)
     # Exclude none's
-    if (!is(panel_type, "NULL")) {
+    if (!is(panel_type, "NULL") & "none" %in% rowData[[panel_type]]) {
       rowData <- rowData %>%
         dplyr::filter(.data[[panel_type]] != "none")
     }
-
 
 
     # Change colnames to fit SCE standard
@@ -122,9 +123,12 @@ df2SCE <- function(
     }
 
     # Change marker names to exclude spaces and dashes
-    rowData[["marker_name"]] <- rowData[["marker_name"]] %>%
-      stringr::str_remove_all("^\\d+[A-Za-z]+_") %>%
-      stringr::str_remove_all("[ _-]")
+    if (clean_names) {
+      rowData[["marker_name"]] <- rowData[["marker_name"]] %>%
+        stringr::str_remove_all("^\\d+[A-Za-z]+_") %>%
+        stringr::str_remove_all("[ _-]")
+    }
+
 
     # Subset rowData to rows in exprs
     rowData <- rowData %>%
@@ -145,6 +149,7 @@ df2SCE <- function(
            transform_asinh(reverse = TRUE,
                            cofactor = transform_cofactor,
                            derand = FALSE,
+                           .keep = TRUE,
                            markers = markers) %>%
            t()),
     colData = colData,
@@ -172,7 +177,8 @@ df2SCE <- function(
 #'  sce2FCS(sce, outdir = "fcs_files")
 #'   }
 #' @export
-sce2FCS <- function(sce, outdir = NULL,
+sce2FCS <- function(sce,
+                    outdir = NULL,
                     split_by = "sample_id",
                     assay = "counts",
                     keep_dr = TRUE,

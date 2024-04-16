@@ -173,12 +173,15 @@ create_som <- function(df,
 #'  The covariate should preferable be the cell condition types but can be any column that infers heterogeneity in the data.
 #'  The function assumes that the batch information is in the "batch" column and the data contains a "sample" column with sample information.
 #'
+#' @inheritParams normalize
 #' @param label The cluster or cell type label. Either as a column name or vector.
 #' @param covar The covariate ComBat should use. Can be a vector or a column name in the input tibble.
 #'   If NULL, no covar will be used
 #' @param anchor Experimental: A column or vector specifying which samples are replicates and which are not. If specified, this column will be used as a covariate in ComBat. Be aware that it may be confounded with the condition.
 #' @param parametric Default: TRUE. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used.
-#' @inheritParams normalize
+#' @param method Default: "ComBat". Choose "ComBat" for cytometry data and "ComBat_seq" for bulk RNAseq data.
+#' @param ref.batch Optional. A string of the batch that should be used as the reference for batch adjustments.
+#' @param ... Additional parameters to pass onto ComBat and ComBat_seq
 #' @family batch
 #' @examples
 #' \dontrun{
@@ -188,10 +191,14 @@ create_som <- function(df,
 #' @export
 correct_data <- function(df,
                          label,
+                         markers = NULL,
+                         method = c("ComBat", "ComBat_seq"),
                          covar = NULL,
                          anchor = NULL,
-                         markers = NULL,
-                         parametric = TRUE) {
+                         ref.batch = NULL,
+                         parametric = TRUE,
+                         ...) {
+  method <- match.arg(method)
   message("Batch correcting data..")
   # Check for batch column
   cyCombine:::check_colname(colnames(df), "batch", "df")
@@ -238,6 +245,33 @@ correct_data <- function(df,
     }
     # Ensure there is more than 1 factor level
     if (nlevels(df[[anchor]]) == 1) anchor <- NULL
+  }
+
+  # Determine combat method
+  combat <- function(x, batch, sample, mod_matrix, parametric, ref.batch, ...) {
+    x <- t(x)
+    colnames(x) <- sample
+    print(head(x))
+    if (method == "ComBat") {
+      x <- sva::ComBat(
+        x,
+        batch = as.character(batch),
+        mod = mod_matrix,
+        par.prior = parametric,
+        ref.batch = ref.batch,
+        prior.plots = FALSE,
+        ...
+      )
+    } else if (method == "ComBat_seq") {
+      print(class(mod_matrix))
+      x <- sva::ComBat_seq(
+        x,
+        batch = as.character(batch),
+        covar_mod = mod_matrix,
+        ...
+      )
+    }
+    return(t(x))
   }
 
   corrected_data <- df %>%
@@ -310,32 +344,33 @@ correct_data <- function(df,
           message("Anchor and covar are confounded. Ignoring anchor in this label group")
         }
       }
+
+      # Determine model
+      if (num_covar > 1 & num_anchor == 1) {
+        mod_matrix <- stats::model.matrix(~ df[[covar]])
+      } else if (num_covar > 1 & num_anchor > 1) {
+        mod_matrix <- stats::model.matrix(~df[[covar]] + df[[anchor]])
+      } else if (num_covar == 1 & num_anchor > 1) {
+        mod_matrix <- stats::model.matrix(~df[[anchor]])
+      } else if (num_covar == 1 & num_anchor == 1) {
+        mod_matrix <- NULL # No model matrix needed
+      }
+
+
+
       # Compute ComBat correction
       ComBat_output <- df %>%
         dplyr::select(dplyr::all_of(markers)) %>%
-        t() %>%
+        # t() %>%
         # The as.character is to remove factor levels not present in the SOM node
-        purrr::when(num_covar > 1 & num_anchor == 1 ~
-                      sva::ComBat(.,
-                                  batch = as.character(df$batch),
-                                  mod = stats::model.matrix(~ df[[covar]]),
-                                  par.prior = parametric),
-                    num_covar > 1 & num_anchor > 1 ~
-                      sva::ComBat(.,
-                                  batch = as.character(df$batch),
-                                  mod = stats::model.matrix(~df[[covar]] + df[[anchor]]),
-                                  par.prior = parametric),
-                    num_covar == 1 & num_anchor > 1 ~
-                      sva::ComBat(.,
-                                  batch = as.character(df$batch),
-                                  mod = stats::model.matrix(~df[[anchor]]),
-                                  par.prior = parametric),
-                    num_covar == 1 & num_anchor == 1 ~
-                      sva::ComBat(.,
-                                  batch = as.character(df$batch),
-                                  par.prior = parametric)
-        ) %>%
-        t() %>%
+        combat(
+          batch = df$batch,
+          sample = df$sample,
+          mod_matrix = mod_matrix,
+          parametric = parametric,
+          ref.batch = ref.batch,
+          ...) %>%
+        # t() %>%
         tibble::as_tibble() %>%
         dplyr::bind_cols(
           dplyr::select(df,
@@ -438,12 +473,15 @@ batch_correct <- function(df,
                           ydim = 8,
                           rlen = 10,
                           parametric = TRUE,
+                          method = c("ComBat", "ComBat_seq"),
+                          ref.batch = NULL,
                           seed = 473,
                           covar = NULL,
                           anchor = NULL,
                           markers = NULL,
                           norm_method = "scale",
-                          ties.method = "average") {
+                          ties.method = "average",
+                          ...) {
   # A batch column is required
   cyCombine:::check_colname(colnames(df), "batch", "df")
   if (any(is.na(df$batch))) { # Check for NAs
@@ -473,7 +511,10 @@ batch_correct <- function(df,
                             covar = covar,
                             anchor = anchor,
                             markers = markers,
-                            parametric = parametric)
+                            parametric = parametric,
+                            method = method,
+                            ref.batch = ref.batch,
+                            ...)
   message("Done!")
   return(corrected)
 }

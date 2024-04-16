@@ -21,8 +21,8 @@ Dimensionality reduction plots for a two-batch dataset before and after correcti
 \seealso{
 Other plot: 
 \code{\link{plot_density}()},
-\code{\link{plot_dimred_full}()},
 \code{\link{plot_dimred}()},
+\code{\link{plot_dimred_full}()},
 \code{\link{plot_save_four}()},
 \code{\link{plot_save_two}()}
 }
