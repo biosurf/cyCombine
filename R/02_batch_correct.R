@@ -196,8 +196,7 @@ correct_data <- function(df,
                          covar = NULL,
                          anchor = NULL,
                          ref.batch = NULL,
-                         parametric = TRUE,
-                         ...) {
+                         parametric = TRUE) {
   method <- match.arg(method)
   message("Batch correcting data..")
   # Check for batch column
@@ -251,7 +250,6 @@ correct_data <- function(df,
   combat <- function(x, batch, sample, mod_matrix, parametric, ref.batch, ...) {
     x <- t(x)
     colnames(x) <- sample
-    print(head(x))
     if (method == "ComBat") {
       x <- sva::ComBat(
         x,
@@ -259,16 +257,13 @@ correct_data <- function(df,
         mod = mod_matrix,
         par.prior = parametric,
         ref.batch = ref.batch,
-        prior.plots = FALSE,
-        ...
+        prior.plots = FALSE
       )
     } else if (method == "ComBat_seq") {
-      print(class(mod_matrix))
       x <- sva::ComBat_seq(
         x,
         batch = as.character(batch),
-        covar_mod = mod_matrix,
-        ...
+        covar_mod = mod_matrix
       )
     }
     return(t(x))

@@ -102,9 +102,11 @@ df2SCE <- function(
     rowData <- panel
     rm(panel)
     # Exclude none's
-    if (!is(panel_type, "NULL") & "none" %in% rowData[[panel_type]]) {
-      rowData <- rowData %>%
-        dplyr::filter(.data[[panel_type]] != "none")
+    if (!is(panel_type, "NULL")) {
+      if ("none" %in% rowData[[panel_type]]){
+        rowData <- rowData %>%
+          dplyr::filter(.data[[panel_type]] != "none")
+      }
     }
 
 
