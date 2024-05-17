@@ -24,6 +24,7 @@
 #' @export
 detect_batch_effect_express <- function(df,
                                         out_dir,
+                                        markers = NULL,
                                         batch_col = "batch",
                                         downsample = NULL,
                                         seed = 472) {
@@ -50,7 +51,6 @@ detect_batch_effect_express <- function(df,
     stop('Error! Please provide a datasets with more than one batch.')
   }
 
-
   # This works without clustering the data, so we set all labels to 1
   df$label <- 1
 
@@ -75,7 +75,10 @@ detect_batch_effect_express <- function(df,
   ### Making distribution plots for all markers in each batch - good for diagnostics
   message('Making distribution plots for all markers in each batch.')
 
-  all_markers <- df %>% cyCombine::get_markers()
+  if (is.null(markers)){
+    markers <- df %>%
+      cyCombine::get_markers()
+  }
 
   # For each marker, make the plot
   grDevices::pdf(NULL)

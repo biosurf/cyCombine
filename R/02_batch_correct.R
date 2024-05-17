@@ -181,7 +181,6 @@ create_som <- function(df,
 #' @param parametric Default: TRUE. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used.
 #' @param method Default: "ComBat". Choose "ComBat" for cytometry data and "ComBat_seq" for bulk RNAseq data.
 #' @param ref.batch Optional. A string of the batch that should be used as the reference for batch adjustments.
-#' @param ... Additional parameters to pass onto ComBat and ComBat_seq
 #' @family batch
 #' @examples
 #' \dontrun{
@@ -247,7 +246,7 @@ correct_data <- function(df,
   }
 
   # Determine combat method
-  combat <- function(x, batch, sample, mod_matrix, parametric, ref.batch, ...) {
+  combat <- function(x, batch, sample, mod_matrix, parametric, ref.batch) {
     x <- t(x)
     colnames(x) <- sample
     if (method == "ComBat") {
@@ -356,16 +355,13 @@ correct_data <- function(df,
       # Compute ComBat correction
       ComBat_output <- df %>%
         dplyr::select(dplyr::all_of(markers)) %>%
-        # t() %>%
         # The as.character is to remove factor levels not present in the SOM node
         combat(
           batch = df$batch,
           sample = df$sample,
           mod_matrix = mod_matrix,
           parametric = parametric,
-          ref.batch = ref.batch,
-          ...) %>%
-        # t() %>%
+          ref.batch = ref.batch) %>%
         tibble::as_tibble() %>%
         dplyr::bind_cols(
           dplyr::select(df,
@@ -475,41 +471,45 @@ batch_correct <- function(df,
                           anchor = NULL,
                           markers = NULL,
                           norm_method = "scale",
-                          ties.method = "average",
-                          ...) {
+                          ties.method = "average") {
   # A batch column is required
   cyCombine:::check_colname(colnames(df), "batch", "df")
   if (any(is.na(df$batch))) { # Check for NAs
-    message("Some batches contain NAs. These will be removed")
     warning("Some batches contain NAs. These will be removed")
     df <- df %>%
       dplyr::filter(!is.na(batch))
-    }
-
-  # Create SOM on scaled data
-  if (is.null(label)) {
-    label <- df %>%
-      cyCombine::normalize(markers = markers,
-                           norm_method = norm_method,
-                           ties.method = ties.method) %>%
-      cyCombine::create_som(markers = markers,
-                            rlen = rlen,
-                            seed = seed,
-                            xdim = xdim,
-                            ydim = ydim)
   }
 
+  for (i in seq_len(max(length(xdim), length(ydim)))) {
+    xdim_i <- xdim[min(length(xdim), i)]
+    ydim_i <- ydim[min(length(ydim), i)]
 
-  # Run batch correction
-  corrected <- df %>%
-    cyCombine::correct_data(label = label,
-                            covar = covar,
-                            anchor = anchor,
-                            markers = markers,
-                            parametric = parametric,
-                            method = method,
-                            ref.batch = ref.batch,
-                            ...)
+    message("Batch correcting using a SOM grid of dimensions ", xdim_i,"x", ydim_i)
+
+    # Create SOM on scaled data
+    if (is.null(label)) {
+      label <- df %>%
+        cyCombine::normalize(markers = markers,
+                             norm_method = norm_method,
+                             ties.method = ties.method) %>%
+        cyCombine::create_som(markers = markers,
+                              rlen = rlen,
+                              seed = seed,
+                              xdim = xdim_i,
+                              ydim = ydim_i)
+    }
+
+
+    # Run batch correction
+    corrected <- df %>%
+      cyCombine::correct_data(label = label,
+                              covar = covar,
+                              anchor = anchor,
+                              markers = markers,
+                              parametric = parametric,
+                              method = method,
+                              ref.batch = ref.batch)
+  }
   message("Done!")
   return(corrected)
 }

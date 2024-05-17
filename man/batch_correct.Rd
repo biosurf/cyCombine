@@ -18,8 +18,7 @@ batch_correct(
   anchor = NULL,
   markers = NULL,
   norm_method = "scale",
-  ties.method = "average",
-  ...
+  ties.method = "average"
 )
 }
 \arguments{
@@ -51,8 +50,6 @@ If NULL, no covar will be used}
 \item{norm_method}{Normalization method. Should be either 'rank', 'scale' or 'qnorm'. Default: 'scale'}
 
 \item{ties.method}{The method to handle ties, when using rank. Default: 'average'. See ?rank for other options.}
-
-\item{...}{Additional parameters to pass onto ComBat and ComBat_seq}
 }
 \description{
 This is a wrapper function for the cyCombine batch correction workflow.

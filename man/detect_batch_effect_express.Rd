@@ -7,6 +7,7 @@
 detect_batch_effect_express(
   df,
   out_dir,
+  markers = NULL,
   batch_col = "batch",
   downsample = NULL,
   seed = 472

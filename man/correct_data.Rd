@@ -12,8 +12,7 @@ correct_data(
   covar = NULL,
   anchor = NULL,
   ref.batch = NULL,
-  parametric = TRUE,
-  ...
+  parametric = TRUE
 )
 }
 \arguments{
@@ -33,8 +32,6 @@ If NULL, no covar will be used}
 \item{ref.batch}{Optional. A string of the batch that should be used as the reference for batch adjustments.}
 
 \item{parametric}{Default: TRUE. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used.}
-
-\item{...}{Additional parameters to pass onto ComBat and ComBat_seq}
 }
 \description{
 Compute the batch correction on the data using the ComBat algorithm.

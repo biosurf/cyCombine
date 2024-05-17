@@ -1,3 +1,12 @@
+# cyCombine 0.2.20
+
+* Batch correction can now be performed iteratively by submitting xdim and ydim as vectors. E.g., `xdim = c(4,8)` and `ydim = c(1,8)`. This will first correct using a 4x1 grid and then an 8x8 grid.
+* You can now adjust the bin size for EMD calculations.
+* Added \ to removed characters in clean_colnames, but - and + are no longer removed.
+* Added markers as input in detect_batch_effects_express
+* Added compensation in prepare_data
+* 
+
 # cyCombine 0.2.19
 
 * Revised data export functions
