@@ -298,7 +298,7 @@ convert_flowset <- function(flowset,
   if(clean_colnames) {
     col_names <- col_names %>%
       stringr::str_remove_all("^\\d+[A-Za-z]+_") %>%
-      stringr::str_remove_all("[ \\[\\](){}\\\\]")
+      stringr::str_remove_all("[-_ \\[\\](){}\\\\]")
     }
   colnames(fcs_data) <- c("id", col_names)
 
