@@ -487,8 +487,9 @@ batch_correct <- function(df,
     message("Batch correcting using a SOM grid of dimensions ", xdim_i,"x", ydim_i)
 
     # Create SOM on scaled data
+    label_i <- label
     if (is.null(label)) {
-      label <- df %>%
+      label_i <- df %>%
         cyCombine::normalize(markers = markers,
                              norm_method = norm_method,
                              ties.method = ties.method) %>%
@@ -501,14 +502,16 @@ batch_correct <- function(df,
 
 
     # Run batch correction
-    corrected <- df %>%
-      cyCombine::correct_data(label = label,
-                              covar = covar,
-                              anchor = anchor,
-                              markers = markers,
-                              parametric = parametric,
-                              method = method,
-                              ref.batch = ref.batch)
+    corrected <- cyCombine::correct_data(
+      df = df,
+      label = label_i,
+      covar = covar,
+      anchor = anchor,
+      markers = markers,
+      parametric = parametric,
+      method = method,
+      ref.batch = ref.batch
+      )
   }
   message("Done!")
   return(corrected)
