@@ -50,10 +50,10 @@ df2SCE <- function(
     colData <- df %>%
       dplyr::select(dplyr::any_of(non_markers))
 
-  if (sample_col != 'sample_id') {
-    colData <- colData %>%
-      dplyr::rename(sample_id = sample_col)
-  }
+    if (sample_col != 'sample_id') {
+      colData <- colData %>%
+        dplyr::rename(sample_id = sample_col)
+    }
 
   } else {
     stop("Error, none of the non_markers/sample_col are available in the dataframe. You cannot make an SCE without sample names.")
@@ -99,7 +99,7 @@ df2SCE <- function(
     sapply(c(panel_channel, panel_antigen, panel_type), function(x) {
       cyCombine:::check_colname(colnames(panel), x, "panel")})
 
-    rowData <- panel
+    rowData <- panel[match(rownames(exprs), panel[[panel_antigen]]), ]
     rm(panel)
     # Exclude none's
     if (!is(panel_type, "NULL")) {
@@ -141,7 +141,7 @@ df2SCE <- function(
     warning("To store as FCS files later, you should include panel information at this step.")
   }
 
-
+  exprs <- exprs[c(scatter, markers), ]
   # Creating the SCE
   sce <- SingleCellExperiment::SingleCellExperiment(
     list(exprs = exprs,
@@ -157,7 +157,7 @@ df2SCE <- function(
     colData = colData,
     rowData = rowData,
     metadata = list("experiment_info" = experiment_info)
-    )
+  )
   message("Your SingleCellExperiment object is now created. The 'counts' assay contains reverse transformed expression values and 'exprs' contains expression values.")
 
   return(sce)
@@ -217,8 +217,11 @@ sce2FCS <- function(sce,
     cyCombine:::check_make_dir(outdir)
 
     message("Writing FCS files to ", outdir)
-    flowCore::write.flowSet(fcs, outdir = outdir)
+    switch(class(fcs)[1],
+           "flowFrame" = flowCore::write.FCS(fcs, filename = paste0(outdir, sce$sample_id[1], ".fcs")),
+           "flowSet" = flowCore::write.flowSet(fcs, outdir = outdir))
   }
 
   return(fcs)
 }
+
