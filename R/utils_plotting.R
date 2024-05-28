@@ -251,12 +251,7 @@ plot_dimred <- function(df,
 
 
   if (return_coord) {
-    if (type == 'pca') {
-      return(list("plot" = plot, "dimred" = pca$x))
-    } else {
-      colnames(umap) <- c('UMAP1', 'UMAP2')
-      return(list("plot" = plot, "dimred" = umap))
-    }
+    return(list("plot" = plot, "dimred" = df))
   } else {
     return(plot)
   }
