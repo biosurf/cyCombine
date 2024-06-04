@@ -5,7 +5,7 @@
 * Added \ to removed characters in clean_colnames, but - and + are no longer removed.
 * Added markers as input in detect_batch_effects_express
 * Added compensation in prepare_data
-* 
+* Experimental Seurat support
 
 # cyCombine 0.2.19
 
