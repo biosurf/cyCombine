@@ -502,7 +502,7 @@ batch_correct <- function(df,
 
 
     # Run batch correction
-    corrected <- cyCombine::correct_data(
+    df <- cyCombine::correct_data(
       df = df,
       label = label_i,
       covar = covar,
@@ -514,5 +514,5 @@ batch_correct <- function(df,
       )
   }
   message("Done!")
-  return(corrected)
+  return(df)
 }

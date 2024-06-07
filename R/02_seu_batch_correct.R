@@ -18,6 +18,7 @@
 #' @export
 normalize_seurat <- function(object,
                              markers = NULL,
+                             layer = "counts",
                              norm_method = "scale",
                              ties.method = "average",
                              mc.cores = parallel::detectCores() - 1) {
@@ -55,6 +56,7 @@ normalize_seurat <- function(object,
            object <- quantile_norm_seurat(object, markers = markers)
            return(object)
          },
+         "none" = return(object),
          stop("Please use either 'scale', 'rank', or 'qnorm' as normalization method.")
   )
 
@@ -63,17 +65,20 @@ normalize_seurat <- function(object,
   ranked_data <- pbmcapply::pbmclapply(
     setNames(batches, batches), function(b) {
       batch_cells <- WhichCells(object, expression = batch == b)
-      data <- LayerData(object, "counts")[, batch_cells]
-
-      rowzeros <- rowSums(data[markers, ]) == 0
+      data <- as.matrix(LayerData(object, layer)[markers, batch_cells])
+      rowzeros <- rowSums(data) == 0
       # if (any(rowzeros)) {
       #   warning("A marker is 0 for an entire batch. This marker is removed.")
       #   data <- data[!rowzeros, ]
       # }
-      data[markers, ] <- apply(data[markers, ], 1, rank, ties.method = ties.method) / ncol(data)
+      data <- apply(data, 2, rank, ties.method = ties.method) / ncol(data)
     },
     mc.cores = mc.cores)
-  ranked_data <- do.call(rbind, ranked_data)
+  ranked_data <- do.call(cbind, ranked_data)
+
+  ranked_data <- ranked_data[, match(colnames(object), colnames(ranked_data))]
+
+
 
   LayerData(object, "scale.data") <- ranked_data
 
@@ -146,7 +151,7 @@ create_som_seurat <- function(
   message("Creating SOM grid..")
   set.seed(seed)
   som_grid <- kohonen::somgrid(xdim = xdim, ydim = ydim, topo = "rectangular")
-  som_model <- kohonen::som(data, grid = som_grid, rlen = rlen, dist.fcts = "euclidean")
+  som_model <- kohonen::som(t(data), grid = som_grid, rlen = rlen, dist.fcts = "euclidean")
 
   # Add labels to metadata
   object <- AddMetaData(object, metadata = som_model$unit.classif, col.name = "Labels")
@@ -360,6 +365,7 @@ batch_correct_seurat <- function(
     covar = NULL,
     anchor = NULL,
     markers = NULL,
+    layer = "counts",
     norm_method = "scale",
     ties.method = "average",
     mc.cores = parallel::detectCores() - 1) {
@@ -367,10 +373,11 @@ batch_correct_seurat <- function(
   stopifnot(
     "No 'batch' column in data." = "batch" %in% names(object[[]]))
 
-  layer <- switch(
-    norm_method,
-    "scale" = "scale.data",
-    "rank" = "rank.data")
+  # scale_layer <- switch(
+  #   norm_method,
+  #   "scale" = "scale.data",
+  #   "rank" = "scale.data",
+  #   "none" = ifelse("scale.data" %in% Layers(object), "scale.data", "data"))
 
   if (is.null(markers)) {
     markers <- rownames(object)
@@ -388,6 +395,7 @@ batch_correct_seurat <- function(
     object <- normalize_seurat(
       object,
       markers = markers,
+      layer = layer,
       norm_method = norm_method,
       ties.method = ties.method,
       mc.cores = mc.cores)
@@ -400,14 +408,14 @@ batch_correct_seurat <- function(
       ydim = ydim_i)
 
 
-
     # Run batch correction
     labels <- unique(object$Labels)
-    corrected_data <- pbmclapply(
+    corrected_data <- lapply(
       setNames(labels, labels),
       function(lab) {
         label_cells <- WhichCells(object, expression = Labels == lab)
-        object_lab <- object[markers, label_cells]
+        object_lab <- object[, label_cells]
+
         correct_data_seurat(
           object_lab,
           covar = covar,
@@ -422,16 +430,15 @@ batch_correct_seurat <- function(
       },
       mc.cores = mc.cores
     )
+    corrected_data <- do.call(cbind, corrected_data)
+
+    # Ensure data is in the same order as the original Seurat object
+    corrected_data <- corrected_data[, match(colnames(object), colnames(corrected_data))]
+
+    object[["cyCombine"]] <- CreateAssayObject(data = corrected_data, key = "cycombine_")
+
+    DefaultAssay(object) <- "cyCombine"
   }
-
-  corrected_data <- do.call(cbind, corrected_data)
-
-  # Ensure data is in the same order as the original Seurat object
-  corrected_data <- corrected_data[, match(colnames(object), colnames(corrected_data))]
-
-  object[["cyCombine"]] <- CreateAssayObject(data = corrected_data, key = "cycombine_")
-
-  DefaultAssay(object) <- "cyCombine"
 
   message("Done!")
   return(object)
