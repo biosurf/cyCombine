@@ -421,7 +421,7 @@ batch_correct_seurat <- function(
 
     # Run batch correction
     labels <- unique(object$Labels)
-    corrected_data <- lapply(
+    corrected_data <- pbmcapply::pbmclapply(
       setNames(labels, labels),
       function(lab) {
         label_cells <- WhichCells(object, expression = Labels == lab)
