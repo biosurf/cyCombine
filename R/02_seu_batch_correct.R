@@ -435,7 +435,7 @@ batch_correct_seurat <- function(
           parametric = parametric,
           method = method,
           ref.batch = ref.batch,
-          mc.cores = 1,
+          # mc.cores = 1,
           return_seurat = FALSE
         )
       },
