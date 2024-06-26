@@ -18,6 +18,8 @@ detect_batch_effect_express(
 
 \item{out_dir}{Directory for plot output}
 
+\item{markers}{If only some markers should be used this parameter is used to define them. If not set, all markers are used.}
+
 \item{batch_col}{Name of column containing batch information}
 
 \item{downsample}{Number of cells to include in detection. If not specified, all cells will be used.}

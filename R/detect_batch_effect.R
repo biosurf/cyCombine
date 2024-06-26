@@ -10,6 +10,7 @@
 #'   3. A MultiDimensional Scaling plot based on the median marker expression per sample.
 #'   It can apply downsampling for a quicker analysis of larger datasets.
 #'
+#' @inheritParams detect_batch_effect
 #' @param df Tibble containing the expression data and batch information. See prepare_data.
 #' @param out_dir Directory for plot output
 #' @param batch_col Name of column containing batch information

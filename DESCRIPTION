@@ -31,7 +31,10 @@ Imports:
     readr,
     purrr,
     stringr,
-    stats
+    stats,
+    Seurat, SeuratObject,
+    pbmcapply,
+    methods
 Suggests: 
     flowCore,
     Biobase,

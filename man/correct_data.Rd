@@ -48,6 +48,7 @@ corrected <- uncorrected \%>\%
 \seealso{
 Other batch: 
 \code{\link{batch_correct}()},
+\code{\link{batch_correct_seurat}()},
 \code{\link{create_som}()},
 \code{\link{normalize}()},
 \code{\link{quantile_norm}()}

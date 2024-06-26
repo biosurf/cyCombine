@@ -9,10 +9,12 @@
 #' Rank is recommended for data from different studies/experiments.
 #' Quantile is not recommended.
 #'
+#' @inheritParams batch_correct_seurat
 #' @param object A Seurat object
 #' @param markers A vector of marker genes to normalize. Defaults to all genes if NULL.
 #' @param norm_method Normalization method: "scale" (Z-score), "rank", or "qnorm" (Quantile normalization). Defaults to "scale".
 #' @param ties.method Method for handling ties in rank normalization. Options are "average", "first", "last", "random", "max", or "min". Defaults to "average".
+#' @importFrom pbmcapply pbmclapply
 #'
 #' @return A Seurat object with normalized data.
 #' @export
@@ -122,6 +124,7 @@ quantile_norm_seurat <- function(object, markers = NULL, mc.cores = parallel::de
 #' It is used to segregate the cells for batch correction to make the correction less affected
 #' by samples with high abundances of a particular cell type.
 #'
+#' @inheritParams batch_correct_seurat
 #' @param object A Seurat object
 #' @param markers A vector of marker genes to use for the SOM. Defaults to all genes if NULL.
 #' @param seed The seed to use when creating the SOM. Defaults to 473.
@@ -171,14 +174,15 @@ create_som_seurat <- function(
 #' The covariate should preferably be the cell condition types but can be any column that infers heterogeneity in the data.
 #' The function assumes that the batch information is in the "batch" column and the data contains a "sample" column with sample information.
 #'
+#' @inheritParams batch_correct_seurat
 #' @param object A Seurat object.
-#' @param label The cluster or cell type label. Either as a metadata column name or vector.
 #' @param markers A vector of marker genes to use for the correction. Defaults to all genes if NULL.
 #' @param method The method for batch correction. Choose "ComBat" for cytometry data and "ComBat_seq" for bulk RNAseq data. Defaults to "ComBat".
 #' @param covar The covariate ComBat should use. Can be a vector or a metadata column name in the input Seurat object. If NULL, no covar will be used.
 #' @param anchor A column or vector specifying which samples are replicates and which are not. If specified, this column will be used as a covariate in ComBat. Be aware that it may be confounded with the condition.
 #' @param ref.batch Optional. A string of the batch that should be used as the reference for batch adjustments.
 #' @param parametric Logical. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used. Defaults to TRUE.
+#' @param return_seurat Logical. Whether the matrix or a Seurat object should be returned.
 #'
 #' @return A Seurat object with corrected data.
 #' @export
@@ -261,7 +265,7 @@ correct_data_seurat <- function(
 combat <- function(object_lab, mod_matrix, parametric, ref.batch, method) {
 
   if (method == "ComBat") {
-    data <- ComBat(
+    data <- sva::ComBat(
       dat = as.matrix(LayerData(object_lab, layer = "data")),
       batch = as.character(object_lab$batch),
       mod = mod_matrix,
@@ -270,7 +274,7 @@ combat <- function(object_lab, mod_matrix, parametric, ref.batch, method) {
       prior.plots = FALSE
     )
   } else if (method == "ComBat_seq") {
-    data <- ComBat_seq(
+    data <- sva::ComBat_seq(
       counts = as.matrix(LayerData(object_lab, "counts")),
       batch = as.character(object_lab$batch),
       covar_mod = mod_matrix,
@@ -345,7 +349,14 @@ check_confound <- function(batch, covariate) {
 #' @inheritParams create_som
 #' @inheritParams correct_data
 #' @inheritParams normalize
+#' @param object A Seurat pbject
+#' @param layer Layer to use from the Seurat object
+#' @param mc.cores Number of cores for parallelization
 #' @family batch
+#' @import Seurat
+#' @import SeuratObject
+#' @importFrom sva ComBat ComBat_seq
+#' @import stats
 #' @examples
 #' \dontrun{
 #' corrected <- uncorrected %>%

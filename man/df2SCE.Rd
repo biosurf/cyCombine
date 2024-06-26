@@ -25,6 +25,10 @@ df2SCE(
 
 \item{non_markers}{Non-markers to include as colData in SCE. If NULL, non_markers will be based on cyCombine::non_markers.}
 
+\item{scatter}{The scatter columns to add to the SCE for FCS export.}
+
+\item{clean_names}{Cleans marker names.}
+
 \item{sample_col}{It is the column name in the df that contains the sample names. Defaults to 'sample'.}
 
 \item{panel}{Optional: Panel as a data.frame. Should have colnames Channel, Marker, Type unless otherwise specified in the panel_ args. Should be included if you want to store FCS files}

@@ -425,6 +425,8 @@ transform_asinh <- function(df,
 #' extract_filename_regex. These names will represent the column names of the
 #' resulting data frame. Example: (matching the example above)
 #' extract_filename_into = c("batch", "sample").
+#' @param compensate Compensate with flowCore::spillover
+#' @param verbose Logical. Verbosity.
 #' @family dataprep
 #' @return Tibble of data (cells in rows, markers in columns)
 #' @examples

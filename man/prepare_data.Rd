@@ -85,11 +85,15 @@ extract_filename_into = c("batch", "sample").}
 
 \item{cofactor}{The cofactor to use when transforming}
 
+\item{compensate}{Compensate with flowCore::spillover}
+
 \item{derand}{Derandomize. Should be TRUE for CyTOF data, otherwise FALSE.}
 
 \item{.keep}{Keep all channels. If FALSE, channels that are not transformed are removed}
 
 \item{clean_colnames}{(Default: TRUE). A logical defining whether column names should be cleaned or not. Cleaning involves removing isotope tags, spaces, dashes, underscores, and all bracket types.}
+
+\item{verbose}{Logical. Verbosity.}
 }
 \value{
 Tibble of data (cells in rows, markers in columns)

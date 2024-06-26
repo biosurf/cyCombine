@@ -6,6 +6,7 @@
 #' @param df Tibble with expression values and metadata
 #' @param markers Markers to include in exprs and counts object of SCE. If NULL, markers will be found using the \code{\link{get_markers}} function.
 #' @param non_markers Non-markers to include as colData in SCE. If NULL, non_markers will be based on cyCombine::non_markers.
+#' @param scatter The scatter columns to add to the SCE for FCS export.
 #' @param sample_col It is the column name in the df that contains the sample names. Defaults to 'sample'.
 #' @param panel Optional: Panel as a data.frame. Should have colnames Channel, Marker, Type unless otherwise specified in the panel_ args. Should be included if you want to store FCS files
 #' @param panel_channel Optional: Only used if panel is given. It is the column name in the panel data that contains the channel names
@@ -13,6 +14,8 @@
 #' @param panel_type Optional: Only used if panel is given. It is the column name in the panel data that contains the antigen types (none, state, type).
 #'  "none" will be excluded from SCE. Set to NULL to disregard.
 #' @param transform_cofactor The cofactor to use when reverse-transforming to raw counts
+#' @param clean_names Cleans marker names.
+#' @importFrom methods is
 #' @family export
 #' @examples
 #' \dontrun{
