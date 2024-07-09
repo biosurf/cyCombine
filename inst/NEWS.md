@@ -6,6 +6,7 @@
 * Added markers as input in detect_batch_effects_express
 * Added compensation in prepare_data
 * Experimental Seurat support
+* Added mode selection in SOM clustering
 
 # cyCombine 0.2.19
 

@@ -10,6 +10,7 @@ batch_correct(
   xdim = 8,
   ydim = 8,
   rlen = 10,
+  mode = c("online", "batch", "pbatch"),
   parametric = TRUE,
   method = c("ComBat", "ComBat_seq"),
   ref.batch = NULL,
@@ -31,6 +32,8 @@ batch_correct(
 \item{ydim}{The y-dimension size of the SOM.}
 
 \item{rlen}{Number of times the data is presented to the SOM network}
+
+\item{mode}{type of learning algorithm.}
 
 \item{parametric}{Default: TRUE. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used.}
 

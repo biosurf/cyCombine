@@ -124,7 +124,6 @@ quantile_norm_seurat <- function(object, markers = NULL, mc.cores = parallel::de
 #' It is used to segregate the cells for batch correction to make the correction less affected
 #' by samples with high abundances of a particular cell type.
 #'
-#' @inheritParams batch_correct_seurat
 #' @param object A Seurat object
 #' @param markers A vector of marker genes to use for the SOM. Defaults to all genes if NULL.
 #' @param seed The seed to use when creating the SOM. Defaults to 473.

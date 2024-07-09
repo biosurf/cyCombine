@@ -4,7 +4,15 @@
 \alias{create_som}
 \title{Create Self-Organizing Map}
 \usage{
-create_som(df, markers = NULL, seed = 473, rlen = 10, xdim = 8, ydim = 8)
+create_som(
+  df,
+  markers = NULL,
+  seed = 473,
+  rlen = 10,
+  mode = c("online", "batch", "pbatch"),
+  xdim = 8,
+  ydim = 8
+)
 }
 \arguments{
 \item{df}{tibble with expression values}
@@ -14,6 +22,8 @@ create_som(df, markers = NULL, seed = 473, rlen = 10, xdim = 8, ydim = 8)
 \item{seed}{The seed to use when creating the SOM.}
 
 \item{rlen}{Number of times the data is presented to the SOM network}
+
+\item{mode}{type of learning algorithm.}
 
 \item{xdim}{The x-dimension size of the SOM.}
 

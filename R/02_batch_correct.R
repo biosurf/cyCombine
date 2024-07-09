@@ -123,6 +123,7 @@ quantile_norm <- function(df, markers = NULL) {
 #'  It is used to segregate the cells for the batch correction to make the correction less affected
 #'  by samples with high abundances of a particular cell type.
 #'
+#' @inheritParams kohonen::supersom
 #' @inheritParams normalize
 #' @param seed The seed to use when creating the SOM.
 #' @param xdim The x-dimension size of the SOM.
@@ -140,6 +141,7 @@ create_som <- function(df,
                        markers = NULL,
                        seed = 473,
                        rlen = 10,
+                       mode = c("online", "batch", "pbatch"),
                        xdim = 8,
                        ydim = 8) {
   if (is.null(markers)) {
@@ -152,10 +154,11 @@ create_som <- function(df,
   message("Creating SOM grid..")
   set.seed(seed)
   labels <- df %>%
-    dplyr::select(markers) %>%
+    dplyr::select(dplyr::all_of(markers)) %>%
     as.matrix() %>%
     kohonen::som(grid = kohonen::somgrid(xdim = xdim, ydim = ydim),
                  rlen = rlen,
+                 mode = mode,
                  dist.fcts = "euclidean")
 
   labels <- labels$unit.classif
@@ -463,6 +466,7 @@ batch_correct <- function(df,
                           xdim = 8,
                           ydim = 8,
                           rlen = 10,
+                          mode = c("online", "batch", "pbatch"),
                           parametric = TRUE,
                           method = c("ComBat", "ComBat_seq"),
                           ref.batch = NULL,
@@ -479,6 +483,7 @@ batch_correct <- function(df,
     df <- df %>%
       dplyr::filter(!is.na(batch))
   }
+  mode <- match.args(mode)
 
   for (i in seq_len(max(length(xdim), length(ydim)))) {
     xdim_i <- xdim[min(length(xdim), i)]
@@ -495,6 +500,7 @@ batch_correct <- function(df,
                              ties.method = ties.method) %>%
         cyCombine::create_som(markers = markers,
                               rlen = rlen,
+                              mode = mode,
                               seed = seed,
                               xdim = xdim_i,
                               ydim = ydim_i)
