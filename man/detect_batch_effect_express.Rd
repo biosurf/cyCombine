@@ -7,6 +7,7 @@
 detect_batch_effect_express(
   df,
   out_dir,
+  binSize = 0.1,
   markers = NULL,
   batch_col = "batch",
   downsample = NULL,
@@ -17,6 +18,8 @@ detect_batch_effect_express(
 \item{df}{Tibble containing the expression data and batch information. See prepare_data.}
 
 \item{out_dir}{Directory for plot output}
+
+\item{binSize}{The size of bins to use when binning data}
 
 \item{markers}{If only some markers should be used this parameter is used to define them. If not set, all markers are used.}
 

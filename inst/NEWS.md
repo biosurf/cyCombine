@@ -7,6 +7,7 @@
 * Added compensation in prepare_data
 * Experimental Seurat support
 * Added mode selection in SOM clustering
+* Added binSize argument to detect_batch_effect* functions
 
 # cyCombine 0.2.19
 
