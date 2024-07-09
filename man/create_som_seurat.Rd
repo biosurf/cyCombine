@@ -9,6 +9,7 @@ create_som_seurat(
   markers = NULL,
   seed = 473,
   rlen = 10,
+  mode = c("online", "batch", "pbatch"),
   xdim = 8,
   ydim = 8
 )
@@ -21,6 +22,8 @@ create_som_seurat(
 \item{seed}{The seed to use when creating the SOM. Defaults to 473.}
 
 \item{rlen}{Number of times the data is presented to the SOM network. Defaults to 10.}
+
+\item{mode}{type of learning algorithm.}
 
 \item{xdim}{The x-dimension size of the SOM. Defaults to 8.}
 

@@ -32,8 +32,6 @@ Imports:
     purrr,
     stringr,
     stats,
-    Seurat, SeuratObject,
-    pbmcapply,
     methods
 Suggests: 
     flowCore,
@@ -57,7 +55,9 @@ Suggests:
     cowplot,
     prettydoc,
     knitr,
-    CATALYST
+    CATALYST,
+    Seurat, SeuratObject,
+    pbmcapply
 VignetteBuilder: knitr
 Depends: 
     R (>= 4.0)

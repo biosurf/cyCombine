@@ -45,12 +45,12 @@ normalize_seurat <- function(object,
          "rank" = message("Ranking expression data.."),
          "scale" = {
            message("Scaling expression data..")
-           object <- ScaleData(object, features = markers, split.by = "batch")
+           object <- Seurat::ScaleData(object, features = markers, split.by = "batch")
            return(object)
            },
          "CLR" = {
            message("CLR normalizing expression data..")
-           object <- NormalizeData(object, normalization.method = "CLR", margin = 2)
+           object <- Seurat::NormalizeData(object, normalization.method = "CLR", margin = 2)
            return(object)
          },
          "qnorm" = {
@@ -66,8 +66,8 @@ normalize_seurat <- function(object,
   batches <- unique(object$batch)
   ranked_data <- pbmcapply::pbmclapply(
     setNames(batches, batches), function(b) {
-      batch_cells <- WhichCells(object, expression = batch == b)
-      data <- as.matrix(LayerData(object, layer)[markers, batch_cells])
+      batch_cells <- SeuratObject::WhichCells(object, expression = batch == b)
+      data <- as.matrix(SeuratObject::LayerData(object, layer)[markers, batch_cells])
       rowzeros <- rowSums(data) == 0
       # if (any(rowzeros)) {
       #   warning("A marker is 0 for an entire batch. This marker is removed.")
@@ -82,7 +82,7 @@ normalize_seurat <- function(object,
 
 
 
-  LayerData(object, "scale.data") <- ranked_data
+  SeuratObject::LayerData(object, "scale.data") <- ranked_data
 
   return(object)
 }
@@ -96,13 +96,13 @@ quantile_norm_seurat <- function(object, markers = NULL, mc.cores = parallel::de
   }
 
   # Determine goal distributions for each marker by getting quantiles across all batches
-  refq <- pbmclapply(setNames(markers, markers), function(m) {
-    quantile(LayerData(object, "data")[m, ], probs = seq(0, 1, length.out = 5), names = FALSE)
+  refq <- pbmcapply::pbmclapply(setNames(markers, markers), function(m) {
+    quantile(SeuratObject::LayerData(object, "data")[m, ], probs = seq(0, 1, length.out = 5), names = FALSE)
   }, mc.cores = mc.cores)
 
   for (batch in unique(object$batch)) {
-    batch_cells <- WhichCells(object, ident = batch)
-    data <- LayerData(object, "data")[, batch_cells]
+    batch_cells <- SeuratObject::WhichCells(object, ident = batch)
+    data <- SeuratObject::LayerData(object, "data")[, batch_cells]
     for (m in markers) {
       qx <- quantile(data[m, ], probs = seq(0, 1, length.out = 5), names = FALSE)
       spf <- splinefun(x = qx, y = refq[[m]], method = "monoH.FC", ties = min)
@@ -110,7 +110,7 @@ quantile_norm_seurat <- function(object, markers = NULL, mc.cores = parallel::de
       # Apply the spline function to adjust quantiles
       data[m, ] <- spf(data[m, ])
     }
-    LayerData(object, "scale.data") <- data
+    SeuratObject::LayerData(object, "scale.data") <- data
   }
 
   return(object)
@@ -124,6 +124,7 @@ quantile_norm_seurat <- function(object, markers = NULL, mc.cores = parallel::de
 #' It is used to segregate the cells for batch correction to make the correction less affected
 #' by samples with high abundances of a particular cell type.
 #'
+#' @inheritParams kohonen::supersom
 #' @param object A Seurat object
 #' @param markers A vector of marker genes to use for the SOM. Defaults to all genes if NULL.
 #' @param seed The seed to use when creating the SOM. Defaults to 473.
@@ -138,6 +139,7 @@ create_som_seurat <- function(
     markers = NULL,
     seed = 473,
     rlen = 10,
+    mode = c("online", "batch", "pbatch"),
     xdim = 8,
     ydim = 8) {
 
@@ -147,16 +149,17 @@ create_som_seurat <- function(
   }
 
   # Extract data for the markers
-  data <- LayerData(object, "scale.data")[markers, ]
+  data <- SeuratObject::LayerData(object, "scale.data")[markers, ]
 
   # SOM grid on overlapping markers, extract clustering per cell
   message("Creating SOM grid..")
   set.seed(seed)
   som_grid <- kohonen::somgrid(xdim = xdim, ydim = ydim, topo = "rectangular")
-  som_model <- kohonen::som(t(data), grid = som_grid, rlen = rlen, dist.fcts = "euclidean")
+  som_model <- kohonen::som(
+    t(data), grid = som_grid, rlen = rlen, dist.fcts = "euclidean", mode = mode)
 
   # Add labels to metadata
-  object <- AddMetaData(object, metadata = som_model$unit.classif, col.name = "Labels")
+  object <- SeuratObject::AddMetaData(object, metadata = som_model$unit.classif, col.name = "Labels")
 
   return(object)
 }
@@ -234,7 +237,7 @@ correct_data_seurat <- function(
   corrected_data <- lapply(
     setNames(labels, labels),
     function(lab) {
-      label_cells <- WhichCells(object, expression = Labels == lab)
+      label_cells <- SeuratObject::WhichCells(object, expression = Labels == lab)
       object_lab <- object[markers, label_cells]
       correct_label(
         object_lab,
@@ -254,7 +257,7 @@ correct_data_seurat <- function(
   if (!return_seurat) return(corrected_data)
   # Update the Seurat object with corrected data
 
-  object[["cyCombine"]] <- CreateAssayObject(data = corrected_data, key = "corrected.data_")
+  object[["cyCombine"]] <- SeuratObject::CreateAssayObject(data = corrected_data, key = "corrected.data_")
 
 
   return(object)
@@ -265,7 +268,7 @@ combat <- function(object_lab, mod_matrix, parametric, ref.batch, method) {
 
   if (method == "ComBat") {
     data <- sva::ComBat(
-      dat = as.matrix(LayerData(object_lab, layer = "data")),
+      dat = as.matrix(SeuratObject::LayerData(object_lab, layer = "data")),
       batch = as.character(object_lab$batch),
       mod = mod_matrix,
       par.prior = parametric,
@@ -274,7 +277,7 @@ combat <- function(object_lab, mod_matrix, parametric, ref.batch, method) {
     )
   } else if (method == "ComBat_seq") {
     data <- sva::ComBat_seq(
-      counts = as.matrix(LayerData(object_lab, "counts")),
+      counts = as.matrix(SeuratObject::LayerData(object_lab, "counts")),
       batch = as.character(object_lab$batch),
       covar_mod = mod_matrix,
       full_mod = TRUE
@@ -352,8 +355,6 @@ check_confound <- function(batch, covariate) {
 #' @param layer Layer to use from the Seurat object
 #' @param mc.cores Number of cores for parallelization
 #' @family batch
-#' @import Seurat
-#' @import SeuratObject
 #' @importFrom sva ComBat ComBat_seq
 #' @import stats
 #' @examples
@@ -368,6 +369,7 @@ batch_correct_seurat <- function(
     xdim = 8,
     ydim = 8,
     rlen = 10,
+    mode = c("online", "batch", "pbatch"),
     parametric = TRUE,
     method = c("ComBat", "ComBat_seq"),
     ref.batch = NULL,
@@ -380,9 +382,12 @@ batch_correct_seurat <- function(
     ties.method = "average",
     mc.cores = parallel::detectCores() - 1) {
 
+  missing_package("pbmcapply")
+  missing_package("Seurat")
+
   stopifnot(
     "No 'batch' column in data." = "batch" %in% names(object[[]]))
-
+  mode <- match.args(mode)
   # scale_layer <- switch(
   #   norm_method,
   #   "scale" = "scale.data",
@@ -413,6 +418,7 @@ batch_correct_seurat <- function(
       object,
       markers = markers,
       rlen = rlen,
+      mode = mode,
       seed = seed,
       xdim = xdim_i,
       ydim = ydim_i)
@@ -423,7 +429,7 @@ batch_correct_seurat <- function(
     corrected_data <- pbmcapply::pbmclapply(
       setNames(labels, labels),
       function(lab) {
-        label_cells <- WhichCells(object, expression = Labels == lab)
+        label_cells <- SeuratObject::WhichCells(object, expression = Labels == lab)
         object_lab <- object[, label_cells]
 
         correct_data_seurat(
@@ -445,7 +451,7 @@ batch_correct_seurat <- function(
     # Ensure data is in the same order as the original Seurat object
     corrected_data <- corrected_data[, match(colnames(object), colnames(corrected_data))]
 
-    object[["cyCombine"]] <- CreateAssayObject(data = corrected_data, key = "cycombine_")
+    object[["cyCombine"]] <- SeuratObject::CreateAssayObject(data = corrected_data, key = "cycombine_")
 
     DefaultAssay(object) <- "cyCombine"
   }
