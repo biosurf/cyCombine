@@ -387,7 +387,7 @@ batch_correct_seurat <- function(
 
   stopifnot(
     "No 'batch' column in data." = "batch" %in% names(object[[]]))
-  mode <- match.args(mode)
+  mode <- match.arg(mode)
   # scale_layer <- switch(
   #   norm_method,
   #   "scale" = "scale.data",

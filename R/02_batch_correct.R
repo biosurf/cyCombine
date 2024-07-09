@@ -483,7 +483,7 @@ batch_correct <- function(df,
     df <- df %>%
       dplyr::filter(!is.na(batch))
   }
-  mode <- match.args(mode)
+  mode <- match.arg(mode)
 
   for (i in seq_len(max(length(xdim), length(ydim)))) {
     xdim_i <- xdim[min(length(xdim), i)]
