@@ -62,7 +62,7 @@ normalize <- function(df,
                            rank(.x, ties.method = ties.method) / length(.x)})),
       norm_method == "scale" ~ dplyr::mutate(., dplyr::across(dplyr::all_of(markers),
                                                               .fns = ~{
-                                                                if(sum(.x) == 0) return(0)#stop("A marker is 0 for an entire batch. Please remove this marker.")
+                                                                if(sum(.x) == 0) return(.x)#stop("A marker is 0 for an entire batch. Please remove this marker.")
                                                                 scale(.x)}))
       ) %>%
     dplyr::ungroup()
