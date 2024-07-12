@@ -198,8 +198,17 @@ correct_data <- function(df,
                          covar = NULL,
                          anchor = NULL,
                          ref.batch = NULL,
-                         parametric = TRUE) {
+                         parametric = TRUE,
+                         mc.cores = 1) {
   method <- match.arg(method)
+
+  if(mc.cores == 1) {
+    APPLY <- lapply
+  } else {
+    cyCombine:::missing_package(package = "pbmcapply")
+    APPLY <- pbmcapply::pbmclapply
+    formals(APPLY)$mc.cores <- mc.cores
+  }
   message("Batch correcting data..")
   # Check for batch column
   cyCombine:::check_colname(colnames(df), "batch", "df")
@@ -272,36 +281,38 @@ correct_data <- function(df,
   }
 
   corrected_data <- df %>%
-    dplyr::group_by(.data[[label]]) %>%
+    split(df[[label]]) |>
+    APPLY(function(df_label) {
+    # dplyr::group_by(.data[[label]]) %>%
     # Correct (modify) each label group with ComBat
-    dplyr::group_modify(.keep = TRUE, function(df, ...) {
+    # dplyr::group_modify(.keep = TRUE, function(df, ...) {
       # Initiate anchor and covar counter
       num_covar <- 1
       num_anchor <- 1
       # Detect if only one batch is present in the node
-      num_batches <- df$batch %>%
+      num_batches <- df_label$batch %>%
         factor() %>%
         nlevels()
-      lab <- df[[label]][1] # Current label group
+      lab <- df_label[[label]][1] # Current label group
       if (num_batches == 1) {
-        batch <- df$batch[1]
+        batch <- df_label$batch[1]
         message(paste("Label group", lab, "only contains cells from batch", batch))
-        df <- df %>% dplyr::select(-label) # Not removed from output, but removed here to prevent bug
-        return(df)
+        # df_label <- df_label %>% dplyr::select(-label) # Not removed from output, but removed here to prevent bug
+        return(df_label)
       }
       message(paste("Correcting Label group", lab))
       # Calculate number of covars in the node
       if (!is.null(covar)) {
 
         # Only use covar, if it does not confound with batch
-        if (!cyCombine:::check_confound(df$batch, stats::model.matrix(~df[[covar]]))) {
-          num_covar <- df[[covar]] %>%
+        if (!cyCombine:::check_confound(df_label$batch, stats::model.matrix(~df_label[[covar]]))) {
+          num_covar <- df_label[[covar]] %>%
             factor() %>%
             nlevels()
 
           # If a node is heavily skewed to a single covar, it should be treated as having only 1 covar.
           # Get number of cells in the condition with most cells
-          covar_counts <- df %>%
+          covar_counts <- df_label %>%
             dplyr::count(.data[[covar]]) %>%
             dplyr::pull(n)
 
@@ -315,14 +326,14 @@ correct_data <- function(df,
       }
       # Do a similar check on anchor
       if (!is.null(anchor)) {
-        if (!cyCombine:::check_confound(df$batch, stats::model.matrix(~df[[anchor]]))) {
-          num_anchor <- df[[anchor]] %>%
+        if (!cyCombine:::check_confound(df_label$batch, stats::model.matrix(~df_label[[anchor]]))) {
+          num_anchor <- df_label[[anchor]] %>%
             factor() %>%
             nlevels()
 
           # If a node is heavily skewed to a single anchor, it should be treated as having only 1 covar.
           # Get number of cells in the anchor with most cells
-          anchor_counts <- df %>%
+          anchor_counts <- df_label %>%
             dplyr::count(.data[[anchor]]) %>%
             dplyr::pull(n)
 
@@ -336,7 +347,7 @@ correct_data <- function(df,
       }
       if (num_covar > 1 & num_anchor > 1) {
         # If neither covar nor anchor confounds with batch but they do each other, prioritise covar
-        if (cyCombine:::check_confound(df$batch, stats::model.matrix(~df[[covar]] + df[[anchor]]))) {
+        if (cyCombine:::check_confound(df_label$batch, stats::model.matrix(~df_label[[covar]] + df_label[[anchor]]))) {
           num_anchor <- 1
           message("Anchor and covar are confounded. Ignoring anchor in this label group")
         }
@@ -344,11 +355,11 @@ correct_data <- function(df,
 
       # Determine model
       if (num_covar > 1 & num_anchor == 1) {
-        mod_matrix <- stats::model.matrix(~ df[[covar]])
+        mod_matrix <- stats::model.matrix(~ df_label[[covar]])
       } else if (num_covar > 1 & num_anchor > 1) {
-        mod_matrix <- stats::model.matrix(~df[[covar]] + df[[anchor]])
+        mod_matrix <- stats::model.matrix(~df_label[[covar]] + df_label[[anchor]])
       } else if (num_covar == 1 & num_anchor > 1) {
-        mod_matrix <- stats::model.matrix(~df[[anchor]])
+        mod_matrix <- stats::model.matrix(~df_label[[anchor]])
       } else if (num_covar == 1 & num_anchor == 1) {
         mod_matrix <- NULL # No model matrix needed
       }
@@ -356,36 +367,37 @@ correct_data <- function(df,
 
 
       # Compute ComBat correction
-      ComBat_output <- df %>%
+      ComBat_output <- df_label %>%
         dplyr::select(dplyr::all_of(markers)) %>%
         # The as.character is to remove factor levels not present in the SOM node
         combat(
-          batch = df$batch,
-          sample = df$sample,
+          batch = df_label$batch,
+          sample = df_label$sample,
           mod_matrix = mod_matrix,
           parametric = parametric,
           ref.batch = ref.batch) %>%
         tibble::as_tibble() %>%
         dplyr::bind_cols(
-          dplyr::select(df,
-                        -dplyr::all_of(c(markers, label)))) %>%
+          dplyr::select(df_label,
+                        -dplyr::all_of(markers))) %>%
         # Cap values to range of input data
         dplyr::mutate(dplyr::across(dplyr::all_of(markers),
                                     function(x) {
-                                      min <- min(df[[dplyr::cur_column()]])
-                                      max <- max(df[[dplyr::cur_column()]])
+                                      min <- min(df_label[[dplyr::cur_column()]])
+                                      max <- max(df_label[[dplyr::cur_column()]])
                                       x <- ifelse(x < min, min, x)
                                       x <- ifelse(x > max, max, x)
                                       return(x)
                                     }))
       # Only add covar column, if it is not null
-      if (!is.null(covar)) ComBat_output[[covar]] <- df[[covar]]
+      if (!is.null(covar)) ComBat_output[[covar]] <- df_label[[covar]]
       # Only add anchor column, if it is not null
-      if (!is.null(anchor)) ComBat_output[[anchor]] <- df[[anchor]]
+      if (!is.null(anchor)) ComBat_output[[anchor]] <- df_label[[anchor]]
 
       return(ComBat_output)
-    }) %>%
-    dplyr::ungroup() %>%
+    })
+  corrected_data <- do.call(rbind, corrected_data) |>
+    # dplyr::ungroup() %>%
     dplyr::arrange(id) %>%
     dplyr::select(id, dplyr::everything()) %>%
     dplyr::mutate(batch = as.factor(batch))
@@ -469,6 +481,7 @@ batch_correct <- function(df,
                           mode = c("online", "batch", "pbatch"),
                           parametric = TRUE,
                           method = c("ComBat", "ComBat_seq"),
+                          mc.cores = 1,
                           ref.batch = NULL,
                           seed = 473,
                           covar = NULL,
@@ -515,6 +528,7 @@ batch_correct <- function(df,
       anchor = anchor,
       markers = markers,
       parametric = parametric,
+      mc.cores = mc.cores,
       method = method,
       ref.batch = ref.batch
       )

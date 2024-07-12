@@ -8,6 +8,7 @@
 * Experimental Seurat support
 * Added mode selection in SOM clustering
 * Added binSize argument to detect_batch_effect* functions
+* batch_correct can now be parallelized with `mc.cores` parameter using `pbmcapply`
 
 # cyCombine 0.2.19
 
