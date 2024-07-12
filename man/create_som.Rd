@@ -8,10 +8,12 @@ create_som(
   df,
   markers = NULL,
   seed = 473,
+  cluster_method = c("kohonen", "flowsom", "kmeans"),
   rlen = 10,
   mode = c("online", "batch", "pbatch"),
   xdim = 8,
-  ydim = 8
+  ydim = 8,
+  nClus = NULL
 )
 }
 \arguments{
@@ -21,6 +23,8 @@ create_som(
 
 \item{seed}{The seed to use when creating the SOM.}
 
+\item{cluster_method}{Cluster method to use. Defaults to kohonen}
+
 \item{rlen}{Number of times the data is presented to the SOM network}
 
 \item{mode}{type of learning algorithm.}
@@ -28,6 +32,8 @@ create_som(
 \item{xdim}{The x-dimension size of the SOM.}
 
 \item{ydim}{The y-dimension size of the SOM.}
+
+\item{nClus}{(Usable with FlowSOM and kmeans) Number of clusters to export}
 }
 \value{
 A vector of clustering labels

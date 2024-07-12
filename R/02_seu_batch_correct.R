@@ -14,7 +14,7 @@
 #' @param markers A vector of marker genes to normalize. Defaults to all genes if NULL.
 #' @param norm_method Normalization method: "scale" (Z-score), "rank", or "qnorm" (Quantile normalization). Defaults to "scale".
 #' @param ties.method Method for handling ties in rank normalization. Options are "average", "first", "last", "random", "max", or "min". Defaults to "average".
-#' @importFrom pbmcapply pbmclapply
+#' @param mc.cores Number of cores for parallelization
 #'
 #' @return A Seurat object with normalized data.
 #' @export
@@ -353,7 +353,6 @@ check_confound <- function(batch, covariate) {
 #' @inheritParams normalize
 #' @param object A Seurat pbject
 #' @param layer Layer to use from the Seurat object
-#' @param mc.cores Number of cores for parallelization
 #' @family batch
 #' @importFrom sva ComBat ComBat_seq
 #' @import stats
@@ -453,7 +452,7 @@ batch_correct_seurat <- function(
 
     object[["cyCombine"]] <- SeuratObject::CreateAssayObject(data = corrected_data, key = "cycombine_")
 
-    DefaultAssay(object) <- "cyCombine"
+    SeuratObject::DefaultAssay(object) <- "cyCombine"
   }
 
   message("Done!")

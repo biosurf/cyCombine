@@ -85,9 +85,9 @@ detect_batch_effect_express <- function(df,
   # For each marker, make the plot
   grDevices::pdf(NULL)
   p <- list()
-  for (c in 1:length(all_markers)) {
+  for (c in 1:length(markers)) {
 
-    p[[c]] <- ggplot2::ggplot(df, ggplot2::aes_string(x = all_markers[c],
+    p[[c]] <- ggplot2::ggplot(df, ggplot2::aes_string(x = markers[c],
                                              y = "batch")) +
       ggridges::geom_density_ridges(ggplot2::aes(color = batch, fill = batch),
                                     alpha = 0.4,
@@ -96,7 +96,7 @@ detect_batch_effect_express <- function(df,
   }
 
   # Save the plots
-  suppressMessages(cowplot::save_plot(paste0(out_dir, '/distributions_per_batch.png'), cowplot::plot_grid(plotlist = p, nrow = round(length(all_markers) / 6)), base_width = length(all_markers) / (4/3), base_height = length(all_markers)))
+  suppressMessages(cowplot::save_plot(paste0(out_dir, '/distributions_per_batch.png'), cowplot::plot_grid(plotlist = p, nrow = round(length(markers) / 6)), base_width = length(markers) / (4/3), base_height = length(markers)))
   message(paste0('Saved marker distribution plots here: ', out_dir, '/distributions_per_batch.png.'))
 
 
@@ -185,7 +185,7 @@ detect_batch_effect_express <- function(df,
     dplyr::group_by(sample) %>%
     dplyr::summarise_at(cyCombine::get_markers(df), stats::median)
 
-  dist_mat <- as.matrix(stats::dist(median_expr[, all_markers]))   # Euclidean distance
+  dist_mat <- as.matrix(stats::dist(median_expr[, markers]))   # Euclidean distance
   rownames(dist_mat) <- colnames(dist_mat) <- median_expr$sample
 
   mds <- as.data.frame(stats::cmdscale(dist_mat, k = 2))

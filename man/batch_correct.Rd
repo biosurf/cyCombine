@@ -13,6 +13,7 @@ batch_correct(
   mode = c("online", "batch", "pbatch"),
   parametric = TRUE,
   method = c("ComBat", "ComBat_seq"),
+  mc.cores = 1,
   ref.batch = NULL,
   seed = 473,
   covar = NULL,
@@ -38,6 +39,8 @@ batch_correct(
 \item{parametric}{Default: TRUE. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used.}
 
 \item{method}{Default: "ComBat". Choose "ComBat" for cytometry data and "ComBat_seq" for bulk RNAseq data.}
+
+\item{mc.cores}{Number of cores for parallelization}
 
 \item{ref.batch}{Optional. A string of the batch that should be used as the reference for batch adjustments.}
 

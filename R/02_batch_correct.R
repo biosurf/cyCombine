@@ -14,6 +14,7 @@
 #' @param markers Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.
 #' @param norm_method Normalization method. Should be either 'rank', 'scale' or 'qnorm'. Default: 'scale'
 #' @param ties.method The method to handle ties, when using rank. Default: 'average'. See ?rank for other options.
+#' @param mc.cores Number of cores for parallelization
 #' @family batch
 #' @examples
 #' \dontrun{
@@ -23,13 +24,20 @@
 #' @export
 normalize <- function(df,
                       markers = NULL,
-                      norm_method = "scale",
-                      ties.method = "average") {
+                      norm_method = c("scale", "rank", "qnorm"),
+                      ties.method = c("average", "first", "last", "random", "max", "min"),
+                      mc.cores = 1) {
 
   # Remove case-sensitivity
-  norm_method <- norm_method %>% stringr::str_to_lower()
-  ties.method <- ties.method %>% stringr::str_to_lower()
-
+  norm_method <- match.arg(norm_method)
+  ties.method <- match.arg(ties.method)
+  if(mc.cores == 1) {
+    APPLY <- lapply
+  } else {
+    cyCombine:::missing_package(package = "pbmcapply")
+    APPLY <- pbmcapply::pbmclapply
+    formals(APPLY)$mc.cores <- mc.cores
+  }
   # Error check
   if (norm_method == "rank" && ties.method %!in% c("average", "first", "last", "random", "max", "min")) {
     stop("When using norm_method = 'rank', please use an available ties.method (average, first, last, random, max, or min).")
@@ -51,22 +59,25 @@ normalize <- function(df,
       cyCombine::get_markers()
   }
 
+  norm_f <- switch(
+    norm_method,
+    "rank" = function(values) rank(values, ties.method = ties.method) / length(values),
+    "scale" = scale)
+
+  if (!"id" %in% colnames(df)) df$id <- seq_len(nrow(df))
   # Scale or rank at marker positions individually for every batch
-  df_normed <- df %>%
-    dplyr::group_by(.data$batch) %>%
-    purrr::when(
-      norm_method == "rank"  ~ dplyr::mutate(
-        ., dplyr::across(dplyr::all_of(markers),
-                         .fns = ~ {
-                           if(sum(.x) == 0) return(.x)#stop("A marker is 0 for an entire batch. Please remove this marker.")
-                           rank(.x, ties.method = ties.method) / length(.x)})),
-      norm_method == "scale" ~ dplyr::mutate(., dplyr::across(dplyr::all_of(markers),
-                                                              .fns = ~{
-                                                                if(sum(.x) == 0) return(.x)#stop("A marker is 0 for an entire batch. Please remove this marker.")
-                                                                scale(.x)}))
-      ) %>%
-    dplyr::ungroup()
-  return(df_normed)
+  df <- df %>%
+    split(df$batch) |>
+    APPLY(function(df_batch) {
+      df_batch[, markers] <- apply(df_batch[, markers], 2, function(values) {
+        if (sum(values) == 0) return(values)
+        return(norm_f(values))
+      })
+      return(df_batch)
+    })
+  df <- do.call(rbind, df) |>
+    dplyr::arrange(.data$id)
+  return(df)
 }
 
 
@@ -129,7 +140,11 @@ quantile_norm <- function(df, markers = NULL) {
 #' @param xdim The x-dimension size of the SOM.
 #' @param ydim The y-dimension size of the SOM.
 #' @param rlen Number of times the data is presented to the SOM network
+#' @param nClus (Usable with FlowSOM and kmeans) Number of clusters to export
+#' @param cluster_method Cluster method to use. Defaults to kohonen
 #' @family batch
+#' @importFrom stats kmeans
+#' @importFrom kohonen som somgrid
 #' @examples
 #' \dontrun{
 #' labels <- uncorrected %>%
@@ -140,15 +155,46 @@ quantile_norm <- function(df, markers = NULL) {
 create_som <- function(df,
                        markers = NULL,
                        seed = 473,
+                       cluster_method = c("kohonen", "flowsom", "kmeans"),
                        rlen = 10,
                        mode = c("online", "batch", "pbatch"),
                        xdim = 8,
-                       ydim = 8) {
+                       ydim = 8,
+                       nClus = NULL) {
+  cluster_method <- match.arg(cluster_method)
+  mode <- match.arg(mode)
   if (is.null(markers)) {
     # Get markers
     markers <- df %>%
       cyCombine::get_markers()
   }
+
+  cluster <- function(mat, cluster_method) {
+    if (cluster_method == "kohonen") {
+      labels <- kohonen::som(
+        mat,
+        grid = kohonen::somgrid(xdim = xdim, ydim = ydim),
+        rlen = rlen,
+        mode = mode,
+        dist.fcts = "euclidean")$unit.classif
+    } else if (cluster_method == "flowsom") {
+      cyCombine:::missing_package("FlowSOM", "Bioc")
+      if (!is.null(nClus)) {
+        labels <- FlowSOM::FlowSOM(
+          mat, xdim = xdim, ydim = ydim, nClus = nClus)
+        labels <- FlowSOM::GetMetaclusters(labels)
+      } else {
+        fsom <- FlowSOM::ReadInput(mat) |>
+          FlowSOM::BuildSOM(xdim = xdim, ydim = ydim)
+        labels <- FlowSOM::GetClusters(fsom)
+      }
+    } else if (cluster_method == "kmeans") {
+      if (is.null(nClus)) nClus <- xdim*ydim
+      labels <- stats::kmeans(mat, centers = nClus)$cluster
+    }
+    return(labels)
+    }
+
 
   # SOM grid on overlapping markers, extract clustering per cell
   message("Creating SOM grid..")
@@ -156,12 +202,10 @@ create_som <- function(df,
   labels <- df %>%
     dplyr::select(dplyr::all_of(markers)) %>%
     as.matrix() %>%
-    kohonen::som(grid = kohonen::somgrid(xdim = xdim, ydim = ydim),
-                 rlen = rlen,
-                 mode = mode,
-                 dist.fcts = "euclidean")
+    cluster(cluster_method)
 
-  labels <- labels$unit.classif
+
+  # labels <- labels$unit.classif
 
   return(labels)
 }
@@ -510,7 +554,8 @@ batch_correct <- function(df,
       label_i <- df %>%
         cyCombine::normalize(markers = markers,
                              norm_method = norm_method,
-                             ties.method = ties.method) %>%
+                             ties.method = ties.method,
+                             mc.cores = mc.cores) %>%
         cyCombine::create_som(markers = markers,
                               rlen = rlen,
                               mode = mode,
