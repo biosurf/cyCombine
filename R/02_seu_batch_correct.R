@@ -413,6 +413,8 @@ batch_correct_seurat <- function(
       norm_method = norm_method,
       ties.method = ties.method,
       mc.cores = mc.cores)
+    # Remove excluded markers
+    markers <- markers[markers %in% rownames(object)]
     object <- create_som_seurat(
       object,
       markers = markers,
