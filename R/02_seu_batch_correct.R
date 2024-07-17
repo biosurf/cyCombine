@@ -239,7 +239,7 @@ correct_data_seurat <- function(
     function(lab) {
       label_cells <- SeuratObject::WhichCells(object, expression = Labels == lab)
       object_lab <- object[markers, label_cells]
-      correct_label(
+      correct_label_seurat(
         object_lab,
         covar = covar,
         anchor = anchor,
@@ -251,7 +251,6 @@ correct_data_seurat <- function(
 
   corrected_data <- do.call(cbind, corrected_data)
 
-  # Ensure data is in the same order as the original Seurat object
   corrected_data <- corrected_data[, match(colnames(object), colnames(corrected_data))]
 
   if (!return_seurat) return(corrected_data)
@@ -264,7 +263,7 @@ correct_data_seurat <- function(
 }
 
 # Function to perform ComBat correction
-combat <- function(object_lab, mod_matrix, parametric, ref.batch, method) {
+combat_seurat <- function(object_lab, mod_matrix, parametric, ref.batch, method) {
 
   if (method == "ComBat") {
     data <- sva::ComBat(
@@ -287,7 +286,7 @@ combat <- function(object_lab, mod_matrix, parametric, ref.batch, method) {
 }
 
 # Function to correct each group
-correct_label <- function(object_lab, covar, anchor, parametric, ref.batch, method) {
+correct_label_seurat <- function(object_lab, covar, anchor, parametric, ref.batch, method) {
   num_covar <- 1
   num_anchor <- 1
   num_batches <- nlevels(factor(object_lab$batch))
@@ -325,7 +324,7 @@ correct_label <- function(object_lab, covar, anchor, parametric, ref.batch, meth
     mod_matrix <- NULL
   }
 
-  data <- combat(object_lab, mod_matrix, parametric, ref.batch, method)
+  data <- combat_seurat(object_lab, mod_matrix, parametric, ref.batch, method)
 
   return(data)
 }
@@ -379,10 +378,11 @@ batch_correct_seurat <- function(
     layer = "counts",
     norm_method = "scale",
     ties.method = "average",
+    return_seurat = TRUE,
     mc.cores = parallel::detectCores() - 1) {
 
-  missing_package("pbmcapply")
-  missing_package("Seurat")
+  cyCombine:::missing_package("pbmcapply")
+  cyCombine:::missing_package("Seurat")
 
   stopifnot(
     "No 'batch' column in data." = "batch" %in% names(object[[]]))
@@ -441,13 +441,22 @@ batch_correct_seurat <- function(
           parametric = parametric,
           method = method,
           ref.batch = ref.batch,
-          # mc.cores = 1,
+          mc.cores = 1,
           return_seurat = FALSE
         )
       },
       mc.cores = mc.cores
     )
     corrected_data <- do.call(cbind, corrected_data)
+
+    if (!return_seurat) return(corrected_data)
+
+    # Ensure data is in the same order as the original Seurat object
+    flawed_cells <- !colnames(corrected_data) %in% colnames(object)
+    if (sum(flawed_cells) > 0) {
+      warning(sum(flawed_cells), " cell(s) were excluded in correction and are removed.")
+      object <- object[, colnames(corrected_data)]
+    }
 
     # Ensure data is in the same order as the original Seurat object
     corrected_data <- corrected_data[, match(colnames(object), colnames(corrected_data))]
