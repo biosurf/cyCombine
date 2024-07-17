@@ -75,9 +75,8 @@ normalize <- function(df,
       })
       return(df_batch)
     })
-  df <- do.call(rbind, df) |>
-    as.data.frame() |>
-    dplyr::arrange(.data$id)
+  df <- do.call(rbind, df)
+  df <- dplyr::arrange(df, .data$id)
   return(df)
 }
 
