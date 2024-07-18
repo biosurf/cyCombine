@@ -525,6 +525,8 @@ batch_correct <- function(df,
                           mode = c("online", "batch", "pbatch"),
                           parametric = TRUE,
                           method = c("ComBat", "ComBat_seq"),
+                          cluster_method = c("kohonen", "flowsom", "kmeans"),
+                          nClus = NULL,
                           mc.cores = 1,
                           ref.batch = NULL,
                           seed = 473,
@@ -535,12 +537,15 @@ batch_correct <- function(df,
                           ties.method = "average") {
   # A batch column is required
   cyCombine:::check_colname(colnames(df), "batch", "df")
+  if (!is.null(markers)) lapply(markers, function(marker) cyCombine:::check_colname(colnames(df), marker, "df"))
+
   if (any(is.na(df$batch))) { # Check for NAs
     warning("Some batches contain NAs. These will be removed")
     df <- df %>%
       dplyr::filter(!is.na(batch))
   }
   mode <- match.arg(mode)
+  cluster_method <- match.arg(cluster_method)
 
   for (i in seq_len(max(length(xdim), length(ydim)))) {
     xdim_i <- xdim[min(length(xdim), i)]
@@ -551,17 +556,23 @@ batch_correct <- function(df,
     # Create SOM on scaled data
     label_i <- label
     if (is.null(label)) {
-      label_i <- df %>%
-        cyCombine::normalize(markers = markers,
-                             norm_method = norm_method,
-                             ties.method = ties.method,
-                             mc.cores = mc.cores) %>%
-        cyCombine::create_som(markers = markers,
-                              rlen = rlen,
-                              mode = mode,
-                              seed = seed,
-                              xdim = xdim_i,
-                              ydim = ydim_i)
+      df_norm <- cyCombine::normalize(
+        df,
+        markers = markers,
+        norm_method = norm_method,
+        ties.method = ties.method,
+        mc.cores = mc.cores)
+      label_i <- cyCombine::create_som(
+        df_norm,
+        markers = markers,
+        rlen = rlen,
+        mode = mode,
+        seed = seed,
+        xdim = xdim_i,
+        ydim = ydim_i,
+        cluster_mode = cluster_mode,
+        nClus = nClus)
+      rm(df_norm)
     }
 
 
