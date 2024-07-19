@@ -61,7 +61,7 @@ get_markers <- function(df) {
   # Use global non_markers if available
   if (!is.null(.GlobalEnv$non_markers)) non_markers <- .GlobalEnv$non_markers
 
-  marker_pos <- stringr::str_to_lower(colnames(df)) %!in% non_markers
+  marker_pos <- tolower(colnames(df)) %!in% tolower(non_markers)
   markers <- colnames(df)[marker_pos]
   markers <- markers[which(!is.na(markers))]
   return(markers)
