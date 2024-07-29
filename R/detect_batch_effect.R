@@ -25,7 +25,7 @@
 #' @export
 detect_batch_effect_express <- function(df,
                                         out_dir,
-                                        binSize = 0.1,
+                                        binSize = 0.1, #TODO: Dynamic binsize
                                         markers = NULL,
                                         batch_col = "batch",
                                         downsample = NULL,

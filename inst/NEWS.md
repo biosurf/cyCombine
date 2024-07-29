@@ -11,6 +11,7 @@
 * batch_correct can now be parallelized with `mc.cores` parameter using `pbmcapply`
 * Data normalization prior to clustering is now also parallelizable
 * Added option for alternative clustering methods, such as `FlowSOM` and `kmeans`
+* Vectorize and parallelize EMD computation
 
 # cyCombine 0.2.19
 
