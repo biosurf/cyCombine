@@ -570,7 +570,7 @@ batch_correct <- function(df,
         seed = seed,
         xdim = xdim_i,
         ydim = ydim_i,
-        cluster_mode = cluster_mode,
+        cluster_method = cluster_method,
         nClus = nClus)
       rm(df_norm)
     }

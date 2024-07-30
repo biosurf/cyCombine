@@ -76,8 +76,8 @@ compute_emd <- function(df,
     return(distances)
   }
   message("Binning destributions using binSize ", binSize)
-  distr <- APPLY(setNames(batches, batches), function(batch) {
-    lapply(setNames(cellTypes, cellTypes), function(cellType) {
+  distr <- lapply(setNames(batches, batches), function(batch) {
+    APPLY(setNames(cellTypes, cellTypes), function(cellType) {
       bin_distribution(batch, cellType)
     })
   })
