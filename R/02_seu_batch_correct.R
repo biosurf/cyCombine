@@ -140,7 +140,7 @@ create_som_seurat <- function(
     seed = 473,
     rlen = 10,
     mode = c("online", "batch", "pbatch"),
-    cluster_method = c("kohonen", "leiden"),
+    cluster_method = c("kohonen", "lauvain", "leiden"),
     resolution = 0.8,
     xdim = 8,
     ydim = 8) {
@@ -178,7 +178,7 @@ create_som_seurat <- function(
       object,
       # method = "igraph",
       cluster.name = "Labels",
-      algorithm = 4,
+      algorithm = switch(cluster_method, "leiden" = 4, "lauvain" = 1),
       resolution = resolution,
       random.seed = seed)
   }
@@ -392,7 +392,7 @@ batch_correct_seurat <- function(
     mode = c("online", "batch", "pbatch"),
     parametric = TRUE,
     method = c("ComBat", "ComBat_seq"),
-    cluster_method = c("kohonen", "leiden"),
+    cluster_method = c("kohonen", "lauvain", "leiden"),
     resolution = 0.8,
     ref.batch = NULL,
     seed = 473,
