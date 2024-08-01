@@ -166,7 +166,13 @@ create_som_seurat <- function(
     # Add labels to metadata
     object <- SeuratObject::AddMetaData(object, metadata = som_model$unit.classif, col.name = "Labels")
   } else if (cluster_method == "leiden") {
-    object <- Seurat::FindClusters(object, method = "igraph", cluster.name = "Labels", resolution = resolution, random.seed = seed)
+    object <- Seurat::FindClusters(
+      object,
+      # method = "igraph",
+      cluster.name = "Labels",
+      algorithm = 4,
+      resolution = resolution,
+      random.seed = seed)
   }
 
   return(object)
