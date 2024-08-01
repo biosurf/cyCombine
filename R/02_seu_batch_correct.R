@@ -140,26 +140,34 @@ create_som_seurat <- function(
     seed = 473,
     rlen = 10,
     mode = c("online", "batch", "pbatch"),
+    cluster_method = c("kohonen", "leiden"),
+    resolution = 0.8,
     xdim = 8,
     ydim = 8) {
 
+  cluster_method <- match.arg(cluster_method)
+  mode <- match.arg(mode)
   # Default to all genes if markers are not specified
   if (is.null(markers)) {
     markers <- rownames(object)
   }
 
-  # Extract data for the markers
-  data <- SeuratObject::LayerData(object, "scale.data")[markers, ]
+  if (cluster_method == "kohonen") {
+    # Extract data for the markers
+    data <- SeuratObject::LayerData(object, "scale.data")[markers, ]
 
-  # SOM grid on overlapping markers, extract clustering per cell
-  message("Creating SOM grid..")
-  set.seed(seed)
-  som_grid <- kohonen::somgrid(xdim = xdim, ydim = ydim, topo = "rectangular")
-  som_model <- kohonen::som(
-    t(data), grid = som_grid, rlen = rlen, dist.fcts = "euclidean", mode = mode)
+    # SOM grid on overlapping markers, extract clustering per cell
+    message("Creating SOM grid..")
+    set.seed(seed)
+    som_grid <- kohonen::somgrid(xdim = xdim, ydim = ydim, topo = "rectangular")
+    som_model <- kohonen::som(
+      t(data), grid = som_grid, rlen = rlen, dist.fcts = "euclidean", mode = mode)
 
-  # Add labels to metadata
-  object <- SeuratObject::AddMetaData(object, metadata = som_model$unit.classif, col.name = "Labels")
+    # Add labels to metadata
+    object <- SeuratObject::AddMetaData(object, metadata = som_model$unit.classif, col.name = "Labels")
+  } else if (cluster_method == "leiden") {
+    object <- Seurat::FindClusters(object, method = "igraph", cluster.name = "Labels", resolution = resolution, random.seed = seed)
+  }
 
   return(object)
 }
@@ -372,6 +380,7 @@ batch_correct_seurat <- function(
     method = c("ComBat", "ComBat_seq"),
     ref.batch = NULL,
     seed = 473,
+    label = NULL,
     covar = NULL,
     anchor = NULL,
     markers = NULL,
@@ -405,28 +414,34 @@ batch_correct_seurat <- function(
 
     message("Batch correcting using a SOM grid of dimensions ", xdim_i,"x", ydim_i)
 
-    # Create SOM on normalized data
-    object <- normalize_seurat(
-      object,
-      markers = markers,
-      layer = layer,
-      norm_method = norm_method,
-      ties.method = ties.method,
-      mc.cores = mc.cores)
-    # Remove excluded markers
-    markers <- markers[markers %in% rownames(object)]
-    object <- create_som_seurat(
-      object,
-      markers = markers,
-      rlen = rlen,
-      mode = mode,
-      seed = seed,
-      xdim = xdim_i,
-      ydim = ydim_i)
+    if (is(label, "NULL")) {
+      # Create SOM on normalized data
+      object <- normalize_seurat(
+        object,
+        markers = markers,
+        layer = layer,
+        norm_method = norm_method,
+        ties.method = ties.method,
+        mc.cores = mc.cores)
+      # Remove excluded markers
+      markers <- markers[markers %in% rownames(object)]
+      object <- create_som_seurat(
+        object,
+        markers = markers,
+        rlen = rlen,
+        mode = mode,
+        seed = seed,
+        xdim = xdim_i,
+        ydim = ydim_i)
+      labels <- unique(object$Labels)
+    } else {
+      labels <- unique(object[[label]])
+    }
+
 
 
     # Run batch correction
-    labels <- unique(object$Labels)
+
     corrected_data <- pbmcapply::pbmclapply(
       setNames(labels, labels),
       function(lab) {
