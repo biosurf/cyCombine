@@ -378,6 +378,8 @@ batch_correct_seurat <- function(
     mode = c("online", "batch", "pbatch"),
     parametric = TRUE,
     method = c("ComBat", "ComBat_seq"),
+    cluster_method = c("kohonen", "leiden"),
+    resolution = 0.8,
     ref.batch = NULL,
     seed = 473,
     label = NULL,
@@ -430,6 +432,8 @@ batch_correct_seurat <- function(
         markers = markers,
         rlen = rlen,
         mode = mode,
+        cluster_method = cluster_method,
+        resolution = resolution,
         seed = seed,
         xdim = xdim_i,
         ydim = ydim_i)
