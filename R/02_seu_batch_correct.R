@@ -166,6 +166,14 @@ create_som_seurat <- function(
     # Add labels to metadata
     object <- SeuratObject::AddMetaData(object, metadata = som_model$unit.classif, col.name = "Labels")
   } else if (cluster_method == "leiden") {
+    if (!"pca" %in% Seurat::Reductions(object)) object <- Seurat::RunPCA(object)
+    object <- Seurat::FindNeighbors(
+      object,
+      reduction = "pca",
+      # dims = npcs,
+      # k.param = nn_count,
+      compute.SNN = TRUE)
+
     object <- Seurat::FindClusters(
       object,
       # method = "igraph",
