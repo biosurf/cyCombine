@@ -177,10 +177,10 @@ create_som_seurat <- function(
     object <- Seurat::FindClusters(
       object,
       # method = "igraph",
-      cluster.name = "Labels",
       algorithm = switch(cluster_method, "leiden" = 4, "lauvain" = 1),
       resolution = resolution,
       random.seed = seed)
+    object$Labels <- object$seurat_clusters
   }
 
   return(object)
