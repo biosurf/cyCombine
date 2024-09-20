@@ -24,6 +24,7 @@ salvage_problematic <- function(
     df,
     correct_batches,
     channel,
+    markers = NULL,
     label = NULL,
     sample_size = NULL,
     exclude = NULL,
@@ -59,7 +60,8 @@ salvage_problematic <- function(
   # Get SOM classes for each event - on overlapping markers
   if (is(label, "NULL")){
     som_classes <- overlapping_data %>%
-      cyCombine::create_som(xdim = xdim,
+      cyCombine::create_som(markers = markers,
+                            xdim = xdim,
                             ydim = ydim,
                             seed = seed)
   } else{
@@ -145,6 +147,7 @@ impute_across_panels <- function(
     overlap_channels,
     impute_channels1,
     impute_channels2,
+    label = NULL,
     xdim = 8,
     ydim = 8,
     seed = 482) {
@@ -175,11 +178,17 @@ impute_across_panels <- function(
   # Get SOM classes for datasets on overlapping channels
   overlapping_data <- rbind(dataset1[,overlap_channels], dataset2[,overlap_channels])
 
-  som_classes <- overlapping_data %>%
-    cyCombine::create_som(markers = overlap_channels,
-                          xdim = xdim,
-                          ydim = ydim,
-                          seed = seed)
+
+  if (is(label, "NULL")){
+    som_classes <- overlapping_data %>%
+      cyCombine::create_som(markers = overlap_channels,
+                            xdim = xdim,
+                            ydim = ydim,
+                            seed = seed)
+  } else{
+    som_classes <- overlapping_data[[label]]
+  }
+
 
   # Split SOM classes to each original dataset
   dataset1_som <- som_classes[1:nrow(dataset1)]

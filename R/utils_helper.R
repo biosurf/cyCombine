@@ -6,6 +6,21 @@
 `%!in%` <- Negate(`%in%`)
 
 
+set_apply <- function(mc.cores, pb = TRUE) {
+  if(mc.cores == 1) {
+    APPLY <- lapply
+  } else {
+    if(pb) {
+      cyCombine:::missing_package(package = "pbmcapply")
+      APPLY <- pbmcapply::pbmclapply
+    } else {
+      APPLY <- parallel::mclapply
+    }
+    formals(APPLY)$mc.cores <- mc.cores
+  }
+  return(APPLY)
+}
+
 #' Wrapper for missing packages
 #'
 #' @noRd

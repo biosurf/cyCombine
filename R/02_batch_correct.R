@@ -15,6 +15,7 @@
 #' @param norm_method Normalization method. Should be either 'rank', 'scale' or 'qnorm'. Default: 'scale'
 #' @param ties.method The method to handle ties, when using rank. Default: 'average'. See ?rank for other options.
 #' @param mc.cores Number of cores for parallelization
+#' @param pb Progress bar for parallelization
 #' @family batch
 #' @examples
 #' \dontrun{
@@ -26,18 +27,13 @@ normalize <- function(df,
                       markers = NULL,
                       norm_method = c("scale", "rank", "qnorm"),
                       ties.method = c("average", "first", "last", "random", "max", "min"),
-                      mc.cores = 1) {
+                      mc.cores = 1,
+                      pb = TRUE) {
 
   # Remove case-sensitivity
   norm_method <- match.arg(norm_method)
   ties.method <- match.arg(ties.method)
-  if(mc.cores == 1) {
-    APPLY <- lapply
-  } else {
-    cyCombine:::missing_package(package = "pbmcapply")
-    APPLY <- pbmcapply::pbmclapply
-    formals(APPLY)$mc.cores <- mc.cores
-  }
+  APPLY <- set_apply(mc.cores, pb)
   # Error check
   if (norm_method == "rank" && ties.method %!in% c("average", "first", "last", "random", "max", "min")) {
     stop("When using norm_method = 'rank', please use an available ties.method (average, first, last, random, max, or min).")
@@ -243,16 +239,11 @@ correct_data <- function(df,
                          anchor = NULL,
                          ref.batch = NULL,
                          parametric = TRUE,
-                         mc.cores = 1) {
+                         mc.cores = 1,
+                         pb = TRUE) {
   method <- match.arg(method)
 
-  if(mc.cores == 1) {
-    APPLY <- lapply
-  } else {
-    cyCombine:::missing_package(package = "pbmcapply")
-    APPLY <- pbmcapply::pbmclapply
-    formals(APPLY)$mc.cores <- mc.cores
-  }
+  APPLY <- set_apply(mc.cores, pb)
   message("Batch correcting data..")
   # Check for batch column
   cyCombine:::check_colname(colnames(df), "batch", "df")
@@ -302,13 +293,12 @@ correct_data <- function(df,
   }
 
   # Determine combat method
-  combat <- function(x, batch, sample, mod_matrix, parametric, ref.batch) {
+  combat <- function(x, batch, mod_matrix, parametric, ref.batch) {
     x <- t(x)
-    colnames(x) <- sample
     if (method == "ComBat") {
       x <- sva::ComBat(
         x,
-        batch = as.character(batch),
+        batch = as.character(batch), # The as.character is to remove factor levels not present in the SOM node
         mod = mod_matrix,
         par.prior = parametric,
         ref.batch = ref.batch,
@@ -327,9 +317,7 @@ correct_data <- function(df,
   corrected_data <- df %>%
     split(df[[label]]) |>
     APPLY(function(df_label) {
-    # dplyr::group_by(.data[[label]]) %>%
-    # Correct (modify) each label group with ComBat
-    # dplyr::group_modify(.keep = TRUE, function(df, ...) {
+      # Correct each label group with ComBat
       # Initiate anchor and covar counter
       num_covar <- 1
       num_anchor <- 1
@@ -341,7 +329,6 @@ correct_data <- function(df,
       if (num_batches == 1) {
         batch <- df_label$batch[1]
         message(paste("Label group", lab, "only contains cells from batch", batch))
-        # df_label <- df_label %>% dplyr::select(-label) # Not removed from output, but removed here to prevent bug
         return(df_label)
       }
       message(paste("Correcting Label group", lab))
@@ -413,10 +400,8 @@ correct_data <- function(df,
       # Compute ComBat correction
       ComBat_output <- df_label %>%
         dplyr::select(dplyr::all_of(markers)) %>%
-        # The as.character is to remove factor levels not present in the SOM node
         combat(
           batch = df_label$batch,
-          sample = df_label$sample,
           mod_matrix = mod_matrix,
           parametric = parametric,
           ref.batch = ref.batch) %>%
@@ -441,7 +426,6 @@ correct_data <- function(df,
       return(ComBat_output)
     })
   corrected_data <- do.call(rbind, corrected_data) |>
-    # dplyr::ungroup() %>%
     dplyr::arrange(id) %>%
     dplyr::select(id, dplyr::everything()) %>%
     dplyr::mutate(batch = as.factor(batch))
@@ -528,6 +512,7 @@ batch_correct <- function(df,
                           cluster_method = c("kohonen", "flowsom", "kmeans"),
                           nClus = NULL,
                           mc.cores = 1,
+                          pb = TRUE,
                           ref.batch = NULL,
                           seed = 473,
                           covar = NULL,
@@ -561,7 +546,8 @@ batch_correct <- function(df,
         markers = markers,
         norm_method = norm_method,
         ties.method = ties.method,
-        mc.cores = mc.cores)
+        mc.cores = mc.cores,
+        pb = pb)
       label_i <- cyCombine::create_som(
         df_norm,
         markers = markers,
@@ -585,6 +571,7 @@ batch_correct <- function(df,
       markers = markers,
       parametric = parametric,
       mc.cores = mc.cores,
+      pb = pb,
       method = method,
       ref.batch = ref.batch
       )
