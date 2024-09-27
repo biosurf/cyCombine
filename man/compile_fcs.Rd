@@ -25,7 +25,8 @@ useful for indicating the channel names that we do not want to read. If
 \code{column.pattern} is set to \code{NULL}, this argument is ignored.}
 }
 \description{
-A simple function to compile a directory of FCS files into a flowSet object using flowCore::read.flowSet().
+A simple function to compile a directory of FCS files into a flowSet object
+using flowCore::read.flowSet().
 Use the pattern argument to select only a subset of FCS files.
 }
 \examples{

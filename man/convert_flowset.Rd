@@ -54,8 +54,8 @@ convert_flowset(
 \item{panel_antigen}{Optional: Only used if panel is given. It is the column name in the panel data.frame that contains the antigen names}
 }
 \description{
-Use this function to convert a flowSet into the tibble object that the remaining
-functions in cyCombine relies on.
+Use this function to convert a flowSet into the tibble
+object that the remaining functions in cyCombine relies on.
 A tibble is a Tidyverse implementation of a data.frame and can be treated as a such.
 The majority of arguments revolves adding relevant info from the metadata file/object.
 The panel argument is included to adjust the output column names using a panel with channel and antigen columns.

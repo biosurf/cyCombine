@@ -8,11 +8,13 @@ df2SCE(
   df,
   markers = NULL,
   non_markers = NULL,
+  scatter = NULL,
+  clean_names = FALSE,
   sample_col = "sample",
   panel = NULL,
   panel_channel = "Channel",
   panel_antigen = "Marker",
-  panel_type = "Type",
+  panel_type = NULL,
   transform_cofactor = 5
 )
 }
@@ -23,6 +25,10 @@ df2SCE(
 
 \item{non_markers}{Non-markers to include as colData in SCE. If NULL, non_markers will be based on cyCombine::non_markers.}
 
+\item{scatter}{The scatter columns to add to the SCE for FCS export.}
+
+\item{clean_names}{Cleans marker names.}
+
 \item{sample_col}{It is the column name in the df that contains the sample names. Defaults to 'sample'.}
 
 \item{panel}{Optional: Panel as a data.frame. Should have colnames Channel, Marker, Type unless otherwise specified in the panel_ args. Should be included if you want to store FCS files}
@@ -32,7 +38,7 @@ df2SCE(
 \item{panel_antigen}{Optional: Only used if panel is given. It is the column name in the panel data that contains the antigen names}
 
 \item{panel_type}{Optional: Only used if panel is given. It is the column name in the panel data that contains the antigen types (none, state, type).
-"none" will be excluded from SCE.}
+"none" will be excluded from SCE. Set to NULL to disregard.}
 
 \item{transform_cofactor}{The cofactor to use when reverse-transforming to raw counts}
 }

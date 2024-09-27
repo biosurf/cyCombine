@@ -4,7 +4,13 @@
 \alias{normalize}
 \title{Batch-wise normalization of data}
 \usage{
-normalize(df, markers = NULL, norm_method = "scale", ties.method = "average")
+normalize(
+  df,
+  markers = NULL,
+  norm_method = c("scale", "rank", "qnorm"),
+  ties.method = c("average", "first", "last", "random", "max", "min"),
+  mc.cores = 1
+)
 }
 \arguments{
 \item{df}{tibble with expression values}
@@ -14,6 +20,8 @@ normalize(df, markers = NULL, norm_method = "scale", ties.method = "average")
 \item{norm_method}{Normalization method. Should be either 'rank', 'scale' or 'qnorm'. Default: 'scale'}
 
 \item{ties.method}{The method to handle ties, when using rank. Default: 'average'. See ?rank for other options.}
+
+\item{mc.cores}{Number of cores for parallelization}
 }
 \description{
 This function normalizes the data in a batch-wise manner.
@@ -32,6 +40,7 @@ df_normed <- df \%>\%
 \seealso{
 Other batch: 
 \code{\link{batch_correct}()},
+\code{\link{batch_correct_seurat}()},
 \code{\link{correct_data}()},
 \code{\link{create_som}()},
 \code{\link{quantile_norm}()}

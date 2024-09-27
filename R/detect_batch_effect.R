@@ -10,6 +10,7 @@
 #'   3. A MultiDimensional Scaling plot based on the median marker expression per sample.
 #'   It can apply downsampling for a quicker analysis of larger datasets.
 #'
+#' @inheritParams detect_batch_effect
 #' @param df Tibble containing the expression data and batch information. See prepare_data.
 #' @param out_dir Directory for plot output, default = NULL will return plots as variable.
 #' @param batch_col Name of column containing batch information
@@ -24,6 +25,8 @@
 #' @export
 detect_batch_effect_express <- function(df,
                                         out_dir = NULL,
+                                        binSize = 0.1, #TODO: Dynamic binsize
+                                        markers = NULL,
                                         batch_col = "batch",
                                         downsample = NULL,
                                         seed = 472) {
@@ -55,7 +58,6 @@ detect_batch_effect_express <- function(df,
     stop('Error! Please provide a datasets with more than one batch.')
   }
 
-
   # This works without clustering the data, so we set all labels to 1
   df$label <- 1
 
@@ -80,14 +82,17 @@ detect_batch_effect_express <- function(df,
   ### Making distribution plots for all markers in each batch - good for diagnostics
   message('Making distribution plots for all markers in each batch.')
 
-  all_markers <- df %>% cyCombine::get_markers()
+  if (is.null(markers)){
+    markers <- df %>%
+      cyCombine::get_markers()
+  }
 
   # For each marker, make the plot
   grDevices::pdf(NULL)
   p <- list()
-  for (c in 1:length(all_markers)) {
+  for (c in 1:length(markers)) {
 
-    p[[c]] <- ggplot2::ggplot(df, ggplot2::aes_string(x = all_markers[c],
+    p[[c]] <- ggplot2::ggplot(df, ggplot2::aes_string(x = markers[c],
                                              y = "batch")) +
       ggridges::geom_density_ridges(ggplot2::aes(color = batch, fill = batch),
                                     alpha = 0.4,
@@ -112,7 +117,7 @@ detect_batch_effect_express <- function(df,
   # Perform EMD calculations
   emd <- df %>%
     dplyr::arrange(id) %>%
-    cyCombine::compute_emd()
+    cyCombine::compute_emd(binSize = binSize)
 
   # Get summary per marker ACROSS batches
   emd_markers <- cbind.data.frame(sapply(emd[[1]], mean, na.rm = T), sapply(emd[[1]], stats::sd, na.rm = T))
@@ -195,7 +200,7 @@ detect_batch_effect_express <- function(df,
     dplyr::group_by(sample) %>%
     dplyr::summarise_at(cyCombine::get_markers(df), stats::median)
 
-  dist_mat <- as.matrix(stats::dist(median_expr[, all_markers]))   # Euclidean distance
+  dist_mat <- as.matrix(stats::dist(median_expr[, markers]))   # Euclidean distance
   rownames(dist_mat) <- colnames(dist_mat) <- median_expr$sample
 
   mds <- as.data.frame(stats::cmdscale(dist_mat, k = 2))
@@ -233,6 +238,7 @@ detect_batch_effect_express <- function(df,
 #'   This is coupled with UMAP plots to assist the interpretation of the results.
 #'   However, this is primarily meaningful for sets with 3-30 batches - in cases outside this range, only the UMAPs will be generated.
 #'
+#' @inheritParams compute_emd
 #' @param df Tibble containing the expression data and batch information. See prepare_data.
 #' @param downsample Number of cells to include in detection. If not specified all cells will be used. One should be careful with the downsampling here as too strong downsampling leads to spurious results.
 #' @param norm_method Normalization methods (options = 'scale' and 'rank')
@@ -260,6 +266,7 @@ detect_batch_effect <- function(df,
                                 ydim = 8,
                                 seed = 382,
                                 markers = NULL,
+                                binSize = 0.1,
                                 batch_col = "batch",
                                 label_col = "label",
                                 name = 'raw data') {
@@ -329,7 +336,7 @@ detect_batch_effect <- function(df,
   if (length(levels(df$batch)) >= 3 & length(levels(df$batch)) <= 30) {
     emd <- df %>%
       dplyr::mutate(label = as.character(label)) %>%
-      cyCombine::compute_emd()
+      cyCombine::compute_emd(binSize = binSize)
 
     markers_emd <- list()
     # Looking through EMDs to find culprits - using loops

@@ -8,12 +8,15 @@ plot_density(
   uncorrected,
   corrected,
   markers = NULL,
+  directory = NULL,
   filename = NULL,
   y = "batch",
-  xlims = c(-1, 10),
   dataset_names = NULL,
+  xlims = c(-1, 10),
   ncol = 6,
-  format = 1
+  format = 1,
+  markers_per_page = NULL,
+  return_format = c("cowplot", "raw", "pdf")
 )
 }
 \arguments{
@@ -23,20 +26,27 @@ plot_density(
 
 \item{markers}{Character vector with the markers to plot}
 
+\item{directory}{Folder to store figures in.}
+
 \item{filename}{Output figure filename. If NULL plots are returned}
 
 \item{y}{The column to stack densities with. Default: "batch". If set to "Type", the dataset_names will be used to stack densities.}
 
-\item{xlims}{The limits of the x axis as a vector}
-
 \item{dataset_names}{Change the names of the datasets from Uncorrected and Corrected to something else. Format: c("Uncorrected", "Corrected")}
+
+\item{xlims}{The limits of the x axis as a vector}
 
 \item{ncol}{Number of density plots in a single row of plots. Default: 6}
 
 \item{format}{Plotting format (1 = 1 row per batch, 2 = all batches in same row.)}
+
+\item{markers_per_page}{Store figures on individual pages, with the number of markers as specified. Default: NULL.}
+
+\item{return_format}{Allows returning the raw plots for manual adjustments. This argument is mainly used when plots are not stored in files.}
 }
 \description{
-Compare densities between each batch both before and after correction
+Compare densities between each batch both before and after correction.
+Thanks to GitHub user asongggg for suggesting storing markers on separate pages and for suggesting an approach.
 }
 \examples{
 \dontrun{
@@ -47,8 +57,8 @@ plot_density(imputed1, imputed2, y = 'Type', dataset_names = paste('Panel', 1:2)
 }
 \seealso{
 Other plot: 
-\code{\link{plot_dimred_full}()},
 \code{\link{plot_dimred}()},
+\code{\link{plot_dimred_full}()},
 \code{\link{plot_save_four}()},
 \code{\link{plot_save_two}()},
 \code{\link{plot_umap_labels}()}

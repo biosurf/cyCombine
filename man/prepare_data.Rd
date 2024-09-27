@@ -11,11 +11,13 @@ prepare_data(
   pattern = "\\\\.fcs",
   metadata = NULL,
   filename_col = "filename",
+  extract_filename_regex = NULL,
+  extract_filename_into = NULL,
   sample_ids = NULL,
   batch_ids = NULL,
   condition = NULL,
   anchor = NULL,
-  down_sample = TRUE,
+  down_sample = FALSE,
   sample_size = 5e+05,
   sampling_type = "random",
   seed = 473,
@@ -24,9 +26,11 @@ prepare_data(
   panel_antigen = "antigen",
   transform = TRUE,
   cofactor = 5,
+  compensate = FALSE,
   derand = TRUE,
   .keep = FALSE,
-  clean_colnames = TRUE
+  clean_colnames = TRUE,
+  verbose = TRUE
 )
 }
 \arguments{
@@ -41,6 +45,19 @@ prepare_data(
 \item{metadata}{Optional: Can be either a filename or data.frame of the metadata file. Please give the full path from working directory to metadata file}
 
 \item{filename_col}{Optional: The column in the metadata containing the fcs filenames. Needed if metadata is given, but sample_ids is not}
+
+\item{extract_filename_regex}{Optional: Use, if there are details that you
+want to keep (e.g. sample, batch or cell type information) saved in the
+filenames. Can be used together with or in place of metadata. Should be a
+string with a regex with groups capturing the information of interest.
+Example: "Helios2_(Plate\\d+)\emph{(Sample\\d+)}" could extract plate and well
+from files named something like "Helios2_Plate21_Sample1_ctrl.fcs".}
+
+\item{extract_filename_into}{Optional: Only if extract_filename_regex is
+given. A character vector of names corresponding to the capture groups in
+extract_filename_regex. These names will represent the column names of the
+resulting data frame. Example: (matching the example above)
+extract_filename_into = c("batch", "sample").}
 
 \item{sample_ids}{Optional: If a character, it should be the sample column in the metadata. If its a vector, it should have the same length as the total flowset. If NULL, sample ids will be the file names. If a single value, all rows will be assigned this value.}
 
@@ -68,11 +85,18 @@ prepare_data(
 
 \item{cofactor}{The cofactor to use when transforming}
 
+\item{compensate}{Compensate with flowCore::spillover}
+
 \item{derand}{Derandomize. Should be TRUE for CyTOF data, otherwise FALSE.}
 
 \item{.keep}{Keep all channels. If FALSE, channels that are not transformed are removed}
 
 \item{clean_colnames}{(Default: TRUE). A logical defining whether column names should be cleaned or not. Cleaning involves removing isotope tags, spaces, dashes, underscores, and all bracket types.}
+
+\item{verbose}{Logical. Verbosity.}
+}
+\value{
+Tibble of data (cells in rows, markers in columns)
 }
 \description{
 This is a wrapper function that takes you from a directory of .fcs files or a flowset to a transformed tibble.

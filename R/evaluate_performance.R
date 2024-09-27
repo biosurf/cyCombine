@@ -20,7 +20,8 @@ compute_emd <- function(df,
                         binSize = 0.1,
                         cell_col = "label",
                         batch_col = "batch",
-                        markers = NULL){
+                        markers = NULL,
+                        mc.cores = 1){
 
   # Check for package
   cyCombine:::missing_package("emdist", "CRAN")
@@ -30,11 +31,17 @@ compute_emd <- function(df,
   cyCombine:::check_colname(colnames(df), cell_col, "df")
   cyCombine:::check_colname(colnames(df), batch_col, "df")
 
+  if(mc.cores == 1) {
+    APPLY <- lapply
+  } else {
+    cyCombine:::missing_package(package = "pbmcapply")
+    APPLY <- pbmcapply::pbmclapply
+    formals(APPLY)$mc.cores <- mc.cores
+  }
+
   # Define cell columns as characters to avoid problems with factors
-  df[[cell_col]] <- df[[cell_col]] %>%
-    as.character()
-  df[[batch_col]] <- df[[batch_col]] %>%
-    as.character()
+  df[[cell_col]] <- as.character(df[[cell_col]])
+  df[[batch_col]] <- as.character(df[[batch_col]])
 
   # Get markers if not given
   if(is.null(markers)){
@@ -42,66 +49,74 @@ compute_emd <- function(df,
       cyCombine::get_markers()
   }
 
-  # Extract batches
-  batches <- df %>%
-    dplyr::pull(batch_col) %>%
-    unique() %>%
-    sort()
-  # Extract cell types
-  cellTypes <- df %>%
-    dplyr::pull(cell_col) %>%
-    unique() %>%
-    sort()
+  # Extract batches and cell types
+  batches <- unique(df[[batch_col]]) %>% sort()
+  cellTypes <- unique(df[[cell_col]]) %>% sort()
 
   # Define limits for binning
   lower <- floor(min(df[,markers])) - binSize
   upper <- ceiling(max(df[,markers])) + binSize
   binLims <- c(lower, upper)
 
-  # Create list of distribution matrices
-  distr <- list()
-  for (b in batches) {
-    distr[[b]] <- list()
-    for (cellType in cellTypes) {
-      # Filter data on batch and cell type
-      distr[[b]][[cellType]] <- df %>%
-        dplyr::filter(.data[[cell_col]] == cellType,
-                      .data[[batch_col]] == b) %>%
-        dplyr::select(dplyr::all_of(markers)) %>%
-        apply(2, function(x) {
-          # Bin data
-          bins <- seq(binLims[1], binLims[2], by = binSize)
-          # bins <- seq(-10, 30, by = binSize)
-          if (length(x) == 0) {
-            rep(0, times = length(bins) - 1)
-          }else{
-            graphics::hist(x, breaks = bins,
-                           plot = FALSE)$density
-          }
-        })
-    }
+  # Create distribution matrices
+  bin_distribution <- function(b, cellType) {
+    filtered_data <- df %>%
+      dplyr::filter(.data[[cell_col]] == cellType,
+                    .data[[batch_col]] == b) %>%
+      dplyr::select(dplyr::all_of(markers))
+
+    distances <- apply(filtered_data, 2, function(x) {
+      bins <- seq(binLims[1], binLims[2], by = binSize)
+      if (length(x) == 0) {
+        rep(0, times = length(bins) - 1)
+      } else {
+        graphics::hist(x, breaks = bins, plot = FALSE)$density
+      }
+    })
+    return(distances)
   }
-  # Compute emd from binned distributions
-  distances <- list()
-  for (cellType in cellTypes) {
-    distances[[cellType]] <- list()
-    for (marker in markers) {
-      # Initiate distance matrix of a given cell type and marker
-      distances[[cellType]][[marker]] <- matrix(NA, nrow = length(batches),
-                                                ncol = length(batches), dimnames = list(batches,
-                                                                                        batches))
-      for (i in seq_along(batches)[-length(batches)]) {
+  message("Binning destributions using binSize ", binSize)
+  distr <- lapply(setNames(batches, batches), function(batch) {
+    APPLY(setNames(cellTypes, cellTypes), function(cellType) {
+      bin_distribution(batch, cellType)
+    })
+  })
+
+  # Compute EMD from binned distributions
+  compute_emd_between_batches <- function(i, batches, distr, cellType, marker) {
+    batch1 <- batches[i]
+    distances <- numeric(length(batches) - i)
+    names(distances) <- batches[(i + 1):length(batches)]
+    for (j in seq(i + 1, length(batches))) {
+      batch2 <- batches[j]
+      A <- matrix(distr[[batch1]][[cellType]][, marker])
+      B <- matrix(distr[[batch2]][[cellType]][, marker])
+      distances[batch2] <- emdist::emd2d(A, B)
+    }
+    return(distances)
+  }
+
+  message("Computing marker-wise EMD for each cell cluster")
+  distances <- APPLY(setNames(cellTypes, cellTypes), function(cellType) {
+    lapply(setNames(markers, markers), function(marker) {
+      distance_matrix <- matrix(NA, nrow = length(batches),
+                                ncol = length(batches), dimnames = list(batches, batches))
+      emd_results <- lapply(seq_along(batches)[-length(batches)],
+                            compute_emd_between_batches,
+                            batches = batches,
+                            distr = distr,
+                            cellType = cellType,
+                            marker = marker)
+      for (i in seq_along(emd_results)) {
         batch1 <- batches[i]
-        for (j in seq(i + 1, length(batches))) {
-          batch2 <- batches[j]
-          # Get matrix for the two batches to be compared
-          A <- matrix(distr[[batch1]][[cellType]][, marker])
-          B <- matrix(distr[[batch2]][[cellType]][, marker])
-          distances[[cellType]][[marker]][batch1, batch2] <- emdist::emd2d(A, B)
+        for (batch2 in names(emd_results[[i]])) {
+          distance_matrix[batch1, batch2] <- emd_results[[i]][batch2]
         }
       }
-    }
-  }
+      return(distance_matrix)
+    })
+  })
+
 
   return(distances)
 }
@@ -126,7 +141,8 @@ evaluate_emd <- function(uncorrected,
                          batch_col = "batch",
                          markers = NULL,
                          plots = TRUE,
-                         filter_limit = 2){
+                         filter_limit = 2,
+                         mc.cores = 1){
 
   # Check for package
   cyCombine:::missing_package("emdist", "CRAN")
@@ -156,7 +172,8 @@ evaluate_emd <- function(uncorrected,
     cyCombine::compute_emd(binSize = binSize,
                            cell_col = cell_col,
                            batch_col = batch_col,
-                           markers = markers)
+                           markers = markers,
+                           mc.cores = mc.cores)
 
   message("Computing EMD for uncorrected data..")
   emd_uncorrected <- uncorrected %>%
@@ -164,7 +181,8 @@ evaluate_emd <- function(uncorrected,
     cyCombine::compute_emd(binSize = binSize,
                            cell_col = cell_col,
                            batch_col = batch_col,
-                           markers = markers)
+                           markers = markers,
+                           mc.cores = mc.cores)
 
 
   # Extracting EMD values

@@ -13,6 +13,7 @@ detect_batch_effect(
   ydim = 8,
   seed = 382,
   markers = NULL,
+  binSize = 0.1,
   batch_col = "batch",
   label_col = "label",
   name = "raw data"
@@ -34,6 +35,8 @@ detect_batch_effect(
 \item{seed}{Random seed for reproducibility}
 
 \item{markers}{If only some markers should be used this parameter is used to define them. If not set, all markers are used.}
+
+\item{binSize}{The size of bins to use when binning data}
 
 \item{batch_col}{Name of column containing batch information}
 

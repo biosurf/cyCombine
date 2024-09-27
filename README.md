@@ -26,8 +26,19 @@
 ``` r
 # To ensure Rstudio looks up BioConductor packages run:
 setRepositories(ind = c(1:6, 8))
+# If you are correcting cytometry data, install the following Bioconductor packages:
+BiocManager::install(c("flowCore", "Biobase"))
 # Then install package with
 devtools::install_github("biosurf/cyCombine")
+```
+
+## Install with conda
+
+Thanks to [gartician](https://github.com/gartician) for the conda
+implementation. [Source](https://anaconda.org/gartician/r-cycombine).
+
+``` sh
+conda install -c gartician r-cycombine
 ```
 
 ## Article
@@ -125,22 +136,34 @@ data_dir <- "data/raw"
 markers <- c("CD20", "CD3", "CD27", "CD45RA", "CD279", "CD5", "CD19", "CD14", "CD45RO", "GranzymeA", "GranzymeK", "FCRL6", "CD355", "CD152", "CD69", "CD33", "CD4", "CD337", "CD8", "CD197", "LAG3", "CD56", "CD137", "CD161", "FoxP3", "CD80", "CD270", "CD275", "CD134", "CD278", "CD127", "KLRG1", "CD25", "HLADR", "TBet", "XCL1")
 
 # Compile fcs files, down-sample, and preprocess
-flowset <- compile_fcs(data_dir = data_dir,
-                   pattern = "\\.fcs")
+flowset <- compile_fcs(
+  data_dir = data_dir,
+  pattern = "\\.fcs",
+  column.pattern = NULL, # Include/exclude FCS columns when importing
+  invert.pattern = FALSE # Inverting on column.pattern
+  )
 
 # Convert the generated flowset into a tibble
-df <- convert_flowset(metadata = file.path(data_dir, "metadata.xlsx"),
-                      sample_ids = NULL,
-                      batch_ids = "Batch",
-                      filename_col = "FCS_name",
-                      condition = "Set",
-                      down_sample = TRUE,
-                      sample_size = 500000,
-                      seed = 473)
+df <- convert_flowset(
+  flowset,
+  metadata = file.path(data_dir, "metadata.xlsx"),
+  sample_ids = NULL,
+  batch_ids = "Batch",
+  filename_col = "FCS_name",
+  condition = "Set",
+  down_sample = TRUE,
+  sample_size = 500000,
+  seed = 473
+  )
 
 # Transform data
 uncorrected <- df %>% 
-  transform_asinh(markers = markers)
+  transform_asinh(
+    markers = markers, 
+    cofactor = 5, 
+    derand = TRUE,
+    .keep = FALSE
+    )
 
 saveRDS(uncorrected, file = "_data/cycombine_raw_uncorrected.RDS")
 
@@ -184,10 +207,13 @@ saveRDS(corrected, file = "_data/cycombine_raw_corrected.RDS")
 run_analysis(tool = "cycombine", data = "raw", data_dir = "_data", markers = markers)
 
 # Otherwise, plots can be made like so:
-density_plots(uncorrected = uncorrected,
-              corrected = corrected,
-              markers = markers,
-              filename = 'figs/densities_withcovar.png')
+plot_density(uncorrected = uncorrected,
+             corrected = corrected,
+             markers = markers,
+             filename = 'figs/densities_withcovar.pdf',
+             markers_per_page = NULL, # Markers per pdf page - thanks to asongggg for the suggestion
+             ncol = 6 # Number of columns of plots
+             )
 
 # PCA plot uncorrected
 pca1 <- uncorrected %>%
@@ -196,7 +222,7 @@ pca1 <- uncorrected %>%
 # PCA plot corrected
 pca2 <- corrected %>%
   plot_dimred('corrected', type = 'pca')
-save_two_plots(pca1, pca2, filename = 'figs/pca.png')
+plot_save_two(pca1, pca2, filename = 'figs/pca.png')
 
 # UMAP
 # UMAP plot uncorrected
@@ -204,7 +230,7 @@ set.seed(473)
 sample <- sample(1:nrow(uncorrected), 20000)
 plot1 <- plot_dimred(uncorrected[sample,], type = 'umap', name = 'Uncorrected')
 plot2 <- plot_dimred(corrected[sample,], type = 'umap', name = 'Corrected')
-save_two_plots(plot1, plot2, filename = 'figs/umap.png')
+plot_save_two(plot1, plot2, filename = 'figs/umap.png')
 ```
 
 ## Anchor-based correction
