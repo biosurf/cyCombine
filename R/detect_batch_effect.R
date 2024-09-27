@@ -101,11 +101,11 @@ detect_batch_effect_express <- function(df,
   }
 
   # Combine plots
-  dist_plot <- suppressMessages(cowplot::plot_grid(plotlist = p, nrow = round(length(all_markers) / 6)))
+  dist_plot <- suppressMessages(cowplot::plot_grid(plotlist = p, nrow = round(length(markers) / 6)))
 
   # Save the plots if out_dir provided
   if (!is.null(out_dir)) {
-    cowplot::save_plot(paste0(out_dir, '/distributions_per_batch.png'), dist_plot, base_width = length(all_markers) / (4/3), base_height = length(all_markers))
+    cowplot::save_plot(paste0(out_dir, '/distributions_per_batch.png'), dist_plot, base_width = length(markers) / (4/3), base_height = length(markers))
     message(paste0('Saved marker distribution plots here: ', out_dir, '/distributions_per_batch.png.\n'))
   } else {
     plots_return[['distributions']] <- dist_plot
