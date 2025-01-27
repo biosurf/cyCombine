@@ -422,6 +422,19 @@ batch_correct_seurat <- function(
     markers <- rownames(object)
   }
 
+  if(DefaultAssay(object) == "SCT"){
+    ## Workaround for correctly subsetting SCT assays.
+    ## Published on github by longmanz
+    ## https://github.com/satijalab/seurat-object/issues/208
+    
+    tmp_SCT_features_attributes = slot(object = object[['SCT']], name = "SCTModel.list")[[1]]@feature.attributes 
+    tmp_SCT_features_attributes = tmp_SCT_features_attributes[markers, ]
+    slot(object = object[['SCT']], name = "SCTModel.list")[[1]]@feature.attributes = tmp_SCT_features_attributes
+    object <- subset(object, features = markers)
+  }else{
+    object <- object[markers, ]
+  }
+  
   object <- object[markers, ]
 
   for (i in seq_len(max(length(xdim), length(ydim)))) {
