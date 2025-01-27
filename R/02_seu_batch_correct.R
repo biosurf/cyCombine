@@ -434,8 +434,6 @@ batch_correct_seurat <- function(
   }else{
     object <- object[markers, ]
   }
-  
-  object <- object[markers, ]
 
   for (i in seq_len(max(length(xdim), length(ydim)))) {
     xdim_i <- xdim[min(length(xdim), i)]
