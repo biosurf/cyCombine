@@ -23,8 +23,9 @@ normalize_seurat <- function(object,
                              layer = "counts",
                              norm_method = "scale",
                              ties.method = "average",
-                             mc.cores = parallel::detectCores() - 1) {
-
+                             mc.cores = 1,
+                             pb = FALSE) {
+  APPLY <- set_apply(mc.cores, pb)
   # Remove case-sensitivity
   norm_method <- tolower(norm_method)
   ties.method <- tolower(ties.method)
@@ -64,7 +65,7 @@ normalize_seurat <- function(object,
 
   # Rank at marker positions individually for every batch
   batches <- unique(object$batch)
-  ranked_data <- pbmcapply::pbmclapply(
+  ranked_data <- APPLY(
     setNames(batches, batches), function(b) {
       batch_cells <- SeuratObject::WhichCells(object, expression = batch == b)
       data <- as.matrix(SeuratObject::LayerData(object, layer)[markers, batch_cells])
@@ -89,14 +90,15 @@ normalize_seurat <- function(object,
 
 # Batch-wise quantile normalization per marker using Seurat
 
-quantile_norm_seurat <- function(object, markers = NULL, mc.cores = parallel::detectCores()) {
+quantile_norm_seurat <- function(object, markers = NULL, mc.cores = 1, pb = FALSE) {
+  APPLY <- set_apply(mc.cores, pb)
   message("Quantile normalizing expression data..")
   if (is.null(markers)) {
     markers <- rownames(object)
   }
 
   # Determine goal distributions for each marker by getting quantiles across all batches
-  refq <- pbmcapply::pbmclapply(setNames(markers, markers), function(m) {
+  refq <- APPLY(setNames(markers, markers), function(m) {
     quantile(SeuratObject::LayerData(object, "data")[m, ], probs = seq(0, 1, length.out = 5), names = FALSE)
   }, mc.cores = mc.cores)
 
@@ -213,14 +215,12 @@ create_som_seurat <- function(
 correct_data_seurat <- function(
     object,
     markers = NULL,
-    mc.cores = 1,
     method = c("ComBat", "ComBat_seq"),
     covar = NULL,
     anchor = NULL,
     ref.batch = NULL,
     parametric = TRUE,
     return_seurat = TRUE) {
-
 
   method <- match.arg(method)
   message("Batch correcting data..")
@@ -404,9 +404,10 @@ batch_correct_seurat <- function(
     norm_method = "scale",
     ties.method = "average",
     return_seurat = TRUE,
-    mc.cores = parallel::detectCores() - 1) {
+    mc.cores = 1,
+    pb = FALSE) {
 
-  cyCombine:::missing_package("pbmcapply")
+  APPLY <- set_apply(mc.cores, pb)
   cyCombine:::missing_package("Seurat")
 
   stopifnot(
@@ -426,8 +427,8 @@ batch_correct_seurat <- function(
     ## Workaround for correctly subsetting SCT assays.
     ## Published on github by longmanz
     ## https://github.com/satijalab/seurat-object/issues/208
-    
-    tmp_SCT_features_attributes = slot(object = object[['SCT']], name = "SCTModel.list")[[1]]@feature.attributes 
+
+    tmp_SCT_features_attributes = slot(object = object[['SCT']], name = "SCTModel.list")[[1]]@feature.attributes
     tmp_SCT_features_attributes = tmp_SCT_features_attributes[markers, ]
     slot(object = object[['SCT']], name = "SCTModel.list")[[1]]@feature.attributes = tmp_SCT_features_attributes
     object <- subset(object, features = markers)
@@ -449,7 +450,8 @@ batch_correct_seurat <- function(
         layer = layer,
         norm_method = norm_method,
         ties.method = ties.method,
-        mc.cores = mc.cores)
+        mc.cores = mc.cores,
+        pb = pb)
       # Remove excluded markers
       markers <- markers[markers %in% rownames(object)]
       object <- create_som_seurat(
@@ -471,7 +473,7 @@ batch_correct_seurat <- function(
 
     # Run batch correction
 
-    corrected_data <- pbmcapply::pbmclapply(
+    corrected_data <- APPLY(
       setNames(labels, labels),
       function(lab) {
         label_cells <- SeuratObject::WhichCells(object, expression = Labels == lab)
@@ -485,7 +487,6 @@ batch_correct_seurat <- function(
           parametric = parametric,
           method = method,
           ref.batch = ref.batch,
-          mc.cores = 1,
           return_seurat = FALSE
         )
       },
