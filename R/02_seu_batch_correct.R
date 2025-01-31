@@ -473,7 +473,7 @@ batch_correct_seurat <- function(
 
     # Run batch correction
 
-    corrected_data <- APPLY(
+    corrected_data <- lapply(
       setNames(labels, labels),
       function(lab) {
         label_cells <- SeuratObject::WhichCells(object, expression = Labels == lab)
@@ -489,8 +489,7 @@ batch_correct_seurat <- function(
           ref.batch = ref.batch,
           return_seurat = FALSE
         )
-      },
-      mc.cores = mc.cores
+      }
     )
     corrected_data <- do.call(cbind, corrected_data)
 
