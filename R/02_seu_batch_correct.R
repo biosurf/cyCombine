@@ -75,8 +75,7 @@ normalize_seurat <- function(object,
       #   data <- data[!rowzeros, ]
       # }
       data <- apply(data, 2, rank, ties.method = ties.method) / ncol(data)
-    },
-    mc.cores = mc.cores)
+    })
   ranked_data <- do.call(cbind, ranked_data)
 
   ranked_data <- ranked_data[, match(colnames(object), colnames(ranked_data))]
@@ -100,7 +99,7 @@ quantile_norm_seurat <- function(object, markers = NULL, mc.cores = 1, pb = FALS
   # Determine goal distributions for each marker by getting quantiles across all batches
   refq <- APPLY(setNames(markers, markers), function(m) {
     quantile(SeuratObject::LayerData(object, "data")[m, ], probs = seq(0, 1, length.out = 5), names = FALSE)
-  }, mc.cores = mc.cores)
+  })
 
   for (batch in unique(object$batch)) {
     batch_cells <- SeuratObject::WhichCells(object, ident = batch)
@@ -489,8 +488,7 @@ batch_correct_seurat <- function(
           ref.batch = ref.batch,
           return_seurat = FALSE
         )
-      },
-      mc.cores = mc.cores
+      }
     )
     corrected_data <- do.call(cbind, corrected_data)
 
