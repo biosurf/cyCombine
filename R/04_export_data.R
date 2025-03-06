@@ -138,6 +138,7 @@ df2SCE <- function(
     # Subset rowData to rows in exprs
     rowData <- rowData %>%
       dplyr::filter(.data[["marker_name"]] %in% rownames(exprs))
+    rownames(rowData) <- rownames(exprs)[match(rownames(exprs), rowData[["marker_name"]])]
 
   } else {
     rowData <- NULL
