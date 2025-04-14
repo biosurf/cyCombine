@@ -12,7 +12,8 @@ evaluate_emd(
   batch_col = "batch",
   markers = NULL,
   plots = TRUE,
-  filter_limit = 2
+  filter_limit = 2,
+  mc.cores = 1
 )
 }
 \arguments{

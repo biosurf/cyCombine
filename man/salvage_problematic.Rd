@@ -8,6 +8,7 @@ salvage_problematic(
   df,
   correct_batches,
   channel,
+  markers = NULL,
   label = NULL,
   sample_size = NULL,
   exclude = NULL,
@@ -22,6 +23,8 @@ salvage_problematic(
 \item{correct_batches}{Batches with misstaining (or other problem) for which to perform the imputation of 'channel'}
 
 \item{channel}{Channel (marker) to impute}
+
+\item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 
 \item{label}{(Optional) Column with group labels to base imputations on}
 

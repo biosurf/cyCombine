@@ -13,7 +13,8 @@ correct_data(
   anchor = NULL,
   ref.batch = NULL,
   parametric = TRUE,
-  mc.cores = 1
+  mc.cores = 1,
+  pb = TRUE
 )
 }
 \arguments{
@@ -35,6 +36,8 @@ If NULL, no covar will be used}
 \item{parametric}{Default: TRUE. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used.}
 
 \item{mc.cores}{Number of cores for parallelization}
+
+\item{pb}{Progress bar for parallelization}
 }
 \description{
 Compute the batch correction on the data using the ComBat algorithm.

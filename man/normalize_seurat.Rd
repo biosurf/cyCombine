@@ -10,7 +10,8 @@ normalize_seurat(
   layer = "counts",
   norm_method = "scale",
   ties.method = "average",
-  mc.cores = parallel::detectCores() - 1
+  mc.cores = 1,
+  pb = FALSE
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ normalize_seurat(
 \item{ties.method}{Method for handling ties in rank normalization. Options are "average", "first", "last", "random", "max", or "min". Defaults to "average".}
 
 \item{mc.cores}{Number of cores for parallelization}
+
+\item{pb}{Progress bar for parallelization}
 }
 \value{
 A Seurat object with normalized data.

@@ -12,15 +12,20 @@ batch_correct_seurat(
   mode = c("online", "batch", "pbatch"),
   parametric = TRUE,
   method = c("ComBat", "ComBat_seq"),
+  cluster_method = c("kohonen", "lauvain", "leiden"),
+  resolution = 0.8,
   ref.batch = NULL,
   seed = 473,
+  label = NULL,
   covar = NULL,
   anchor = NULL,
   markers = NULL,
   layer = "counts",
   norm_method = "scale",
   ties.method = "average",
-  mc.cores = parallel::detectCores() - 1
+  return_seurat = TRUE,
+  mc.cores = 1,
+  pb = FALSE
 )
 }
 \arguments{
@@ -34,28 +39,33 @@ batch_correct_seurat(
 
 \item{mode}{type of learning algorithm.}
 
-\item{parametric}{Default: TRUE. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used.}
+\item{parametric}{Logical. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used. Defaults to TRUE.}
 
-\item{method}{Default: "ComBat". Choose "ComBat" for cytometry data and "ComBat_seq" for bulk RNAseq data.}
+\item{method}{The method for batch correction. Choose "ComBat" for cytometry data and "ComBat_seq" for bulk RNAseq data. Defaults to "ComBat".}
+
+\item{cluster_method}{Cluster method to use. Defaults to kohonen}
 
 \item{ref.batch}{Optional. A string of the batch that should be used as the reference for batch adjustments.}
 
 \item{seed}{The seed to use when creating the SOM.}
 
-\item{covar}{The covariate ComBat should use. Can be a vector or a column name in the input tibble.
-If NULL, no covar will be used}
+\item{covar}{The covariate ComBat should use. Can be a vector or a metadata column name in the input Seurat object. If NULL, no covar will be used.}
 
-\item{anchor}{Experimental: A column or vector specifying which samples are replicates and which are not. If specified, this column will be used as a covariate in ComBat. Be aware that it may be confounded with the condition.}
+\item{anchor}{A column or vector specifying which samples are replicates and which are not. If specified, this column will be used as a covariate in ComBat. Be aware that it may be confounded with the condition.}
 
 \item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 
 \item{layer}{Layer to use from the Seurat object}
 
-\item{norm_method}{Normalization method. Should be either 'rank', 'scale' or 'qnorm'. Default: 'scale'}
+\item{norm_method}{Normalization method. Should be either 'rank', 'scale', 'CLR', or 'qnorm'. Default: 'scale'}
 
 \item{ties.method}{The method to handle ties, when using rank. Default: 'average'. See ?rank for other options.}
 
+\item{return_seurat}{Logical. Whether the matrix or a Seurat object should be returned.}
+
 \item{mc.cores}{Number of cores for parallelization}
+
+\item{pb}{Progress bar for parallelization}
 }
 \description{
 This is a wrapper function for the cyCombine batch correction workflow.

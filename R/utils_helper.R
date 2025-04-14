@@ -5,7 +5,8 @@
 #' 1 %!in% 1:10
 `%!in%` <- Negate(`%in%`)
 
-
+#'
+#' @importFrom parallel mclapply
 set_apply <- function(mc.cores, pb = TRUE) {
   if(mc.cores == 1) {
     APPLY <- lapply

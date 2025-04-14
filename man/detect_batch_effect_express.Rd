@@ -6,7 +6,7 @@
 \usage{
 detect_batch_effect_express(
   df,
-  out_dir,
+  out_dir = NULL,
   binSize = 0.1,
   markers = NULL,
   batch_col = "batch",
@@ -17,7 +17,7 @@ detect_batch_effect_express(
 \arguments{
 \item{df}{Tibble containing the expression data and batch information. See prepare_data.}
 
-\item{out_dir}{Directory for plot output}
+\item{out_dir}{Directory for plot output, default = NULL will return plots as variable.}
 
 \item{binSize}{The size of bins to use when binning data}
 

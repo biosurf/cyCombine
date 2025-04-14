@@ -199,7 +199,6 @@ create_som_seurat <- function(
 #' The covariate should preferably be the cell condition types but can be any column that infers heterogeneity in the data.
 #' The function assumes that the batch information is in the "batch" column and the data contains a "sample" column with sample information.
 #'
-#' @inheritParams batch_correct_seurat
 #' @param object A Seurat object.
 #' @param markers A vector of marker genes to use for the correction. Defaults to all genes if NULL.
 #' @param method The method for batch correction. Choose "ComBat" for cytometry data and "ComBat_seq" for bulk RNAseq data. Defaults to "ComBat".
@@ -369,7 +368,7 @@ check_confound <- function(batch, covariate) {
 #'  To run the workflow manually, type "batch_correct" to see the source code of this wrapper and follow along or read the vignettes on the GitHub page \url{https://github.com/biosurf/cyCombine}.
 #'
 #' @inheritParams create_som
-#' @inheritParams correct_data
+#' @inheritParams correct_data_seurat
 #' @inheritParams normalize
 #' @param object A Seurat pbject
 #' @param layer Layer to use from the Seurat object

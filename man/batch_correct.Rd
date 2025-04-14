@@ -13,7 +13,10 @@ batch_correct(
   mode = c("online", "batch", "pbatch"),
   parametric = TRUE,
   method = c("ComBat", "ComBat_seq"),
+  cluster_method = c("kohonen", "flowsom", "kmeans"),
+  nClus = NULL,
   mc.cores = 1,
+  pb = TRUE,
   ref.batch = NULL,
   seed = 473,
   covar = NULL,
@@ -40,7 +43,13 @@ batch_correct(
 
 \item{method}{Default: "ComBat". Choose "ComBat" for cytometry data and "ComBat_seq" for bulk RNAseq data.}
 
+\item{cluster_method}{Cluster method to use. Defaults to kohonen}
+
+\item{nClus}{(Usable with FlowSOM and kmeans) Number of clusters to export}
+
 \item{mc.cores}{Number of cores for parallelization}
+
+\item{pb}{Progress bar for parallelization}
 
 \item{ref.batch}{Optional. A string of the batch that should be used as the reference for batch adjustments.}
 
@@ -53,7 +62,7 @@ If NULL, no covar will be used}
 
 \item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 
-\item{norm_method}{Normalization method. Should be either 'rank', 'scale' or 'qnorm'. Default: 'scale'}
+\item{norm_method}{Normalization method. Should be either 'rank', 'scale', 'CLR', or 'qnorm'. Default: 'scale'}
 
 \item{ties.method}{The method to handle ties, when using rank. Default: 'average'. See ?rank for other options.}
 }

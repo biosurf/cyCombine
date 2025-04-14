@@ -7,7 +7,6 @@
 correct_data_seurat(
   object,
   markers = NULL,
-  mc.cores = 1,
   method = c("ComBat", "ComBat_seq"),
   covar = NULL,
   anchor = NULL,
@@ -20,8 +19,6 @@ correct_data_seurat(
 \item{object}{A Seurat object.}
 
 \item{markers}{A vector of marker genes to use for the correction. Defaults to all genes if NULL.}
-
-\item{mc.cores}{Number of cores for parallelization}
 
 \item{method}{The method for batch correction. Choose "ComBat" for cytometry data and "ComBat_seq" for bulk RNAseq data. Defaults to "ComBat".}
 

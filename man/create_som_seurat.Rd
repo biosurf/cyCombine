@@ -10,6 +10,8 @@ create_som_seurat(
   seed = 473,
   rlen = 10,
   mode = c("online", "batch", "pbatch"),
+  cluster_method = c("kohonen", "lauvain", "leiden"),
+  resolution = 0.8,
   xdim = 8,
   ydim = 8
 )

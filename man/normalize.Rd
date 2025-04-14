@@ -7,9 +7,10 @@
 normalize(
   df,
   markers = NULL,
-  norm_method = c("scale", "rank", "qnorm"),
+  norm_method = c("scale", "rank", "CLR", "qnorm"),
   ties.method = c("average", "first", "last", "random", "max", "min"),
-  mc.cores = 1
+  mc.cores = 1,
+  pb = TRUE
 )
 }
 \arguments{
@@ -17,11 +18,13 @@ normalize(
 
 \item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 
-\item{norm_method}{Normalization method. Should be either 'rank', 'scale' or 'qnorm'. Default: 'scale'}
+\item{norm_method}{Normalization method. Should be either 'rank', 'scale', 'CLR', or 'qnorm'. Default: 'scale'}
 
 \item{ties.method}{The method to handle ties, when using rank. Default: 'average'. See ?rank for other options.}
 
 \item{mc.cores}{Number of cores for parallelization}
+
+\item{pb}{Progress bar for parallelization}
 }
 \description{
 This function normalizes the data in a batch-wise manner.

@@ -9,7 +9,8 @@ compute_emd(
   binSize = 0.1,
   cell_col = "label",
   batch_col = "batch",
-  markers = NULL
+  markers = NULL,
+  mc.cores = 1
 )
 }
 \arguments{

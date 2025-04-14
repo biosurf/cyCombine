@@ -10,6 +10,7 @@ impute_across_panels(
   overlap_channels,
   impute_channels1,
   impute_channels2,
+  label = NULL,
   xdim = 8,
   ydim = 8,
   seed = 482

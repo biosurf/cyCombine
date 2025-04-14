@@ -12,7 +12,7 @@
 #'
 #' @param df tibble with expression values
 #' @param markers Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.
-#' @param norm_method Normalization method. Should be either 'rank', 'scale' or 'qnorm'. Default: 'scale'
+#' @param norm_method Normalization method. Should be either 'rank', 'scale', 'CLR', or 'qnorm'. Default: 'scale'
 #' @param ties.method The method to handle ties, when using rank. Default: 'average'. See ?rank for other options.
 #' @param mc.cores Number of cores for parallelization
 #' @param pb Progress bar for parallelization
@@ -25,7 +25,7 @@
 #' @export
 normalize <- function(df,
                       markers = NULL,
-                      norm_method = c("scale", "rank", "qnorm"),
+                      norm_method = c("scale", "rank", "CLR", "qnorm"),
                       ties.method = c("average", "first", "last", "random", "max", "min"),
                       mc.cores = 1,
                       pb = TRUE) {
@@ -42,6 +42,7 @@ normalize <- function(df,
   # Messaging
   if (norm_method == "rank") {message("Ranking expression data..")
   } else if (norm_method == "scale") {message("Scaling expression data..")
+  } else if (norm_method == "CLR") {message("CLR normalizing expression data..")
   } else if (norm_method == "qnorm") {
     # message("Quantile normalizing expression data..")
     # Run quantile normalization
@@ -58,7 +59,8 @@ normalize <- function(df,
   norm_f <- switch(
     norm_method,
     "rank" = function(values) rank(values, ties.method = ties.method) / length(values),
-    "scale" = scale)
+    "scale" = scale,
+    "CLR" = clr_norm)
 
   if (!"id" %in% colnames(df)) df$id <- seq_len(nrow(df))
   # Scale or rank at marker positions individually for every batch
@@ -120,6 +122,19 @@ quantile_norm <- function(df, markers = NULL) {
   return(qnormed_expr)
 }
 
+#' Centered Log-Ratio (CLR) Normalization
+#'
+#' This function was added to evaluate its performance in integrating across modalities.
+#'
+#' @param x A vector to normalize
+#'
+#' @return CLR-normalized values.
+#' @noRd
+clr_norm <- function(x) {
+  geom_mean <- exp(sum(log1p(x[x > 0]), na.rm = TRUE) / length(x))
+  clr <- log1p(x / geom_mean)
+  return(clr)
+}
 
 
 # Clustering ----
