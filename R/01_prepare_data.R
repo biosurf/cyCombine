@@ -23,6 +23,9 @@ compile_fcs <- function(
     invert.pattern = FALSE
     ) {
 
+  cyCombine:::missing_package("flowCore", repo = "Bioc")
+  cyCombine:::missing_package("Biobase", repo = "Bioc")
+
   # Error checking
   if (data_dir %>% endsWith("/")) {
     data_dir <- stringr::str_sub(data_dir, end = -2)
@@ -106,6 +109,9 @@ convert_flowset <- function(flowset,
                             panel = NULL,
                             panel_channel = "fcs_colname",
                             panel_antigen = "antigen"){
+
+  cyCombine:::missing_package("flowCore", repo = "Bioc")
+  cyCombine:::missing_package("Biobase", repo = "Bioc")
   # Extract information necessary both with and without included metadata
   ## FlowSet row numbers
   nrows <- flowCore::fsApply(flowset, nrow)
@@ -254,18 +260,24 @@ convert_flowset <- function(flowset,
 
     # Down-sample metadata columns
     ids <- ids[sample]
-    if(!is.null(sample_ids) && length(sample_ids) > 1) sample_ids <- sample_ids[sample]
-    if(!is.null(batch_ids) && length(batch_ids) > 1) batch_ids <- batch_ids[sample]
-    if(!is.null(condition) && length(condition) > 1) condition <- condition[sample]
-    if(!is.null(anchor) && length(anchor) > 1) anchor <- anchor[sample]
+    if (!is.null(sample_ids) && length(sample_ids) > 1) sample_ids <- sample_ids[sample]
+    if (!is.null(batch_ids) && length(batch_ids) > 1) batch_ids <- batch_ids[sample]
+    if (!is.null(condition) && length(condition) > 1) condition <- condition[sample]
+    if (!is.null(anchor) && length(anchor) > 1) anchor <- anchor[sample]
   }
 
   message("Extracting expression data..")
-  fcs_data <- flowset %>%
-    purrr::when(down_sample ~ flowCore::fsApply(., cyCombine:::fcs_sample,
-                                                sample = sample,
-                                                nrows = nrows),
-                ~ flowCore::fsApply(., Biobase::exprs)) %>%
+
+  if (down_sample) {
+    fcs_data <- flowCore::fsApply(
+      flowset,
+      cyCombine:::fcs_sample,
+      sample = sample,
+      nrows = nrows)
+  } else {
+    fcs_data <-  flowCore::fsApply(flowset, Biobase::exprs)
+  }
+  fcs_data <- fcs_data %>%
     tibble::as_tibble() %>%
     dplyr::mutate(id = ids) %>%
     dplyr::select(id, dplyr::everything())
@@ -325,15 +337,13 @@ fcs_sample <- function(flowframe, sample, nrows, seed = 473){
   ff_number <- which(rownames(nrows) == ff_name)
 
   # Down-sample based on accumulated nrows (ensures the correct rows are extracted from each flowframe)
-  nrows_acc <- c(0, nrows %>%
-                   purrr::accumulate(`+`))
+  nrows_acc <- c(0, cumsum(nrows))
   ff_sample <- sample - nrows_acc[ff_number]
   ff_sample <- ff_sample[ff_sample > 0]
   ff_sample <- ff_sample[ff_sample <= nrows[ff_number]]
 
   # Extract expression data
-  ff <- flowframe %>%
-    Biobase::exprs()
+  ff <- Biobase::exprs(flowframe)
   ff <- ff[ff_sample, ]
 
   return(ff)
@@ -388,9 +398,8 @@ transform_asinh <- function(df,
     stop("Your data contains non-unique column names. Please ensure they are unique. The column names are: ", stringr::str_c(colnames(df), collapse = ", "))
   }
   message("Transforming data using asinh with a cofactor of ", cofactor, "..")
+  if (!.keep) df <- dplyr::select(df, dplyr::any_of(c(markers, non_markers)))
   transformed <- df %>%
-    purrr::when(.keep ~ .,
-                ~ dplyr::select_if(., colnames(.) %in% c(markers, non_markers))) %>%
     # Transform all data on those markers
     dplyr::mutate(dplyr::across(dplyr::all_of(markers),
                      .fns = function(x){

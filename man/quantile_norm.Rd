@@ -17,8 +17,7 @@ The purpose is to minimize the impact of batch correction when clustering the da
 }
 \examples{
 \dontrun{
-df_qnorm <- preprocessed \%>\%
-  quantile_norm()
+df_qnorm <- quantile_norm(preprocessed)
   }
 }
 \seealso{

@@ -23,12 +23,13 @@
 #'   normalize()
 #'   }
 #' @export
-normalize <- function(df,
-                      markers = NULL,
-                      norm_method = c("scale", "rank", "CLR_seu", "CLR_med", "CLR", "qnorm", "none"),
-                      ties.method = c("average", "first", "last", "random", "max", "min"),
-                      mc.cores = 1,
-                      pb = TRUE) {
+normalize <- function(
+    df,
+    markers = NULL,
+    norm_method = c("scale", "rank", "CLR_seu", "CLR_med", "CLR", "qnorm", "none"),
+    ties.method = c("average", "first", "last", "random", "max", "min"),
+    mc.cores = 1,
+    pb = TRUE) {
 
   # Remove case-sensitivity
   norm_method <- match.arg(norm_method)
@@ -40,32 +41,32 @@ normalize <- function(df,
   }
 
   if (is.null(markers)) {
-    # Get markers
     markers <- df %>%
       cyCombine::get_markers()
   }
 
   # Messaging
-  switch(norm_method,
-         "rank" = message("Ranking expression data.."),
-         "scale" = {
-           message("Scaling expression data..")
-         },
-         "CLR" = {
-           message("CLR normalizing expression data..")
-         },
-         "CLR_seu" = {
-           message("CLR normalizing expression data with Seurat flavor..")
-         },
-         "CLR_med" = {
-           message("CLR normalizing expression data using median..")
-         },
-         "qnorm" = {
-           message("Quantile normalizing expression data..")
-           df <- cyCombine:::quantile_norm(df, markers = markers)
-           return(df)
-         },
-         "none" = {return(df)}
+  switch(
+    norm_method,
+    "rank" = message("Ranking expression data.."),
+    "scale" = {
+      message("Scaling expression data..")
+      },
+    "CLR" = {
+      message("CLR normalizing expression data..")
+      },
+    "CLR_seu" = {
+      message("CLR normalizing expression data with Seurat flavor..")
+      },
+    "CLR_med" = {
+      message("CLR normalizing expression data using median..")
+      },
+    "qnorm" = {
+      message("Quantile normalizing expression data..")
+      df <- cyCombine:::quantile_norm(df, markers = markers)
+      return(df)
+      },
+    "none" = {return(df)}
   )
 
   norm_f <- switch(
@@ -103,8 +104,7 @@ normalize <- function(df,
 #' @family batch
 #' @examples
 #' \dontrun{
-#' df_qnorm <- preprocessed %>%
-#'   quantile_norm()
+#' df_qnorm <- quantile_norm(preprocessed)
 #'   }
 quantile_norm <- function(df, markers = NULL) {
   message("Quantile normalizing expression data..")
@@ -162,19 +162,6 @@ clr_norm_med <- function(x) {
   return(clr)
 }
 
-
-
-clr_normalization <- function(df, markers) {
-  x <- df[,markers]
-  # Calculate the geometric mean of each row
-  geom_mean <- apply(x, 2, function(marker) expm1(mean(log1p(marker))))
-  df[, markers] <- log1p(x / geom_mean)
-  # Compute the CLR transformation
-  # df[, markers] <- apply(x, 2, function(marker) log1p(marker / geom_mean))
-
-  return(df)
-}
-
 # Clustering ----
 
 #' Create Self-Organizing Map
@@ -197,8 +184,7 @@ clr_normalization <- function(df, markers) {
 #' @importFrom kohonen som somgrid
 #' @examples
 #' \dontrun{
-#' labels <- uncorrected %>%
-#'   create_som()
+#' labels <- create_som(uncorrected)
 #'   }
 #' @export
 #' @return A vector of clustering labels
@@ -212,27 +198,36 @@ create_som <- function(df,
                        xdim = 8,
                        ydim = 8,
                        nClus = NULL) {
-  cluster_method <- match.arg(cluster_method)
   mode <- match.arg(mode)
+  distf <- match.arg(distf)
+  cluster_method <- match.arg(cluster_method)
+
   if (is.null(markers)) {
-    # Get markers
     markers <- df %>%
       cyCombine::get_markers()
   }
 
-  cluster <- function(mat, cluster_method) {
-    if (cluster_method == "kohonen") {
+  # SOM grid on overlapping markers, extract clustering per cell
+  message("Creating SOM grid..")
+  set.seed(seed)
+  df <- as.matrix(df[, markers])
+
+  labels <- switch(
+    cluster_method,
+    "kohonen" = {
       if (!distf %in% c("sumofsquares", "euclidean", "manhattan")) {
         warning("Distance function '", dist, "' not supported by Kohonen. Setting to 'sumofsquares'")
         distf <- "sumofsquares"
       }
-      labels <- kohonen::som(
-        mat,
+      kohonen::som(
+        df,
         grid = kohonen::somgrid(xdim = xdim, ydim = ydim),
         rlen = rlen,
         mode = mode,
         dist.fcts = distf)$unit.classif
-    } else if (cluster_method == "flowsom") {
+    },
+
+    "flowsom" = {
       if (distf == "sumofsquares") {
         warning("Distance function '", dist, "' not supported by FlowSOM. Setting to 'euclidean'")
         distf <- "euclidean"
@@ -240,31 +235,20 @@ create_som <- function(df,
       cyCombine:::missing_package("FlowSOM", "Bioc")
       if (!is.null(nClus)) {
         labels <- FlowSOM::FlowSOM(
-          mat, xdim = xdim, ydim = ydim, nClus = nClus)
-        labels <- FlowSOM::GetMetaclusters(labels)
+          df, xdim = xdim, ydim = ydim, nClus = nClus)
+        FlowSOM::GetMetaclusters(labels)
       } else {
-        fsom <- FlowSOM::ReadInput(mat) |>
+        fsom <- FlowSOM::ReadInput(df) |>
           FlowSOM::BuildSOM(xdim = xdim, ydim = ydim)
-        labels <- FlowSOM::GetClusters(fsom)
+        FlowSOM::GetClusters(fsom)
       }
-    } else if (cluster_method == "kmeans") {
+    },
+
+    "kmeans" = {
       if (is.null(nClus)) nClus <- xdim*ydim
-      labels <- stats::kmeans(mat, centers = nClus)$cluster
+      stats::kmeans(df, centers = nClus)$cluster
     }
-    return(labels)
-    }
-
-
-  # SOM grid on overlapping markers, extract clustering per cell
-  message("Creating SOM grid..")
-  set.seed(seed)
-  labels <- df %>%
-    dplyr::select(dplyr::all_of(markers)) %>%
-    as.matrix() %>%
-    cluster(cluster_method)
-
-
-  # labels <- labels$unit.classif
+    )
 
   return(labels)
 }
@@ -377,7 +361,7 @@ correct_data <- function(df,
     return(t(x))
   }
 
-  corrected_data <- df %>%
+  corrected_data <- df |>
     split(df[[label]]) |>
     APPLY(function(df_label) {
       # Correct each label group with ComBat
@@ -385,8 +369,8 @@ correct_data <- function(df,
       num_covar <- 1
       num_anchor <- 1
       # Detect if only one batch is present in the node
-      num_batches <- df_label$batch %>%
-        factor() %>%
+      num_batches <- df_label$batch |>
+        factor() |>
         nlevels()
       lab <- df_label[[label]][1] # Current label group
       if (num_batches == 1) {
@@ -400,8 +384,8 @@ correct_data <- function(df,
 
         # Only use covar, if it does not confound with batch
         if (!cyCombine:::check_confound(df_label$batch, stats::model.matrix(~df_label[[covar]]))) {
-          num_covar <- df_label[[covar]] %>%
-            factor() %>%
+          num_covar <- df_label[[covar]] |>
+            factor() |>
             nlevels()
 
           # If a node is heavily skewed to a single covar, it should be treated as having only 1 covar.
@@ -421,8 +405,8 @@ correct_data <- function(df,
       # Do a similar check on anchor
       if (!is.null(anchor)) {
         if (!cyCombine:::check_confound(df_label$batch, stats::model.matrix(~df_label[[anchor]]))) {
-          num_anchor <- df_label[[anchor]] %>%
-            factor() %>%
+          num_anchor <- df_label[[anchor]] |>
+            factor() |>
             nlevels()
 
           # If a node is heavily skewed to a single anchor, it should be treated as having only 1 covar.
@@ -457,8 +441,6 @@ correct_data <- function(df,
       } else if (num_covar == 1 & num_anchor == 1) {
         mod_matrix <- NULL # No model matrix needed
       }
-
-
 
       # Compute ComBat correction
       ComBat_output <- df_label %>%
@@ -589,8 +571,7 @@ batch_correct <- function(df,
 
   if (any(is.na(df$batch))) { # Check for NAs
     warning("Some batches contain NAs. These will be removed")
-    df <- df %>%
-      dplyr::filter(!is.na(batch))
+    df <- dplyr::filter(df, !is.na(batch))
   }
   mode <- match.arg(mode)
   cluster_method <- match.arg(cluster_method)
@@ -627,7 +608,7 @@ batch_correct <- function(df,
 
     # Run batch correction
     df <- cyCombine::correct_data(
-      df = df,
+      df,
       label = label_i,
       covar = covar,
       anchor = anchor,

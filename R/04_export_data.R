@@ -226,3 +226,90 @@ sce2FCS <- function(sce,
 
   return(fcs)
 }
+
+
+#' Function to remove specific keywords from a flowFrame
+#'
+#' @note flowCore parameters exprs keyword
+#' @note Biobase pData
+#' @noRd
+remove_keywords <- function(ff, remove_kwd="flowCore_") {
+  params <- flowCore::parameters(ff)
+  pdata <- Biobase::pData(params)
+  exp_mat <- flowCore::exprs(ff)
+  old_kwds <- flowCore::keyword(ff)
+
+  keyval <- list()
+  unchanged_keywords <- flowCore::keyword(ff)
+  keyval <- unchanged_keywords[!grepl("\\$P", names(unchanged_keywords))]
+
+  new_pdata <- pdata
+
+  for (i in 1:nrow(pdata)) {
+    marker <- pdata$name[i]
+    Rmax <- ceiling(max(exp_mat[, marker]))
+    Rmin <- ceiling(min(exp_mat[, marker]))
+
+    new_pdata[i, "name"] <- pdata[i, "name"]
+    new_pdata[i, "desc"] <- pdata[i, "desc"]
+    new_pdata[i, "range"] <- Rmax - Rmin + 1
+    new_pdata[i, "minRange"] <- Rmin
+    new_pdata[i, "maxRange"] <- Rmax
+    keyval[[paste0("$P", i, "R")]] <- as.character(Rmax - Rmin + 1)
+  }
+
+  new_kwds <- names(old_kwds)[!grepl(remove_kwd, names(old_kwds))]
+
+  for (key in new_kwds) {
+    new_key <- key
+    keyval[[new_key]] <- old_kwds[[new_key]]
+    if (new_key == "r") {
+      keyval[[new_key]] <- as.character(Rmax - Rmin + 1)
+    }
+  }
+  keyval[["transformation"]] <- NULL
+
+  new_ff <- ff
+  flowCore::keyword(new_ff) <- keyval
+  Biobase::pData(flowCore::parameters(new_ff)) <- new_pdata
+
+  return(new_ff)
+}
+
+#' Process FCS files for FlowJo integration
+#'
+#' Process corrected and exported FCS files such that FlowJo can read them.
+#'    Reading FCS files in R with flowCore adds 'flowCore_' keywords that are
+#'    incompatible with FlowJo.
+#'    The `process_fcs_files` function reads a directory of corrected files
+#'    and exports them without the flowCore keywords.
+#'
+#' @param input_folder path to input folder
+#' @param output_folder path to output folder
+#'
+#' @examples
+#' \dontrun{
+#'  process_fcs_files(
+#'  input_folder = "path/to/input_folder",
+#'  output_folder = "path/to/output_folder")
+#'   }
+#'
+#' @note flowCore write.FCS
+#'
+#' @export
+process_fcs_files <- function(input_folder, output_folder) {
+
+  cyCombine:::missing_package("flowCore", repo = "Bioc")
+  cyCombine:::missing_package("Biobase", repo = "Bioc")
+
+
+  files <- list.files(input_folder, pattern = "\\.(fcs|FCS)$", full.names = TRUE)
+  system(paste("mkdir -p", output_folder))
+
+  for (file in files) {
+    ff <- flowCore::read.FCS(file)
+    new_ff <- remove_keywords(ff, remove_kwd="flowCore_")
+    new_filename <- file.path(output_folder, basename(file))
+    flowCore::write.FCS(new_ff, new_filename)
+  }
+}

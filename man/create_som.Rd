@@ -48,8 +48,7 @@ by samples with high abundances of a particular cell type.
 }
 \examples{
 \dontrun{
-labels <- uncorrected \%>\%
-  create_som()
+labels <- create_som(uncorrected)
   }
 }
 \seealso{

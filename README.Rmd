@@ -44,7 +44,7 @@ knitr::opts_chunk$set(
 # To ensure Rstudio looks up BioConductor packages run:
 setRepositories(ind = c(1:6, 8))
 # If you are correcting cytometry data, install the following Bioconductor packages:
-BiocManager::install(c("flowCore", "Biobase"))
+BiocManager::install(c("flowCore", "Biobase", "sva"))
 # Then install package with
 devtools::install_github("biosurf/cyCombine")
 ```

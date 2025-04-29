@@ -32,7 +32,6 @@ Imports:
     dplyr,
     readxl,
     readr,
-    purrr,
     stringr,
     stats,
     methods,

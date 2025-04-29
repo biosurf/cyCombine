@@ -199,8 +199,7 @@ create_som_seurat <- function(
       # Add labels to metadata
       object <- SeuratObject::AddMetaData(object, metadata = FlowSOM::GetClusters(fsom), col.name = "Labels")
     } else{
-      fsom <- fsom |>
-        FlowSOM::BuildMST(tSNE = FALSE)
+      fsom <- FlowSOM::BuildMST(fsom, tSNE = FALSE)
 
         meta <- FlowSOM::metaClustering_consensus(
           fsom$map$codes,
