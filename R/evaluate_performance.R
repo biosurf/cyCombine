@@ -10,6 +10,7 @@
 #' @param cell_col Column name of df that contains cell population labels (or clusters)
 #' @param batch_col Column name of df that contains batch numbers
 #' @param markers Vector of the markers to calculate EMD for. If NULL, \code{\link{get_markers}} will be used to find markers
+#' @param mc.cores Number of cores for parallelization
 #' @family emd
 #' @export
 #' @examples

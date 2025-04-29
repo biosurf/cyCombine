@@ -61,5 +61,6 @@ Suggests:
     knitr,
     CATALYST,
     Seurat, SeuratObject,
+    FlowSOM,
     pbmcapply
 VignetteBuilder: knitr

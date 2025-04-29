@@ -6,30 +6,44 @@
 \usage{
 create_som_seurat(
   object,
+  layer = SeuratObject::Layers(object)[length(SeuratObject::Layers(object))],
   markers = NULL,
   seed = 473,
   rlen = 10,
   mode = c("online", "batch", "pbatch"),
-  cluster_method = c("kohonen", "lauvain", "leiden"),
+  cluster_method = c("kohonen", "flowsom", "lauvain", "leiden"),
   resolution = 0.8,
+  distf = c("euclidean", "sumofsquares", "cosine", "manhattan", "chebyshev"),
   xdim = 8,
-  ydim = 8
+  ydim = 8,
+  nClus = NULL
 )
 }
 \arguments{
 \item{object}{A Seurat object}
 
-\item{markers}{A vector of marker genes to use for the SOM. Defaults to all genes if NULL.}
+\item{layer}{Layer to use from the Seurat object}
 
-\item{seed}{The seed to use when creating the SOM. Defaults to 473.}
+\item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 
-\item{rlen}{Number of times the data is presented to the SOM network. Defaults to 10.}
+\item{seed}{The seed to use when creating the SOM.}
+
+\item{rlen}{the number of times the complete data set will be
+    presented to the network.}
 
 \item{mode}{type of learning algorithm.}
 
-\item{xdim}{The x-dimension size of the SOM. Defaults to 8.}
+\item{cluster_method}{Cluster method to use. Defaults to kohonen}
 
-\item{ydim}{The y-dimension size of the SOM. Defaults to 8.}
+\item{resolution}{Resolution parameter for lauvain/leiden}
+
+\item{distf}{Distance metric used for kohonen ("sumofsquares", "euclidean", "manhattan") or FlowSOM ("euclidean", "cosine", "manhattan", "chebyshev")}
+
+\item{xdim}{The x-dimension size of the SOM.}
+
+\item{ydim}{The y-dimension size of the SOM.}
+
+\item{nClus}{(Usable with FlowSOM and kmeans) Number of clusters to export}
 }
 \value{
 A vector of clustering labels

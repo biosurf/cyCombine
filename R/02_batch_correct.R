@@ -10,9 +10,9 @@
 #'   Rank is recommend in cases where data from different studies/experiments are merged.
 #'   Quantile is not recommended.
 #'
-#' @param df tibble with expression values
+#' @param df tibble or seurat with expression values
 #' @param markers Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.
-#' @param norm_method Normalization method. Should be either 'rank', 'scale', 'CLR', or 'qnorm'. Default: 'scale'
+#' @param norm_method Normalization method. Should be either 'rank', 'scale', 'CLR', 'CLR_seu', 'CLR_med', or 'qnorm'. Default: 'scale'. CLR is recommended for ADT normalization. CLR_seu mimicks the Seurat implementation of CLR. CLR_med uses the median instead of geometric mean.
 #' @param ties.method The method to handle ties, when using rank. Default: 'average'. See ?rank for other options.
 #' @param mc.cores Number of cores for parallelization
 #' @param pb Progress bar for parallelization
@@ -25,7 +25,7 @@
 #' @export
 normalize <- function(df,
                       markers = NULL,
-                      norm_method = c("scale", "rank", "CLR", "qnorm"),
+                      norm_method = c("scale", "rank", "CLR_seu", "CLR_med", "CLR", "qnorm", "none"),
                       ties.method = c("average", "first", "last", "random", "max", "min"),
                       mc.cores = 1,
                       pb = TRUE) {
@@ -39,28 +39,42 @@ normalize <- function(df,
     stop("When using norm_method = 'rank', please use an available ties.method (average, first, last, random, max, or min).")
   }
 
-  # Messaging
-  if (norm_method == "rank") {message("Ranking expression data..")
-  } else if (norm_method == "scale") {message("Scaling expression data..")
-  } else if (norm_method == "CLR") {message("CLR normalizing expression data..")
-  } else if (norm_method == "qnorm") {
-    # message("Quantile normalizing expression data..")
-    # Run quantile normalization
-    df_normed <- cyCombine:::quantile_norm(df, markers = markers)
-    return(df_normed)
-  } else stop("Please use either 'scale', 'rank', or 'qnorm' as normalization method." )
-
   if (is.null(markers)) {
     # Get markers
     markers <- df %>%
       cyCombine::get_markers()
   }
 
+  # Messaging
+  switch(norm_method,
+         "rank" = message("Ranking expression data.."),
+         "scale" = {
+           message("Scaling expression data..")
+         },
+         "CLR" = {
+           message("CLR normalizing expression data..")
+         },
+         "CLR_seu" = {
+           message("CLR normalizing expression data with Seurat flavor..")
+         },
+         "CLR_med" = {
+           message("CLR normalizing expression data using median..")
+         },
+         "qnorm" = {
+           message("Quantile normalizing expression data..")
+           df <- cyCombine:::quantile_norm(df, markers = markers)
+           return(df)
+         },
+         "none" = {return(df)}
+  )
+
   norm_f <- switch(
     norm_method,
     "rank" = function(values) rank(values, ties.method = ties.method) / length(values),
     "scale" = scale,
-    "CLR" = clr_norm)
+    "CLR" = clr_norm_mean,
+    "CLR_seu" = clr_norm,
+    "CLR_med" = clr_norm_med)
 
   if (!"id" %in% colnames(df)) df$id <- seq_len(nrow(df))
   # Scale or rank at marker positions individually for every batch
@@ -131,11 +145,35 @@ quantile_norm <- function(df, markers = NULL) {
 #' @return CLR-normalized values.
 #' @noRd
 clr_norm <- function(x) {
-  geom_mean <- exp(sum(log1p(x[x > 0]), na.rm = TRUE) / length(x))
+  geom_mean <- expm1(sum(log1p(x[x > 0]), na.rm = TRUE) / length(x))
   clr <- log1p(x / geom_mean)
   return(clr)
 }
+clr_norm_mean <- function(x) {
+  geom_mean <- expm1(mean(log1p(x[x >= 0]), na.rm = TRUE))
+  if (geom_mean == 0) return(x)
+  clr <- log((x+1) / geom_mean)
+  return(clr)
+}
+clr_norm_med <- function(x) {
+  geom_median <- median(x, na.rm = TRUE)
+  if (geom_median == 0) geom_median <- 1
+  clr <- log((x+1) / geom_median)
+  return(clr)
+}
 
+
+
+clr_normalization <- function(df, markers) {
+  x <- df[,markers]
+  # Calculate the geometric mean of each row
+  geom_mean <- apply(x, 2, function(marker) expm1(mean(log1p(marker))))
+  df[, markers] <- log1p(x / geom_mean)
+  # Compute the CLR transformation
+  # df[, markers] <- apply(x, 2, function(marker) log1p(marker / geom_mean))
+
+  return(df)
+}
 
 # Clustering ----
 
@@ -153,6 +191,7 @@ clr_norm <- function(x) {
 #' @param rlen Number of times the data is presented to the SOM network
 #' @param nClus (Usable with FlowSOM and kmeans) Number of clusters to export
 #' @param cluster_method Cluster method to use. Defaults to kohonen
+#' @param distf Distance metric used for kohonen ("sumofsquares", "euclidean", "manhattan") or FlowSOM ("euclidean", "cosine", "manhattan", "chebyshev")
 #' @family batch
 #' @importFrom stats kmeans
 #' @importFrom kohonen som somgrid
@@ -167,6 +206,7 @@ create_som <- function(df,
                        markers = NULL,
                        seed = 473,
                        cluster_method = c("kohonen", "flowsom", "kmeans"),
+                       distf = c("euclidean", "sumofsquares", "cosine", "manhattan", "chebyshev"),
                        rlen = 10,
                        mode = c("online", "batch", "pbatch"),
                        xdim = 8,
@@ -182,13 +222,21 @@ create_som <- function(df,
 
   cluster <- function(mat, cluster_method) {
     if (cluster_method == "kohonen") {
+      if (!distf %in% c("sumofsquares", "euclidean", "manhattan")) {
+        warning("Distance function '", dist, "' not supported by Kohonen. Setting to 'sumofsquares'")
+        distf <- "sumofsquares"
+      }
       labels <- kohonen::som(
         mat,
         grid = kohonen::somgrid(xdim = xdim, ydim = ydim),
         rlen = rlen,
         mode = mode,
-        dist.fcts = "euclidean")$unit.classif
+        dist.fcts = distf)$unit.classif
     } else if (cluster_method == "flowsom") {
+      if (distf == "sumofsquares") {
+        warning("Distance function '", dist, "' not supported by FlowSOM. Setting to 'euclidean'")
+        distf <- "euclidean"
+      }
       cyCombine:::missing_package("FlowSOM", "Bioc")
       if (!is.null(nClus)) {
         labels <- FlowSOM::FlowSOM(

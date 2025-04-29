@@ -7,18 +7,18 @@
 normalize(
   df,
   markers = NULL,
-  norm_method = c("scale", "rank", "CLR", "qnorm"),
+  norm_method = c("scale", "rank", "CLR_seu", "CLR_med", "CLR", "qnorm", "none"),
   ties.method = c("average", "first", "last", "random", "max", "min"),
   mc.cores = 1,
   pb = TRUE
 )
 }
 \arguments{
-\item{df}{tibble with expression values}
+\item{df}{tibble or seurat with expression values}
 
 \item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 
-\item{norm_method}{Normalization method. Should be either 'rank', 'scale', 'CLR', or 'qnorm'. Default: 'scale'}
+\item{norm_method}{Normalization method. Should be either 'rank', 'scale', 'CLR', 'CLR_seu', 'CLR_med', or 'qnorm'. Default: 'scale'. CLR is recommended for ADT normalization. CLR_seu mimicks the Seurat implementation of CLR. CLR_med uses the median instead of geometric mean.}
 
 \item{ties.method}{The method to handle ties, when using rank. Default: 'average'. See ?rank for other options.}
 

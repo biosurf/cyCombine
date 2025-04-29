@@ -170,8 +170,8 @@ plot_dimred <- function(df,
                         return_coord = FALSE) {
 
   # Check for missing packages
-  if(type == "umap") cyCombine:::missing_package("uwot", "CRAN")
-  if(plot != "batch") cyCombine:::missing_package("viridis", "CRAN")
+  if (type == "umap") cyCombine:::missing_package("uwot", "CRAN")
+  if (plot != "batch") cyCombine:::missing_package("viridis", "CRAN")
   cyCombine:::missing_package("ggridges", "CRAN")
   cyCombine:::missing_package("ggplot2", "CRAN")
 

@@ -7,7 +7,7 @@
 correct_data_alt(df, mod, markers = NULL, parametric = TRUE)
 }
 \arguments{
-\item{df}{tibble with expression values}
+\item{df}{tibble or seurat with expression values}
 
 \item{mod}{Covariate model to use in ComBat.}
 

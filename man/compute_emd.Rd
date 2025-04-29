@@ -23,6 +23,8 @@ compute_emd(
 \item{batch_col}{Column name of df that contains batch numbers}
 
 \item{markers}{Vector of the markers to calculate EMD for. If NULL, \code{\link{get_markers}} will be used to find markers}
+
+\item{mc.cores}{Number of cores for parallelization}
 }
 \description{
 Given a dataframe, the Earth Movers Distance is computed, using the emdist package.

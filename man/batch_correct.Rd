@@ -27,7 +27,7 @@ batch_correct(
 )
 }
 \arguments{
-\item{df}{tibble with expression values}
+\item{df}{tibble or seurat with expression values}
 
 \item{label}{The cluster or cell type label. Either as a column name or vector.}
 
@@ -62,7 +62,7 @@ If NULL, no covar will be used}
 
 \item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 
-\item{norm_method}{Normalization method. Should be either 'rank', 'scale', 'CLR', or 'qnorm'. Default: 'scale'}
+\item{norm_method}{Normalization method. Should be either 'rank', 'scale', 'CLR', 'CLR_seu', 'CLR_med', or 'qnorm'. Default: 'scale'. CLR is recommended for ADT normalization. CLR_seu mimicks the Seurat implementation of CLR. CLR_med uses the median instead of geometric mean.}
 
 \item{ties.method}{The method to handle ties, when using rank. Default: 'average'. See ?rank for other options.}
 }

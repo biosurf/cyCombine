@@ -27,6 +27,8 @@ impute_across_panels(
 
 \item{impute_channels2}{Channels to impute and add to the impute_for dataset2 (must be present in dataset1). Alternatively can be set to NULL.}
 
+\item{label}{The cluster or cell type label. Either as a column name or vector.}
+
 \item{xdim}{The x-dimension size of the SOM.}
 
 \item{ydim}{The y-dimension size of the SOM.}

@@ -12,25 +12,32 @@ correct_data_seurat(
   anchor = NULL,
   ref.batch = NULL,
   parametric = TRUE,
-  return_seurat = TRUE
+  return_seurat = TRUE,
+  mc.cores = 1,
+  pb = FALSE
 )
 }
 \arguments{
-\item{object}{A Seurat object.}
+\item{object}{A Seurat object}
 
-\item{markers}{A vector of marker genes to use for the correction. Defaults to all genes if NULL.}
+\item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 
-\item{method}{The method for batch correction. Choose "ComBat" for cytometry data and "ComBat_seq" for bulk RNAseq data. Defaults to "ComBat".}
+\item{method}{Default: "ComBat". Choose "ComBat" for cytometry data and "ComBat_seq" for bulk RNAseq data.}
 
-\item{covar}{The covariate ComBat should use. Can be a vector or a metadata column name in the input Seurat object. If NULL, no covar will be used.}
+\item{covar}{The covariate ComBat should use. Can be a vector or a column name in the input tibble.
+If NULL, no covar will be used}
 
-\item{anchor}{A column or vector specifying which samples are replicates and which are not. If specified, this column will be used as a covariate in ComBat. Be aware that it may be confounded with the condition.}
+\item{anchor}{Experimental: A column or vector specifying which samples are replicates and which are not. If specified, this column will be used as a covariate in ComBat. Be aware that it may be confounded with the condition.}
 
 \item{ref.batch}{Optional. A string of the batch that should be used as the reference for batch adjustments.}
 
-\item{parametric}{Logical. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used. Defaults to TRUE.}
+\item{parametric}{Default: TRUE. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used.}
 
 \item{return_seurat}{Logical. Whether the matrix or a Seurat object should be returned.}
+
+\item{mc.cores}{Number of cores for parallelization}
+
+\item{pb}{Progress bar for parallelization}
 }
 \value{
 A Seurat object with corrected data.

@@ -132,7 +132,7 @@ salvage_problematic <- function(
 #' @param overlap_channels Channels (markers) that overlap between impute_for and complete_obs, which can be used to base imputation on
 #' @param impute_channels1 Channels to impute and add to the impute_for dataset1 (must be present in dataset2). Alternatively can be set to NULL.
 #' @param impute_channels2 Channels to impute and add to the impute_for dataset2 (must be present in dataset1). Alternatively can be set to NULL.
-#' @inheritParams create_som
+#' @inheritParams batch_correct
 #' @family merging
 #' @examples
 #' \dontrun{

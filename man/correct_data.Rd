@@ -18,7 +18,7 @@ correct_data(
 )
 }
 \arguments{
-\item{df}{tibble with expression values}
+\item{df}{tibble or seurat with expression values}
 
 \item{label}{The cluster or cell type label. Either as a column name or vector.}
 

@@ -9,6 +9,7 @@ create_som(
   markers = NULL,
   seed = 473,
   cluster_method = c("kohonen", "flowsom", "kmeans"),
+  distf = c("euclidean", "sumofsquares", "cosine", "manhattan", "chebyshev"),
   rlen = 10,
   mode = c("online", "batch", "pbatch"),
   xdim = 8,
@@ -17,13 +18,15 @@ create_som(
 )
 }
 \arguments{
-\item{df}{tibble with expression values}
+\item{df}{tibble or seurat with expression values}
 
 \item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 
 \item{seed}{The seed to use when creating the SOM.}
 
 \item{cluster_method}{Cluster method to use. Defaults to kohonen}
+
+\item{distf}{Distance metric used for kohonen ("sumofsquares", "euclidean", "manhattan") or FlowSOM ("euclidean", "cosine", "manhattan", "chebyshev")}
 
 \item{rlen}{Number of times the data is presented to the SOM network}
 

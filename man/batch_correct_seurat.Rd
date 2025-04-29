@@ -12,7 +12,7 @@ batch_correct_seurat(
   mode = c("online", "batch", "pbatch"),
   parametric = TRUE,
   method = c("ComBat", "ComBat_seq"),
-  cluster_method = c("kohonen", "lauvain", "leiden"),
+  cluster_method = c("kohonen", "flowsom", "lauvain", "leiden"),
   resolution = 0.8,
   ref.batch = NULL,
   seed = 473,
@@ -21,15 +21,14 @@ batch_correct_seurat(
   anchor = NULL,
   markers = NULL,
   layer = "counts",
-  norm_method = "scale",
+  norm_method = c("scale", "rank", "CLR", "lognorm", "qnorm", "none"),
   ties.method = "average",
-  return_seurat = TRUE,
   mc.cores = 1,
   pb = FALSE
 )
 }
 \arguments{
-\item{object}{A Seurat pbject}
+\item{object}{A Seurat object}
 
 \item{xdim}{The x-dimension size of the SOM.}
 
@@ -39,29 +38,32 @@ batch_correct_seurat(
 
 \item{mode}{type of learning algorithm.}
 
-\item{parametric}{Logical. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used. Defaults to TRUE.}
+\item{parametric}{Default: TRUE. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used.}
 
-\item{method}{The method for batch correction. Choose "ComBat" for cytometry data and "ComBat_seq" for bulk RNAseq data. Defaults to "ComBat".}
+\item{method}{Default: "ComBat". Choose "ComBat" for cytometry data and "ComBat_seq" for bulk RNAseq data.}
 
 \item{cluster_method}{Cluster method to use. Defaults to kohonen}
+
+\item{resolution}{Resolution parameter for lauvain/leiden}
 
 \item{ref.batch}{Optional. A string of the batch that should be used as the reference for batch adjustments.}
 
 \item{seed}{The seed to use when creating the SOM.}
 
-\item{covar}{The covariate ComBat should use. Can be a vector or a metadata column name in the input Seurat object. If NULL, no covar will be used.}
+\item{label}{The cluster or cell type label. Either as a column name or vector.}
 
-\item{anchor}{A column or vector specifying which samples are replicates and which are not. If specified, this column will be used as a covariate in ComBat. Be aware that it may be confounded with the condition.}
+\item{covar}{The covariate ComBat should use. Can be a vector or a column name in the input tibble.
+If NULL, no covar will be used}
+
+\item{anchor}{Experimental: A column or vector specifying which samples are replicates and which are not. If specified, this column will be used as a covariate in ComBat. Be aware that it may be confounded with the condition.}
 
 \item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 
 \item{layer}{Layer to use from the Seurat object}
 
-\item{norm_method}{Normalization method. Should be either 'rank', 'scale', 'CLR', or 'qnorm'. Default: 'scale'}
+\item{norm_method}{Normalization method. Should be either 'rank', 'scale', 'CLR', 'CLR_seu', 'CLR_med', or 'qnorm'. Default: 'scale'. CLR is recommended for ADT normalization. CLR_seu mimicks the Seurat implementation of CLR. CLR_med uses the median instead of geometric mean.}
 
 \item{ties.method}{The method to handle ties, when using rank. Default: 'average'. See ?rank for other options.}
-
-\item{return_seurat}{Logical. Whether the matrix or a Seurat object should be returned.}
 
 \item{mc.cores}{Number of cores for parallelization}
 
@@ -73,9 +75,11 @@ To run the workflow manually, type "batch_correct" to see the source code of thi
 }
 \examples{
 \dontrun{
-corrected <- uncorrected \%>\%
-  batch_correct(markers = markers,
-  covar = "condition")
+seu <- batch_correct_seurat(
+ seu,
+ markers = markers,
+ covar = "condition"
+ )
   }
 }
 \seealso{

@@ -8,8 +8,8 @@ normalize_seurat(
   object,
   markers = NULL,
   layer = "counts",
-  norm_method = "scale",
-  ties.method = "average",
+  norm_method = c("scale", "rank", "CLR", "lognorm", "qnorm", "none"),
+  ties.method = c("average", "first", "last", "random", "max", "min"),
   mc.cores = 1,
   pb = FALSE
 )
@@ -17,13 +17,13 @@ normalize_seurat(
 \arguments{
 \item{object}{A Seurat object}
 
-\item{markers}{A vector of marker genes to normalize. Defaults to all genes if NULL.}
+\item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 
 \item{layer}{Layer to use from the Seurat object}
 
-\item{norm_method}{Normalization method: "scale" (Z-score), "rank", or "qnorm" (Quantile normalization). Defaults to "scale".}
+\item{norm_method}{Normalization method: "scale" (Z-score), "CLR", "lognorm", "rank", or "qnorm" (Quantile normalization). Defaults to "scale".}
 
-\item{ties.method}{Method for handling ties in rank normalization. Options are "average", "first", "last", "random", "max", or "min". Defaults to "average".}
+\item{ties.method}{The method to handle ties, when using rank. Default: 'average'. See ?rank for other options.}
 
 \item{mc.cores}{Number of cores for parallelization}
 
@@ -35,8 +35,9 @@ A Seurat object with normalized data.
 \description{
 This function normalizes the data in a batch-wise manner using Seurat.
 The purpose is to minimize the impact of batch effects when clustering the data prior to batch correction.
-Three normalization methods are implemented: Z-score, Rank, and Quantile normalization.
+Four normalization methods are implemented: Z-score, Rank, CLR, and Quantile normalization.
 Z-score is recommended for batches from a single study/experiment.
 Rank is recommended for data from different studies/experiments.
+CLR is recommended for ADT data.
 Quantile is not recommended.
 }

@@ -4,72 +4,82 @@
 #'
 #' This function normalizes the data in a batch-wise manner using Seurat.
 #' The purpose is to minimize the impact of batch effects when clustering the data prior to batch correction.
-#' Three normalization methods are implemented: Z-score, Rank, and Quantile normalization.
+#' Four normalization methods are implemented: Z-score, Rank, CLR, and Quantile normalization.
 #' Z-score is recommended for batches from a single study/experiment.
 #' Rank is recommended for data from different studies/experiments.
+#' CLR is recommended for ADT data.
 #' Quantile is not recommended.
 #'
-#' @inheritParams batch_correct_seurat
+#' @inheritParams normalize
 #' @param object A Seurat object
-#' @param markers A vector of marker genes to normalize. Defaults to all genes if NULL.
-#' @param norm_method Normalization method: "scale" (Z-score), "rank", or "qnorm" (Quantile normalization). Defaults to "scale".
-#' @param ties.method Method for handling ties in rank normalization. Options are "average", "first", "last", "random", "max", or "min". Defaults to "average".
-#' @param mc.cores Number of cores for parallelization
+#' @param norm_method Normalization method: "scale" (Z-score), "CLR", "lognorm", "rank", or "qnorm" (Quantile normalization). Defaults to "scale".
+#' @param layer Layer to use from the Seurat object
 #'
 #' @return A Seurat object with normalized data.
 #' @export
-normalize_seurat <- function(object,
-                             markers = NULL,
-                             layer = "counts",
-                             norm_method = "scale",
-                             ties.method = "average",
-                             mc.cores = 1,
-                             pb = FALSE) {
-  APPLY <- set_apply(mc.cores, pb)
+normalize_seurat <- function(
+    object,
+    markers = NULL,
+    layer = "counts",
+    norm_method = c("scale", "rank", "CLR", "lognorm", "qnorm", "none"),
+    ties.method = c("average", "first", "last", "random", "max", "min"),
+    mc.cores = 1,
+    pb = FALSE) {
+  cyCombine:::missing_package("Seurat")
   # Remove case-sensitivity
-  norm_method <- tolower(norm_method)
-  ties.method <- tolower(ties.method)
-
-  # Error check
-  if (norm_method == "rank" && !ties.method %in% c("average", "first", "last", "random", "max", "min")) {
-    stop("When using norm_method = 'rank', please use an available ties.method (average, first, last, random, max, or min).")
-  }
+  norm_method <- match.arg(norm_method)
+  ties.method <- match.arg(ties.method)
+  APPLY <- set_apply(mc.cores, pb)
 
   if (is.null(markers)) {
-    warning("All rows will be normalized. This can take a while.")
     # Get markers
     markers <- rownames(object)
   }
+  object <- object[markers,]
 
   # Messaging
-  switch(norm_method,
-         "rank" = message("Ranking expression data.."),
+  object <- switch(norm_method,
+         "rank" = {
+           message("Ranking expression data..")
+           rank_norm_seurat(object, markers = markers, ties.method = ties.method, APPLY = APPLY, layer = layer)
+           },
          "scale" = {
            message("Scaling expression data..")
-           object <- Seurat::ScaleData(object, features = markers, split.by = "batch")
-           return(object)
+           Seurat::ScaleData(object, features = markers, split.by = "batch")
            },
          "CLR" = {
            message("CLR normalizing expression data..")
            object <- Seurat::NormalizeData(object, normalization.method = "CLR", margin = 2)
-           return(object)
+           Seurat::ScaleData(object, features = markers, split.by = "batch")
+         },
+         "lognorm" = {
+           message("Log-normalizing expression data..")
+           object <- Seurat::NormalizeData(object)
+           Seurat::ScaleData(object, features = markers, split.by = "batch")
          },
          "qnorm" = {
            message("Quantile normalizing expression data..")
-           object <- quantile_norm_seurat(object, markers = markers)
-           return(object)
+           quantile_norm_seurat(object, markers = markers)
          },
-         "none" = return(object),
-         stop("Please use either 'scale', 'rank', or 'qnorm' as normalization method.")
+         "none" = {
+           message("Skipping the normalization..")
+           object
+         }
   )
 
+  return(object)
+}
+
+# Batch-wise quantile normalization per marker using Seurat
+
+rank_norm_seurat <- function(object, markers = NULL, ties.method, APPLY, layer) {
   # Rank at marker positions individually for every batch
   batches <- unique(object$batch)
   ranked_data <- APPLY(
     setNames(batches, batches), function(b) {
       batch_cells <- SeuratObject::WhichCells(object, expression = batch == b)
       data <- as.matrix(SeuratObject::LayerData(object, layer)[markers, batch_cells])
-      rowzeros <- rowSums(data) == 0
+      # rowzeros <- rowSums(data) == 0
       # if (any(rowzeros)) {
       #   warning("A marker is 0 for an entire batch. This marker is removed.")
       #   data <- data[!rowzeros, ]
@@ -80,14 +90,9 @@ normalize_seurat <- function(object,
 
   ranked_data <- ranked_data[, match(colnames(object), colnames(ranked_data))]
 
-
-
   SeuratObject::LayerData(object, "scale.data") <- ranked_data
-
   return(object)
 }
-
-# Batch-wise quantile normalization per marker using Seurat
 
 quantile_norm_seurat <- function(object, markers = NULL, mc.cores = 1, pb = FALSE) {
   APPLY <- set_apply(mc.cores, pb)
@@ -126,62 +131,98 @@ quantile_norm_seurat <- function(object, markers = NULL, mc.cores = 1, pb = FALS
 #' by samples with high abundances of a particular cell type.
 #'
 #' @inheritParams kohonen::supersom
-#' @param object A Seurat object
-#' @param markers A vector of marker genes to use for the SOM. Defaults to all genes if NULL.
-#' @param seed The seed to use when creating the SOM. Defaults to 473.
-#' @param xdim The x-dimension size of the SOM. Defaults to 8.
-#' @param ydim The y-dimension size of the SOM. Defaults to 8.
-#' @param rlen Number of times the data is presented to the SOM network. Defaults to 10.
+#' @inheritParams create_som
+#' @inheritParams normalize_seurat
+#' @param resolution Resolution parameter for lauvain/leiden
 #'
 #' @return A vector of clustering labels
 #' @export
 create_som_seurat <- function(
     object,
+    layer = SeuratObject::Layers(object)[length(SeuratObject::Layers(object))],
     markers = NULL,
     seed = 473,
     rlen = 10,
     mode = c("online", "batch", "pbatch"),
-    cluster_method = c("kohonen", "lauvain", "leiden"),
+    cluster_method = c("kohonen", "flowsom", "lauvain", "leiden"),
     resolution = 0.8,
+    distf = c("euclidean", "sumofsquares", "cosine", "manhattan", "chebyshev"),
     xdim = 8,
-    ydim = 8) {
+    ydim = 8,
+    nClus = NULL) {
 
-  cluster_method <- match.arg(cluster_method)
   mode <- match.arg(mode)
+  distf <- match.arg(distf)
+  cluster_method <- match.arg(cluster_method)
   # Default to all genes if markers are not specified
   if (is.null(markers)) {
     markers <- rownames(object)
   }
 
   if (cluster_method == "kohonen") {
+    if (!distf %in% c("sumofsquares", "euclidean", "manhattan")) {
+      warning("Distance function '", dist, "' not supported by Kohonen. Setting to 'sumofsquares'")
+      distf <- "sumofsquares"
+    }
     # Extract data for the markers
-    data <- SeuratObject::LayerData(object, "scale.data")[markers, ]
+    data <- SeuratObject::LayerData(object, layer)[markers, ]
 
     # SOM grid on overlapping markers, extract clustering per cell
     message("Creating SOM grid..")
     set.seed(seed)
     som_grid <- kohonen::somgrid(xdim = xdim, ydim = ydim, topo = "rectangular")
     som_model <- kohonen::som(
-      t(data), grid = som_grid, rlen = rlen, dist.fcts = "euclidean", mode = mode)
+      t(data), grid = som_grid, rlen = rlen, dist.fcts = distf, mode = mode)
 
     # Add labels to metadata
     object <- SeuratObject::AddMetaData(object, metadata = som_model$unit.classif, col.name = "Labels")
+  } else if (cluster_method == "flowsom") {
+    if (distf == "sumofsquares") {
+      warning("Distance function '", dist, "' not supported by FlowSOM. Setting to 'euclidean'")
+      distf <- "euclidean"
+    }
+    cyCombine:::missing_package("FlowSOM", "Bioc")
+    distf <- switch(distf, "manhattan" = 1, "euclidean" = 2, "chebyshev" = 3, "cosine" = 4)
+    # Extract data for the markers
+    data <- SeuratObject::LayerData(object, layer)[markers, ]
+    message("Creating SOM grid..")
+    set.seed(seed)
+    fsom <- t(data) |>
+      FlowSOM::ReadInput() |>
+      FlowSOM::BuildSOM(
+      xdim = xdim,
+      ydim = ydim,
+      rlen = rlen,
+      distf = distf
+    )
+    if (is(nClus, "NULL")){
+      # Add labels to metadata
+      object <- SeuratObject::AddMetaData(object, metadata = FlowSOM::GetClusters(fsom), col.name = "Labels")
+    } else{
+      fsom <- fsom |>
+        FlowSOM::BuildMST(tSNE = FALSE)
+
+        meta <- FlowSOM::metaClustering_consensus(
+          fsom$map$codes,
+          k = nClus,
+          seed = seed)
+        # Add labels to metadata
+        object <- SeuratObject::AddMetaData(object, metadata = meta[fsom$map$mapping[, 1]], col.name = "Labels")
+    }
   } else if (cluster_method %in% c("leiden", "lauvain")) {
     if (!"pca" %in% Seurat::Reductions(object)) object <- Seurat::RunPCA(object)
     object <- Seurat::FindNeighbors(
       object,
       reduction = "pca",
-      # dims = npcs,
-      # k.param = nn_count,
       compute.SNN = TRUE)
 
     object <- Seurat::FindClusters(
       object,
-      # method = "igraph",
+      random.seed = seed,
       algorithm = switch(cluster_method, "leiden" = 4, "lauvain" = 1),
       resolution = resolution,
       random.seed = seed)
-    object$Labels <- object$seurat_clusters
+    object <- SeuratObject::AddMetaData(object, metadata = object$seurat_clusters, col.name = "Labels")
   }
 
   return(object)
@@ -199,13 +240,8 @@ create_som_seurat <- function(
 #' The covariate should preferably be the cell condition types but can be any column that infers heterogeneity in the data.
 #' The function assumes that the batch information is in the "batch" column and the data contains a "sample" column with sample information.
 #'
-#' @param object A Seurat object.
-#' @param markers A vector of marker genes to use for the correction. Defaults to all genes if NULL.
-#' @param method The method for batch correction. Choose "ComBat" for cytometry data and "ComBat_seq" for bulk RNAseq data. Defaults to "ComBat".
-#' @param covar The covariate ComBat should use. Can be a vector or a metadata column name in the input Seurat object. If NULL, no covar will be used.
-#' @param anchor A column or vector specifying which samples are replicates and which are not. If specified, this column will be used as a covariate in ComBat. Be aware that it may be confounded with the condition.
-#' @param ref.batch Optional. A string of the batch that should be used as the reference for batch adjustments.
-#' @param parametric Logical. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used. Defaults to TRUE.
+#' @inheritParams correct_data
+#' @inheritParams create_som_seurat
 #' @param return_seurat Logical. Whether the matrix or a Seurat object should be returned.
 #'
 #' @return A Seurat object with corrected data.
@@ -218,10 +254,14 @@ correct_data_seurat <- function(
     anchor = NULL,
     ref.batch = NULL,
     parametric = TRUE,
-    return_seurat = TRUE) {
+    return_seurat = TRUE,
+    mc.cores = 1,
+    pb = FALSE) {
+  cyCombine:::missing_package("Seurat")
 
   method <- match.arg(method)
-  message("Batch correcting data..")
+  APPLY <- set_apply(mc.cores, pb)
+  message("Batch correcting..")
 
   metadata <- object[[]]
 
@@ -252,15 +292,13 @@ correct_data_seurat <- function(
   }
 
 
-  message("Batch correcting..")
   labels <- unique(object$Labels)
-  corrected_data <- lapply(
+  corrected_data <- APPLY(
     setNames(labels, labels),
     function(lab) {
-      label_cells <- SeuratObject::WhichCells(object, expression = Labels == lab)
-      object_lab <- object[markers, label_cells]
+      label_cells <- SeuratObject::WhichCells(object, expression = `Labels` == lab)
       correct_label_seurat(
-        object_lab,
+        object[markers, label_cells],
         covar = covar,
         anchor = anchor,
         parametric = parametric,
@@ -274,10 +312,18 @@ correct_data_seurat <- function(
   corrected_data <- corrected_data[, match(colnames(object), colnames(corrected_data))]
 
   if (!return_seurat) return(corrected_data)
+
+  # Ensure data is in the same order as the original Seurat object
+  flawed_cells <- !colnames(corrected_data) %in% colnames(object)
+  if (sum(flawed_cells) > 0) {
+    warning(sum(flawed_cells), " cell(s) were excluded in correction and are removed.")
+    object <- object[, colnames(corrected_data)]
+  }
+
   # Update the Seurat object with corrected data
 
-  object[["cyCombine"]] <- SeuratObject::CreateAssayObject(data = corrected_data, key = "corrected.data_")
-
+  object[["cyCombine"]] <- SeuratObject::CreateAssayObject(data = corrected_data, key = "corrected_")
+  SeuratObject::DefaultAssay(object) <- "cyCombine"
 
   return(object)
 }
@@ -350,15 +396,15 @@ correct_label_seurat <- function(object_lab, covar, anchor, parametric, ref.batc
 }
 
 # Function to check confounding
-check_confound <- function(batch, covariate) {
-  covariate_levels <- unique(covariate)
-  for (level in covariate_levels) {
-    if (length(unique(batch[covariate == level])) == 1) {
-      return(TRUE)
-    }
-  }
-  return(FALSE)
-}
+# check_confound <- function(batch, covariate) {
+#   covariate_levels <- unique(covariate)
+#   for (level in covariate_levels) {
+#     if (length(unique(batch[covariate == level])) == 1) {
+#       return(TRUE)
+#     }
+#   }
+#   return(FALSE)
+# }
 
 # Wrapper ----
 
@@ -367,19 +413,21 @@ check_confound <- function(batch, covariate) {
 #' This is a wrapper function for the cyCombine batch correction workflow.
 #'  To run the workflow manually, type "batch_correct" to see the source code of this wrapper and follow along or read the vignettes on the GitHub page \url{https://github.com/biosurf/cyCombine}.
 #'
-#' @inheritParams create_som
+#' @inheritParams batch_correct
+#' @inheritParams create_som_seurat
 #' @inheritParams correct_data_seurat
-#' @inheritParams normalize
-#' @param object A Seurat pbject
-#' @param layer Layer to use from the Seurat object
+#' @inheritParams normalize_seurat
 #' @family batch
 #' @importFrom sva ComBat ComBat_seq
+#' @importFrom methods slot slot<-
 #' @import stats
 #' @examples
 #' \dontrun{
-#' corrected <- uncorrected %>%
-#'   batch_correct(markers = markers,
-#'   covar = "condition")
+#' seu <- batch_correct_seurat(
+#'  seu,
+#'  markers = markers,
+#'  covar = "condition"
+#'  )
 #'   }
 #' @export
 batch_correct_seurat <- function(
@@ -390,7 +438,7 @@ batch_correct_seurat <- function(
     mode = c("online", "batch", "pbatch"),
     parametric = TRUE,
     method = c("ComBat", "ComBat_seq"),
-    cluster_method = c("kohonen", "lauvain", "leiden"),
+    cluster_method = c("kohonen", "flowsom", "lauvain", "leiden"),
     resolution = 0.8,
     ref.batch = NULL,
     seed = 473,
@@ -399,9 +447,8 @@ batch_correct_seurat <- function(
     anchor = NULL,
     markers = NULL,
     layer = "counts",
-    norm_method = "scale",
+    norm_method = c("scale", "rank", "CLR", "lognorm", "qnorm", "none"),
     ties.method = "average",
-    return_seurat = TRUE,
     mc.cores = 1,
     pb = FALSE) {
 
@@ -410,27 +457,21 @@ batch_correct_seurat <- function(
 
   stopifnot(
     "No 'batch' column in data." = "batch" %in% names(object[[]]))
-  mode <- match.arg(mode)
-  # scale_layer <- switch(
-  #   norm_method,
-  #   "scale" = "scale.data",
-  #   "rank" = "scale.data",
-  #   "none" = ifelse("scale.data" %in% Layers(object), "scale.data", "data"))
 
   if (is.null(markers)) {
     markers <- rownames(object)
   }
 
-  if(DefaultAssay(object) == "SCT"){
+  if (SeuratObject::DefaultAssay(object) == "SCT"){
     ## Workaround for correctly subsetting SCT assays.
     ## Published on github by longmanz
     ## https://github.com/satijalab/seurat-object/issues/208
 
-    tmp_SCT_features_attributes = slot(object = object[['SCT']], name = "SCTModel.list")[[1]]@feature.attributes
-    tmp_SCT_features_attributes = tmp_SCT_features_attributes[markers, ]
-    slot(object = object[['SCT']], name = "SCTModel.list")[[1]]@feature.attributes = tmp_SCT_features_attributes
-    object <- subset(object, features = markers)
-  }else{
+    tmp_SCT_features_attributes <- slot(object = object[['SCT']], name = "SCTModel.list")[[1]]@feature.attributes
+    tmp_SCT_features_attributes <- tmp_SCT_features_attributes[markers, ]
+    slot(object = object[['SCT']], name = "SCTModel.list")[[1]]@feature.attributes <- tmp_SCT_features_attributes
+    object <- object[markers, ] #subset(object, features = markers)
+  } else {
     object <- object[markers, ]
   }
 
@@ -470,42 +511,19 @@ batch_correct_seurat <- function(
 
 
     # Run batch correction
-
-    corrected_data <- APPLY(
-      setNames(labels, labels),
-      function(lab) {
-        label_cells <- SeuratObject::WhichCells(object, expression = Labels == lab)
-        object_lab <- object[, label_cells]
-
-        correct_data_seurat(
-          object_lab,
-          covar = covar,
-          anchor = anchor,
-          markers = markers,
-          parametric = parametric,
-          method = method,
-          ref.batch = ref.batch,
-          return_seurat = FALSE
-        )
-      }
+    object <- correct_data_seurat(
+      object,
+      covar = covar,
+      anchor = anchor,
+      markers = markers,
+      parametric = parametric,
+      method = method,
+      ref.batch = ref.batch,
+      mc.cores = mc.cores,
+      pb = pb,
+      return_seurat = TRUE
     )
-    corrected_data <- do.call(cbind, corrected_data)
-
-    if (!return_seurat) return(corrected_data)
-
-    # Ensure data is in the same order as the original Seurat object
-    flawed_cells <- !colnames(corrected_data) %in% colnames(object)
-    if (sum(flawed_cells) > 0) {
-      warning(sum(flawed_cells), " cell(s) were excluded in correction and are removed.")
-      object <- object[, colnames(corrected_data)]
-    }
-
-    # Ensure data is in the same order as the original Seurat object
-    corrected_data <- corrected_data[, match(colnames(object), colnames(corrected_data))]
-
-    object[["cyCombine"]] <- SeuratObject::CreateAssayObject(data = corrected_data, key = "cycombine_")
-
-    SeuratObject::DefaultAssay(object) <- "cyCombine"
+    layer <- "data"
   }
 
   message("Done!")
