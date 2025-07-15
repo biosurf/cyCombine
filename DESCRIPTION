@@ -22,7 +22,7 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Depends: 
-    R (>= 4.0)
+    R (>= 4.2)
 biocViews:
 Imports: 
     magrittr,
@@ -34,8 +34,7 @@ Imports:
     readr,
     stringr,
     stats,
-    methods,
-    parallel
+    methods
 Suggests: 
     flowCore,
     Biobase,
@@ -61,5 +60,7 @@ Suggests:
     CATALYST,
     Seurat, SeuratObject,
     FlowSOM,
-    pbmcapply
+    FuseSOM,
+    pbmcapply,
+    parallel
 VignetteBuilder: knitr

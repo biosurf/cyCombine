@@ -5,7 +5,7 @@
 * Added \ to removed characters in clean_colnames, but - and + are no longer removed.
 * Added markers as input in detect_batch_effects_express
 * Added compensation in prepare_data
-* Experimental Seurat support
+* Support for Seurat objects
 * Added mode selection in SOM clustering
 * Added binSize argument to detect_batch_effect* functions
 * batch_correct can now be parallelized with `mc.cores` parameter using `pbmcapply`, optionally without progressbar.
@@ -13,6 +13,7 @@
 * Added option for alternative clustering methods, such as `FlowSOM` and `kmeans`
 * Vectorize and parallelize EMD computation
 * Remove dependency on sample column in correction
+* Included FuseSOM clustering
 
 # cyCombine 0.2.19
 

@@ -2,12 +2,12 @@
 % Please edit documentation in R/utils_helper.R
 \name{get_markers}
 \alias{get_markers}
-\title{Get markers from a dataframe}
+\title{Get markers from a dataframe or vector of markers}
 \usage{
-get_markers(df)
+get_markers(x)
 }
 \arguments{
-\item{df}{dataframe to get the markers from}
+\item{x}{dataframe or vector to get the markers from}
 }
 \description{
 This function uses the global variable "non_markers".

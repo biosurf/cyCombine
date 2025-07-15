@@ -13,7 +13,7 @@ batch_correct(
   mode = c("online", "batch", "pbatch"),
   parametric = TRUE,
   method = c("ComBat", "ComBat_seq"),
-  cluster_method = c("kohonen", "flowsom", "kmeans"),
+  cluster_method = c("kohonen", "flowsom", "fusesom", "kmeans"),
   nClus = NULL,
   mc.cores = 1,
   pb = TRUE,

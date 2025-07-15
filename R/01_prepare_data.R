@@ -23,8 +23,8 @@ compile_fcs <- function(
     invert.pattern = FALSE
     ) {
 
-  cyCombine:::missing_package("flowCore", repo = "Bioc")
-  cyCombine:::missing_package("Biobase", repo = "Bioc")
+  cyCombine:::check_package("flowCore", repo = "Bioc")
+  cyCombine:::check_package("Biobase", repo = "Bioc")
 
   # Error checking
   if (data_dir %>% endsWith("/")) {
@@ -110,8 +110,8 @@ convert_flowset <- function(flowset,
                             panel_channel = "fcs_colname",
                             panel_antigen = "antigen"){
 
-  cyCombine:::missing_package("flowCore", repo = "Bioc")
-  cyCombine:::missing_package("Biobase", repo = "Bioc")
+  cyCombine:::check_package("flowCore", repo = "Bioc")
+  cyCombine:::check_package("Biobase", repo = "Bioc")
   # Extract information necessary both with and without included metadata
   ## FlowSet row numbers
   nrows <- flowCore::fsApply(flowset, nrow)
@@ -390,7 +390,7 @@ transform_asinh <- function(df,
     mes <- stringr::str_c("Not all given markers are in the data.\nCheck if the markers contain a _ or -:",
                           stringr::str_c(markers, collapse = ", "),
                           "Columns:",
-                          stringr::str_c(colnames(df), collapse = ", "),
+                          stringr::str_c(colnames(df)[!is.na(colnames(df))], collapse = ", "),
                           sep = "\n"
     )
     stop(mes)
@@ -477,8 +477,8 @@ prepare_data <- function(
     clean_colnames = TRUE,
     verbose = TRUE) {
 
-  cyCombine:::missing_package("flowCore", repo = "Bioc")
-  cyCombine:::missing_package("Biobase", repo = "Bioc")
+  cyCombine:::check_package("flowCore", repo = "Bioc")
+  cyCombine:::check_package("Biobase", repo = "Bioc")
   # Stop if no data is given
   if (is.null(data_dir) & is.null(flowset)) stop("No data given.")
 

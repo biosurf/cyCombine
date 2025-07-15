@@ -25,7 +25,7 @@ normalize_seurat <- function(
     ties.method = c("average", "first", "last", "random", "max", "min"),
     mc.cores = 1,
     pb = FALSE) {
-  cyCombine:::missing_package("Seurat")
+  cyCombine:::check_package("Seurat")
   # Remove case-sensitivity
   norm_method <- match.arg(norm_method)
   ties.method <- match.arg(ties.method)
@@ -181,7 +181,7 @@ create_som_seurat <- function(
       warning("Distance function '", dist, "' not supported by FlowSOM. Setting to 'euclidean'")
       distf <- "euclidean"
     }
-    cyCombine:::missing_package("FlowSOM", "Bioc")
+    cyCombine:::check_package("FlowSOM", "Bioc")
     distf <- switch(distf, "manhattan" = 1, "euclidean" = 2, "chebyshev" = 3, "cosine" = 4)
     # Extract data for the markers
     data <- SeuratObject::LayerData(object, layer)[markers, ]
@@ -256,7 +256,7 @@ correct_data_seurat <- function(
     return_seurat = TRUE,
     mc.cores = 1,
     pb = FALSE) {
-  cyCombine:::missing_package("Seurat")
+  cyCombine:::check_package("Seurat")
 
   method <- match.arg(method)
   APPLY <- set_apply(mc.cores, pb)
@@ -389,7 +389,14 @@ correct_label_seurat <- function(object_lab, covar, anchor, parametric, ref.batc
     mod_matrix <- NULL
   }
 
-  data <- combat_seurat(object_lab, mod_matrix, parametric, ref.batch, method)
+  layer <- ifelse(method == "ComBat", "data", "counts")
+  data <- .combat(
+    as.matrix(SeuratObject::LayerData(object_lab, layer = layer)),
+    batch = object_lab$batch,
+    mod_matrix,
+    parametric,
+    ref.batch,
+    method)
 
   return(data)
 }
@@ -452,7 +459,7 @@ batch_correct_seurat <- function(
     pb = FALSE) {
 
   APPLY <- set_apply(mc.cores, pb)
-  cyCombine:::missing_package("Seurat")
+  cyCombine:::check_package("Seurat")
 
   stopifnot(
     "No 'batch' column in data." = "batch" %in% names(object[[]]))

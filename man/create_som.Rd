@@ -8,7 +8,7 @@ create_som(
   df,
   markers = NULL,
   seed = 473,
-  cluster_method = c("kohonen", "flowsom", "kmeans"),
+  cluster_method = c("kohonen", "flowsom", "fusesom", "kmeans"),
   distf = c("euclidean", "sumofsquares", "cosine", "manhattan", "chebyshev"),
   rlen = 10,
   mode = c("online", "batch", "pbatch"),

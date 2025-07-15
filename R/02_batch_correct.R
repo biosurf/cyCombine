@@ -80,7 +80,7 @@ normalize <- function(
   if (!"id" %in% colnames(df)) df$id <- seq_len(nrow(df))
   # Scale or rank at marker positions individually for every batch
   df <- df %>%
-    split(df$batch) |>
+    split(df$batch) %>%
     APPLY(function(df_batch) {
       df_batch[, markers] <- apply(df_batch[, markers], 2, function(values) {
         if (sum(values) == 0) return(values)
@@ -191,7 +191,7 @@ clr_norm_med <- function(x) {
 create_som <- function(df,
                        markers = NULL,
                        seed = 473,
-                       cluster_method = c("kohonen", "flowsom", "kmeans"),
+                       cluster_method = c("kohonen", "flowsom", "fusesom", "kmeans"),
                        distf = c("euclidean", "sumofsquares", "cosine", "manhattan", "chebyshev"),
                        rlen = 10,
                        mode = c("online", "batch", "pbatch"),
@@ -232,13 +232,13 @@ create_som <- function(df,
         warning("Distance function '", dist, "' not supported by FlowSOM. Setting to 'euclidean'")
         distf <- "euclidean"
       }
-      cyCombine:::missing_package("FlowSOM", "Bioc")
+      cyCombine:::check_package("FlowSOM", "Bioc")
       if (!is.null(nClus)) {
         labels <- FlowSOM::FlowSOM(
           df, xdim = xdim, ydim = ydim, nClus = nClus)
         FlowSOM::GetMetaclusters(labels)
       } else {
-        fsom <- FlowSOM::ReadInput(df) |>
+        fsom <- FlowSOM::ReadInput(df) %>%
           FlowSOM::BuildSOM(xdim = xdim, ydim = ydim)
         FlowSOM::GetClusters(fsom)
       }
@@ -247,6 +247,15 @@ create_som <- function(df,
     "kmeans" = {
       if (is.null(nClus)) nClus <- xdim*ydim
       stats::kmeans(df, centers = nClus)$cluster
+    },
+    "fusesom" = {
+      cyCombine:::check_package("FuseSOM", "Bioc")
+      somModel <- FuseSOM::generatePrototypes(df, size = round(sqrt(xdim*ydim)))
+      if (is.null(nClus)) {
+        somModel$classif
+      } else {
+        FuseSOM::clusterPrototypes(somModel, numClusters = nClus)
+      }
     }
     )
 
@@ -296,7 +305,7 @@ correct_data <- function(df,
   cyCombine:::check_colname(colnames(df), "batch", "df")
   if (is.null(markers)) {
     # Get markers
-    markers <- df %>%
+    markers <- df |>
       cyCombine::get_markers()
   }
 
@@ -339,28 +348,6 @@ correct_data <- function(df,
     if (nlevels(df[[anchor]]) == 1) anchor <- NULL
   }
 
-  # Determine combat method
-  combat <- function(x, batch, mod_matrix, parametric, ref.batch) {
-    x <- t(x)
-    if (method == "ComBat") {
-      x <- sva::ComBat(
-        x,
-        batch = as.character(batch), # The as.character is to remove factor levels not present in the SOM node
-        mod = mod_matrix,
-        par.prior = parametric,
-        ref.batch = ref.batch,
-        prior.plots = FALSE
-      )
-    } else if (method == "ComBat_seq") {
-      x <- sva::ComBat_seq(
-        x,
-        batch = as.character(batch),
-        covar_mod = mod_matrix
-      )
-    }
-    return(t(x))
-  }
-
   corrected_data <- df |>
     split(df[[label]]) |>
     APPLY(function(df_label) {
@@ -370,8 +357,8 @@ correct_data <- function(df,
       num_anchor <- 1
       # Detect if only one batch is present in the node
       num_batches <- df_label$batch |>
-        factor() |>
-        nlevels()
+        unique() |>
+        length()
       lab <- df_label[[label]][1] # Current label group
       if (num_batches == 1) {
         batch <- df_label$batch[1]
@@ -384,15 +371,11 @@ correct_data <- function(df,
 
         # Only use covar, if it does not confound with batch
         if (!cyCombine:::check_confound(df_label$batch, stats::model.matrix(~df_label[[covar]]))) {
-          num_covar <- df_label[[covar]] |>
-            factor() |>
-            nlevels()
 
           # If a node is heavily skewed to a single covar, it should be treated as having only 1 covar.
           # Get number of cells in the condition with most cells
-          covar_counts <- df_label %>%
-            dplyr::count(.data[[covar]]) %>%
-            dplyr::pull(n)
+          covar_counts <- table(df_label[[covar]])
+          num_covar <- length(covar_counts)
 
           if (sum(covar_counts) < max(covar_counts) + num_covar*5) {
             message("The label group almost exclusively consists of cells from a single covar. Therefore, covar is ignored for this label group")
@@ -405,15 +388,10 @@ correct_data <- function(df,
       # Do a similar check on anchor
       if (!is.null(anchor)) {
         if (!cyCombine:::check_confound(df_label$batch, stats::model.matrix(~df_label[[anchor]]))) {
-          num_anchor <- df_label[[anchor]] |>
-            factor() |>
-            nlevels()
-
           # If a node is heavily skewed to a single anchor, it should be treated as having only 1 covar.
           # Get number of cells in the anchor with most cells
-          anchor_counts <- df_label %>%
-            dplyr::count(.data[[anchor]]) %>%
-            dplyr::pull(n)
+          anchor_counts <- table(df_label[[anchor]])
+          num_anchor <- length(anchor_counts)
 
           if (sum(anchor_counts) < max(anchor_counts) + num_anchor*5) {
             message("The label group almost exclusively consists of cells from a single anchor group. Therefore, anchor is ignored for this label group")
@@ -443,13 +421,16 @@ correct_data <- function(df,
       }
 
       # Compute ComBat correction
-      ComBat_output <- df_label %>%
-        dplyr::select(dplyr::all_of(markers)) %>%
-        combat(
+      ComBat_output <- df_label[, markers] %>%
+        as.matrix() %>%
+        t() %>%
+        .combat(
           batch = df_label$batch,
           mod_matrix = mod_matrix,
           parametric = parametric,
-          ref.batch = ref.batch) %>%
+          ref.batch = ref.batch,
+          method = method) %>%
+        t() %>%
         tibble::as_tibble() %>%
         dplyr::bind_cols(
           dplyr::select(df_label,
@@ -471,10 +452,33 @@ correct_data <- function(df,
       return(ComBat_output)
     })
   corrected_data <- do.call(rbind, corrected_data) |>
-    dplyr::arrange(id) %>%
-    dplyr::select(id, dplyr::everything()) %>%
+    dplyr::arrange(id) |>
+    dplyr::relocate(id)  |>
     dplyr::mutate(batch = as.factor(batch))
   return(corrected_data)
+}
+
+#' Run combat
+#' @noRd
+.combat <- function(x, batch, mod_matrix, parametric, ref.batch, method) {
+  if (method == "ComBat") {
+    x <- sva::ComBat(
+      x,
+      batch = as.character(batch), # The as.character is to remove factor levels not present in the SOM node
+      mod = mod_matrix,
+      par.prior = parametric,
+      ref.batch = ref.batch,
+      prior.plots = FALSE
+    )
+  } else if (method == "ComBat_seq") {
+    x <- sva::ComBat_seq(
+      x,
+      batch = as.character(batch),
+      covar_mod = mod_matrix,
+      full_mod = TRUE
+    )
+  }
+  return(x)
 }
 
 #' Alternate correction
@@ -496,14 +500,13 @@ correct_data_alt <- function(df,
   message("Batch correcting data..")
   if (is.null(markers)){
     # Get markers
-    markers <- df %>%
+    markers <- df  |>
       cyCombine::get_markers()
   }
 
 
-  corrected_data <- df %>%
+  corrected_data <- df[, markers] %>%
       # Compute ComBat correction
-    dplyr::select(dplyr::all_of(markers)) %>%
     t() %>%
     # The as.character is to remove factor levels not present in the SOM node
     sva::ComBat(batch = as.character(df$batch),
@@ -554,7 +557,7 @@ batch_correct <- function(df,
                           mode = c("online", "batch", "pbatch"),
                           parametric = TRUE,
                           method = c("ComBat", "ComBat_seq"),
-                          cluster_method = c("kohonen", "flowsom", "kmeans"),
+                          cluster_method = c("kohonen", "flowsom", "fusesom", "kmeans"),
                           nClus = NULL,
                           mc.cores = 1,
                           pb = TRUE,
@@ -565,6 +568,8 @@ batch_correct <- function(df,
                           markers = NULL,
                           norm_method = "scale",
                           ties.method = "average") {
+
+  if (inherits(df, "Seurat")) stop("Please use 'batch_correct_seu()' on Seurat objects.")
   # A batch column is required
   cyCombine:::check_colname(colnames(df), "batch", "df")
   if (!is.null(markers)) lapply(markers, function(marker) cyCombine:::check_colname(colnames(df), marker, "df"))
@@ -574,11 +579,13 @@ batch_correct <- function(df,
     df <- dplyr::filter(df, !is.na(batch))
   }
   mode <- match.arg(mode)
+  method <- match.arg(method)
   cluster_method <- match.arg(cluster_method)
 
   for (i in seq_len(max(length(xdim), length(ydim)))) {
     xdim_i <- xdim[min(length(xdim), i)]
     ydim_i <- ydim[min(length(ydim), i)]
+    nClus_i <- nClus_i[min(length(nClus_i), i)]
 
     message("Batch correcting using a SOM grid of dimensions ", xdim_i,"x", ydim_i)
 
@@ -601,7 +608,7 @@ batch_correct <- function(df,
         xdim = xdim_i,
         ydim = ydim_i,
         cluster_method = cluster_method,
-        nClus = nClus)
+        nClus = nClus_i)
       rm(df_norm)
     }
 

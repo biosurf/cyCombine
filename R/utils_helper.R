@@ -5,45 +5,28 @@
 #' 1 %!in% 1:10
 `%!in%` <- Negate(`%in%`)
 
+#' Utility function for NULL coalescing
+#' @noRd
+`%||%` <- function(x, y) if (is.null(x)) y else x
+
 #'
-#' @importFrom parallel mclapply
+#' Define apply function to use
+#' @noRd
 set_apply <- function(mc.cores, pb = TRUE) {
   if(mc.cores == 1) {
     APPLY <- lapply
   } else {
     if(pb) {
-      cyCombine:::missing_package(package = "pbmcapply")
+      cyCombine:::check_package("pbmcapply")
       APPLY <- pbmcapply::pbmclapply
     } else {
+      cyCombine:::check_package("parallel")
       APPLY <- parallel::mclapply
     }
     formals(APPLY)$mc.cores <- mc.cores
   }
   return(APPLY)
 }
-
-#' Wrapper for missing packages
-#'
-#' @noRd
-missing_package <- function(package, repo = "CRAN", git_repo = "") {
-
-  if (repo == "CRAN") {
-    install_function <- "install.packages('"
-  } else if (repo == "github") {
-    install_function <- paste0("devtools::install_github('", git_repo, "/")
-  } else if (repo == "Bioc") {
-    install_function <- "BiocManager::install('"
-  }
-
-  if (!requireNamespace(package, quietly = TRUE)) {
-    stop(
-      paste0("Package ", package, " is not installed.\n",
-      "Please run: ", install_function, package, "')"))
-  }
-  requireNamespace(package, quietly = TRUE)
-}
-
-
 
 #' Randomize a matrix of values
 #'
@@ -66,30 +49,22 @@ randomize_matrix <- function(mat) {
 }
 
 
-#' Get markers from a dataframe
+#' Get markers from a dataframe or vector of markers
 #'
 #' This function uses the global variable "non_markers".
 #'   If the output contains markers you did not expect, you can add to non_markers like this:
 #'   \code{non_markers <- c(non_markers, "remove1", "remove2")} and rerun get_markers()
-#' @param df dataframe to get the markers from
+#' @param x dataframe or vector to get the markers from
 #' @export
-get_markers <- function(df) {
+get_markers <- function(x) {
   # Use global non_markers if available
   if (!is.null(.GlobalEnv$non_markers)) non_markers <- .GlobalEnv$non_markers
 
-  marker_pos <- tolower(colnames(df)) %!in% tolower(non_markers)
-  markers <- colnames(df)[marker_pos]
+  if (inherits(x, "data.frame")) x <- colnames(x)
+  marker_pos <- tolower(x) %!in% tolower(non_markers)
+  markers <- x[marker_pos]
   markers <- markers[which(!is.na(markers))]
   return(markers)
-}
-
-#' Check colname
-#' @noRd
-check_colname <- function(df_colnames, col_name, location = "metadata") {
-  if (!is.null(col_name)) {
-    if (col_name %!in% df_colnames) {
-      stop("Column \"", col_name, "\" was not found in the ", location)
-    }}
 }
 
 
@@ -104,6 +79,17 @@ run_pca <- function(df, pcs = 20) {
 
   return(pca$x[, 1:pcs])
 }
+
+
+#' Check colname
+#' @noRd
+check_colname <- function(df_colnames, col_name, location = "metadata") {
+  if (!is.null(col_name)) {
+    if (col_name %!in% df_colnames) {
+      stop("Column \"", col_name, "\" was not found in the ", location)
+    }}
+}
+
 
 
 #' Check if directory exists, if not, make it
@@ -165,3 +151,27 @@ check_confound <- function(batch, mod = NULL) {
   return(FALSE)
 }
 
+#' Wrapper for missing packages
+#'
+#' @noRd
+check_package <- function(package, repo = "CRAN", git_repo = "") {
+
+  if (repo == "CRAN") {
+    install_function <- "install.packages('"
+  } else if (repo == "github") {
+    install_function <- paste0("devtools::install_github('", git_repo, "/")
+  } else if (repo == "Bioc") {
+    install_function <- "BiocManager::install('"
+  }
+
+  if (!requireNamespace(package, quietly = TRUE)) {
+    stop(
+      paste0("Package ", package, " is not installed.\n",
+             "Please run: ", install_function, package, "')"))
+  }
+  requireNamespace(package, quietly = TRUE)
+}
+
+missing_package <- function(...) {
+  check_package(...)
+}
