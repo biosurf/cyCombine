@@ -9,10 +9,10 @@ prepare_data(
   flowset = NULL,
   markers = NULL,
   pattern = "\\\\.fcs",
-  metadata = NULL,
-  filename_col = "filename",
   extract_filename_regex = NULL,
   extract_filename_into = NULL,
+  metadata = NULL,
+  filename_col = "filename",
   sample_ids = NULL,
   batch_ids = NULL,
   condition = NULL,
@@ -42,10 +42,6 @@ prepare_data(
 
 \item{pattern}{The pattern to use to find the files in the folder}
 
-\item{metadata}{Optional: Can be either a filename or data.frame of the metadata file. Please give the full path from working directory to metadata file}
-
-\item{filename_col}{Optional: The column in the metadata containing the fcs filenames. Needed if metadata is given, but sample_ids is not}
-
 \item{extract_filename_regex}{Optional: Use, if there are details that you
 want to keep (e.g. sample, batch or cell type information) saved in the
 filenames. Can be used together with or in place of metadata. Should be a
@@ -58,6 +54,10 @@ given. A character vector of names corresponding to the capture groups in
 extract_filename_regex. These names will represent the column names of the
 resulting data frame. Example: (matching the example above)
 extract_filename_into = c("batch", "sample").}
+
+\item{metadata}{Optional: Can be either a filename or data.frame of the metadata file. Please give the full path from working directory to metadata file}
+
+\item{filename_col}{Optional: The column in the metadata containing the fcs filenames. Needed if metadata is given, but sample_ids is not}
 
 \item{sample_ids}{Optional: If a character, it should be the sample column in the metadata. If its a vector, it should have the same length as the total flowset. If NULL, sample ids will be the file names. If a single value, all rows will be assigned this value.}
 

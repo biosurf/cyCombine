@@ -8,10 +8,12 @@ normalize_seurat(
   object,
   markers = NULL,
   layer = "counts",
+  assay = NULL,
   norm_method = c("scale", "rank", "CLR", "lognorm", "qnorm", "none"),
   ties.method = c("average", "first", "last", "random", "max", "min"),
   mc.cores = 1,
-  pb = FALSE
+  pb = FALSE,
+  ...
 )
 }
 \arguments{

@@ -7,11 +7,12 @@
 create_som_seurat(
   object,
   layer = SeuratObject::Layers(object)[length(SeuratObject::Layers(object))],
+  assay = NULL,
   markers = NULL,
   seed = 473,
   rlen = 10,
   mode = c("online", "batch", "pbatch"),
-  cluster_method = c("kohonen", "flowsom", "lauvain", "leiden"),
+  cluster_method = c("kohonen", "flowsom", "fusesom", "lauvain", "leiden"),
   resolution = 0.8,
   distf = c("euclidean", "sumofsquares", "cosine", "manhattan", "chebyshev"),
   xdim = 8,
@@ -33,17 +34,17 @@ create_som_seurat(
 
 \item{mode}{type of learning algorithm.}
 
-\item{cluster_method}{Cluster method to use. Defaults to kohonen}
+\item{cluster_method}{Cluster method to use. Defaults to kohonen. Options: c("kohonen", "flowsom", "fusesom", "kmeans")}
 
 \item{resolution}{Resolution parameter for lauvain/leiden}
 
 \item{distf}{Distance metric used for kohonen ("sumofsquares", "euclidean", "manhattan") or FlowSOM ("euclidean", "cosine", "manhattan", "chebyshev")}
 
-\item{xdim}{The x-dimension size of the SOM.}
+\item{xdim}{The x-dimension size of the SOM. If NULL, gridsize is computed using \code{FuseSOM::computeGridSize}}
 
-\item{ydim}{The y-dimension size of the SOM.}
+\item{ydim}{The y-dimension size of the SOM. If NULL, gridsize is computed using \code{FuseSOM::computeGridSize}}
 
-\item{nClus}{(Usable with FlowSOM and kmeans) Number of clusters to export}
+\item{nClus}{(Usable with FlowSOM, FuseSOM, and kmeans) Number of clusters to export}
 }
 \value{
 A vector of clustering labels

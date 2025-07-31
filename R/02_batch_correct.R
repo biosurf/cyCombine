@@ -323,7 +323,8 @@ correct_data <- function(df,
                          ref.batch = NULL,
                          parametric = TRUE,
                          mc.cores = 1,
-                         pb = FALSE) {
+                         pb = FALSE,
+                         ...) {
   method <- match.arg(method)
 
   APPLY <- set_apply(mc.cores, pb)

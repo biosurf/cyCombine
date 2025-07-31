@@ -27,13 +27,17 @@ impute_across_panels(
 
 \item{impute_channels2}{Channels to impute and add to the impute_for dataset2 (must be present in dataset1). Alternatively can be set to NULL.}
 
-\item{label}{The cluster or cell type label. Either as a column name or vector.}
+\item{label}{Character string for the cluster labels column. If this column
+already exists in \code{colData(sce)}, the normalization and clustering steps are
+skipped, and correction proceeds using these existing labels. Defaults to "Labels".}
 
-\item{xdim}{The x-dimension size of the SOM.}
+\item{xdim}{Integer or vector of integers, the x-dimension(s) of the SOM grid
+(for "kohonen" and "flowsom"). If a vector, the workflow iterates.}
 
-\item{ydim}{The y-dimension size of the SOM.}
+\item{ydim}{Integer or vector of integers, the y-dimension(s) of the SOM grid.
+If a vector, the workflow iterates. Length should match \code{xdim} or be 1.}
 
-\item{seed}{The seed to use when creating the SOM.}
+\item{seed}{Integer, random seed for reproducibility.}
 }
 \description{
 This function imputes the expression values for a whole dataset based on the overlapping markers contained in another dataset.

@@ -8,6 +8,7 @@ batch_correct_seurat(
   object,
   xdim = 8,
   ydim = 8,
+  nClus = NULL,
   rlen = 10,
   mode = c("online", "batch", "pbatch"),
   parametric = TRUE,
@@ -28,46 +29,53 @@ batch_correct_seurat(
 )
 }
 \arguments{
-\item{object}{A Seurat object}
+\item{object}{An object of type "data.frame", "SingleCellExperiment", or "Seurat".}
 
-\item{xdim}{The x-dimension size of the SOM.}
+\item{xdim}{Integer or vector of integers, the x-dimension(s) of the SOM grid
+(for "kohonen" and "flowsom"). If a vector, the workflow iterates.}
 
-\item{ydim}{The y-dimension size of the SOM.}
+\item{ydim}{Integer or vector of integers, the y-dimension(s) of the SOM grid.
+If a vector, the workflow iterates. Length should match \code{xdim} or be 1.}
 
-\item{rlen}{Number of times the data is presented to the SOM network}
+\item{nClus}{Integer, target number of clusters for FlowSOM metaclustering.}
 
-\item{mode}{type of learning algorithm.}
+\item{rlen}{Integer, the number of iterations for SOM training.}
 
-\item{parametric}{Default: TRUE. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used.}
+\item{mode}{Character, SOM training mode ("online", "batch", "pbatch") for "kohonen".}
 
-\item{method}{Default: "ComBat". Choose "ComBat" for cytometry data and "ComBat_seq" for bulk RNAseq data.}
+\item{parametric}{Logical, for ComBat's parametric adjustment.}
 
-\item{cluster_method}{Cluster method to use. Defaults to kohonen}
+\item{method}{Batch correction method ("ComBat", "ComBat_seq").}
 
-\item{resolution}{Resolution parameter for lauvain/leiden}
+\item{cluster_method}{Clustering method: "kohonen", "flowsom", "fusesom", "leiden", or "kmeans.}
 
-\item{ref.batch}{Optional. A string of the batch that should be used as the reference for batch adjustments.}
+\item{resolution}{Numeric, resolution parameter for Louvain/Leiden clustering.}
 
-\item{seed}{The seed to use when creating the SOM.}
+\item{ref.batch}{Optional: Reference batch for ComBat.}
 
-\item{label}{The cluster or cell type label. Either as a column name or vector.}
+\item{seed}{Integer, random seed for reproducibility.}
 
-\item{covar}{The covariate ComBat should use. Can be a vector or a column name in the input tibble.
-If NULL, no covar will be used}
+\item{label}{Character string for the cluster labels column. If this column
+already exists in \code{colData(sce)}, the normalization and clustering steps are
+skipped, and correction proceeds using these existing labels. Defaults to "Labels".}
 
-\item{anchor}{Experimental: A column or vector specifying which samples are replicates and which are not. If specified, this column will be used as a covariate in ComBat. Be aware that it may be confounded with the condition.}
+\item{covar}{Optional: Covariate column name or vector for correction.}
 
-\item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
+\item{anchor}{Optional: Anchor column name or vector for correction.}
 
-\item{layer}{Layer to use from the Seurat object}
+\item{markers}{A character vector specifying the markers (features) to use for
+normalization, clustering, and correction. If NULL, all features are used.}
 
-\item{norm_method}{Normalization method. Should be either 'rank', 'scale', 'CLR', 'CLR_seu', 'CLR_med', or 'qnorm'. Default: 'scale'. CLR is recommended for ADT normalization. CLR_seu mimicks the Seurat implementation of CLR. CLR_med uses the median instead of geometric mean.}
+\item{layer}{Name of Seurat layer to use.}
 
-\item{ties.method}{The method to handle ties, when using rank. Default: 'average'. See ?rank for other options.}
+\item{norm_method}{Normalization method ("scale", "rank", "clr", "lognorm", "qnorm", "none").
+Applied before clustering unless \code{labels_colname} is provided. Defaults to "scale".}
 
-\item{mc.cores}{Number of cores for parallelization}
+\item{ties.method}{Method for handling ties in rank normalization.}
 
-\item{pb}{Progress bar for parallelization}
+\item{mc.cores}{Number of cores for parallel processing. Defaults to 1.}
+
+\item{pb}{Logical, whether to show progress bars. Defaults to FALSE.}
 }
 \description{
 This is a wrapper function for the cyCombine batch correction workflow.
@@ -84,7 +92,7 @@ seu <- batch_correct_seurat(
 }
 \seealso{
 Other batch: 
-\code{\link{batch_correct}()},
+\code{\link{batch_correct_df}()},
 \code{\link{correct_data}()},
 \code{\link{create_som}()},
 \code{\link{normalize}()},

@@ -32,9 +32,9 @@ salvage_problematic(
 
 \item{exclude}{Channels to exclude (e.g. other misstained channels not to be used for imputation)}
 
-\item{xdim}{The x-dimension size of the SOM.}
+\item{xdim}{The x-dimension size of the SOM. If NULL, gridsize is computed using \code{FuseSOM::computeGridSize}}
 
-\item{ydim}{The y-dimension size of the SOM.}
+\item{ydim}{The y-dimension size of the SOM. If NULL, gridsize is computed using \code{FuseSOM::computeGridSize}}
 
 \item{seed}{The seed to use when creating the SOM.}
 }

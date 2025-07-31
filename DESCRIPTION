@@ -64,3 +64,4 @@ Suggests:
     pbmcapply,
     parallel
 VignetteBuilder: knitr
+LazyData: true

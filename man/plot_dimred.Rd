@@ -7,11 +7,12 @@
 plot_dimred(
   df,
   name,
-  type = "umap",
+  type = c("umap", "pca"),
   plot = "batch",
   markers = NULL,
   seed = 473,
-  return_coord = FALSE
+  return_coord = FALSE,
+  metric = "euclidean"
 )
 }
 \arguments{

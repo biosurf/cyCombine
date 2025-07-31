@@ -14,7 +14,8 @@ correct_data(
   ref.batch = NULL,
   parametric = TRUE,
   mc.cores = 1,
-  pb = TRUE
+  pb = FALSE,
+  ...
 )
 }
 \arguments{
@@ -53,7 +54,7 @@ corrected <- uncorrected \%>\%
 }
 \seealso{
 Other batch: 
-\code{\link{batch_correct}()},
+\code{\link{batch_correct_df}()},
 \code{\link{batch_correct_seurat}()},
 \code{\link{create_som}()},
 \code{\link{normalize}()},

@@ -14,7 +14,9 @@ create_som(
   mode = c("online", "batch", "pbatch"),
   xdim = 8,
   ydim = 8,
-  nClus = NULL
+  nClus = NULL,
+  return_model = FALSE,
+  ...
 )
 }
 \arguments{
@@ -24,7 +26,7 @@ create_som(
 
 \item{seed}{The seed to use when creating the SOM.}
 
-\item{cluster_method}{Cluster method to use. Defaults to kohonen}
+\item{cluster_method}{Cluster method to use. Defaults to kohonen. Options: c("kohonen", "flowsom", "fusesom", "kmeans")}
 
 \item{distf}{Distance metric used for kohonen ("sumofsquares", "euclidean", "manhattan") or FlowSOM ("euclidean", "cosine", "manhattan", "chebyshev")}
 
@@ -32,11 +34,16 @@ create_som(
 
 \item{mode}{type of learning algorithm.}
 
-\item{xdim}{The x-dimension size of the SOM.}
+\item{xdim}{The x-dimension size of the SOM. If NULL, gridsize is computed using \code{FuseSOM::computeGridSize}}
 
-\item{ydim}{The y-dimension size of the SOM.}
+\item{ydim}{The y-dimension size of the SOM. If NULL, gridsize is computed using \code{FuseSOM::computeGridSize}}
 
-\item{nClus}{(Usable with FlowSOM and kmeans) Number of clusters to export}
+\item{nClus}{(Usable with FlowSOM, FuseSOM, and kmeans) Number of clusters to export}
+
+\item{return_model}{Option to return the clustering model instead of the labels for downstream usage. See used package documentation for how to use the model. E.g., the kohonen model can be used with \code{predict(model, newdata = df[,markers])}}
+
+\item{...}{Further arguments for the \code{supersom} function
+    presented to the \code{som} or \code{xyf} wrappers.}
 }
 \value{
 A vector of clustering labels
@@ -53,7 +60,7 @@ labels <- create_som(uncorrected)
 }
 \seealso{
 Other batch: 
-\code{\link{batch_correct}()},
+\code{\link{batch_correct_df}()},
 \code{\link{batch_correct_seurat}()},
 \code{\link{correct_data}()},
 \code{\link{normalize}()},

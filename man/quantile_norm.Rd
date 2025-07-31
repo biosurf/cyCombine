@@ -22,7 +22,7 @@ df_qnorm <- quantile_norm(preprocessed)
 }
 \seealso{
 Other batch: 
-\code{\link{batch_correct}()},
+\code{\link{batch_correct_df}()},
 \code{\link{batch_correct_seurat}()},
 \code{\link{correct_data}()},
 \code{\link{create_som}()},

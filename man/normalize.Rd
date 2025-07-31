@@ -10,7 +10,8 @@ normalize(
   norm_method = c("scale", "rank", "CLR_seu", "CLR_med", "CLR", "qnorm", "none"),
   ties.method = c("average", "first", "last", "random", "max", "min"),
   mc.cores = 1,
-  pb = TRUE
+  pb = TRUE,
+  ...
 )
 }
 \arguments{
@@ -42,7 +43,7 @@ df_normed <- df \%>\%
 }
 \seealso{
 Other batch: 
-\code{\link{batch_correct}()},
+\code{\link{batch_correct_df}()},
 \code{\link{batch_correct_seurat}()},
 \code{\link{correct_data}()},
 \code{\link{create_som}()},
