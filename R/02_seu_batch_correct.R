@@ -21,15 +21,18 @@ normalize_seurat <- function(
     object,
     markers = NULL,
     layer = "counts",
+    assay = NULL,
     norm_method = c("scale", "rank", "CLR", "lognorm", "qnorm", "none"),
     ties.method = c("average", "first", "last", "random", "max", "min"),
     mc.cores = 1,
-    pb = FALSE) {
+    pb = FALSE,
+    ...) {
   cyCombine:::check_package("Seurat")
   # Remove case-sensitivity
   norm_method <- match.arg(norm_method)
   ties.method <- match.arg(ties.method)
   APPLY <- set_apply(mc.cores, pb)
+  if (!is.null(assay)) layer <- assay
 
   if (is.null(markers)) {
     # Get markers
@@ -140,75 +143,30 @@ quantile_norm_seurat <- function(object, markers = NULL, mc.cores = 1, pb = FALS
 create_som_seurat <- function(
     object,
     layer = SeuratObject::Layers(object)[length(SeuratObject::Layers(object))],
+    assay = NULL,
     markers = NULL,
     seed = 473,
     rlen = 10,
     mode = c("online", "batch", "pbatch"),
-    cluster_method = c("kohonen", "flowsom", "lauvain", "leiden"),
+    cluster_method = c("kohonen", "flowsom", "fusesom", "lauvain", "leiden"),
     resolution = 0.8,
     distf = c("euclidean", "sumofsquares", "cosine", "manhattan", "chebyshev"),
     xdim = 8,
     ydim = 8,
     nClus = NULL) {
+  check_package("Seurat")
 
   mode <- match.arg(mode)
   distf <- match.arg(distf)
   cluster_method <- match.arg(cluster_method)
+  if (!is.null(assay)) layer <- assay
   # Default to all genes if markers are not specified
   if (is.null(markers)) {
     markers <- rownames(object)
   }
 
-  if (cluster_method == "kohonen") {
-    if (!distf %in% c("sumofsquares", "euclidean", "manhattan")) {
-      warning("Distance function '", dist, "' not supported by Kohonen. Setting to 'sumofsquares'")
-      distf <- "sumofsquares"
-    }
-    # Extract data for the markers
-    data <- SeuratObject::LayerData(object, layer)[markers, ]
+  if (cluster_method %in% c("leiden", "lauvain")) {
 
-    # SOM grid on overlapping markers, extract clustering per cell
-    message("Creating SOM grid..")
-    set.seed(seed)
-    som_grid <- kohonen::somgrid(xdim = xdim, ydim = ydim, topo = "rectangular")
-    som_model <- kohonen::som(
-      t(data), grid = som_grid, rlen = rlen, dist.fcts = distf, mode = mode)
-
-    # Add labels to metadata
-    object <- SeuratObject::AddMetaData(object, metadata = som_model$unit.classif, col.name = "Labels")
-  } else if (cluster_method == "flowsom") {
-    if (distf == "sumofsquares") {
-      warning("Distance function '", dist, "' not supported by FlowSOM. Setting to 'euclidean'")
-      distf <- "euclidean"
-    }
-    cyCombine:::check_package("FlowSOM", "Bioc")
-    distf <- switch(distf, "manhattan" = 1, "euclidean" = 2, "chebyshev" = 3, "cosine" = 4)
-    # Extract data for the markers
-    data <- SeuratObject::LayerData(object, layer)[markers, ]
-    message("Creating SOM grid..")
-    set.seed(seed)
-    fsom <- t(data) |>
-      FlowSOM::ReadInput() |>
-      FlowSOM::BuildSOM(
-      xdim = xdim,
-      ydim = ydim,
-      rlen = rlen,
-      distf = distf
-    )
-    if (is(nClus, "NULL")){
-      # Add labels to metadata
-      object <- SeuratObject::AddMetaData(object, metadata = FlowSOM::GetClusters(fsom), col.name = "Labels")
-    } else{
-      fsom <- FlowSOM::BuildMST(fsom, tSNE = FALSE)
-
-        meta <- FlowSOM::metaClustering_consensus(
-          fsom$map$codes,
-          k = nClus,
-          seed = seed)
-        # Add labels to metadata
-        object <- SeuratObject::AddMetaData(object, metadata = meta[fsom$map$mapping[, 1]], col.name = "Labels")
-    }
-  } else if (cluster_method %in% c("leiden", "lauvain")) {
     if (!"pca" %in% Seurat::Reductions(object)) object <- Seurat::RunPCA(object)
     object <- Seurat::FindNeighbors(
       object,
@@ -219,9 +177,21 @@ create_som_seurat <- function(
       object,
       random.seed = seed,
       algorithm = switch(cluster_method, "leiden" = 4, "lauvain" = 1),
-      resolution = resolution,
-      random.seed = seed)
+      resolution = resolution)
     object <- SeuratObject::AddMetaData(object, metadata = object$seurat_clusters, col.name = "Labels")
+  } else {
+    label <- create_som(
+      SeuratObject::LayerData(object, layer)[markers, ] |>
+        t() |> as.matrix(),
+      markers = markers,
+      xdim = xdim, ydim = ydim,
+      nClus = nClus,
+      cluster_method = cluster_method,
+      distf = distf,
+      seed = seed,
+      rlen = rlen
+    )
+    object <- SeuratObject::AddMetaData(object, metadata = label, col.name = "Labels")
   }
 
   return(object)
@@ -296,8 +266,11 @@ correct_data_seurat <- function(
     setNames(labels, labels),
     function(lab) {
       label_cells <- SeuratObject::WhichCells(object, expression = `Labels` == lab)
+      metadata_lab <- metadata[label_cells, ]
+      layer <- ifelse(method == "ComBat", "data", "counts")
       correct_label_seurat(
-        object[markers, label_cells],
+        as.matrix(SeuratObject::LayerData(object[markers, label_cells], layer = layer)),
+        metadata = metadata_lab,
         covar = covar,
         anchor = anchor,
         parametric = parametric,
@@ -327,76 +300,49 @@ correct_data_seurat <- function(
   return(object)
 }
 
-# Function to perform ComBat correction
-combat_seurat <- function(object_lab, mod_matrix, parametric, ref.batch, method) {
-
-  if (method == "ComBat") {
-    data <- sva::ComBat(
-      dat = as.matrix(SeuratObject::LayerData(object_lab, layer = "data")),
-      batch = as.character(object_lab$batch),
-      mod = mod_matrix,
-      par.prior = parametric,
-      ref.batch = ref.batch,
-      prior.plots = FALSE
-    )
-  } else if (method == "ComBat_seq") {
-    data <- sva::ComBat_seq(
-      counts = as.matrix(SeuratObject::LayerData(object_lab, "counts")),
-      batch = as.character(object_lab$batch),
-      covar_mod = mod_matrix,
-      full_mod = TRUE
-    )
-  }
-  return(data)
-}
-
 # Function to correct each group
-correct_label_seurat <- function(object_lab, covar, anchor, parametric, ref.batch, method) {
+correct_label_seurat <- function(mat, metadata, ...) {
   num_covar <- 1
   num_anchor <- 1
-  num_batches <- nlevels(factor(object_lab$batch))
+  num_batches <- nlevels(factor(metadata$batch))
 
   if (num_batches == 1) {
-    message(paste("Label group", object_lab$Labels[1], "only contains cells from batch", object_lab$batch[1]))
+    message(paste("Label group", metadata$Labels[1], "only contains cells from batch", metadata$batch[1]))
     return(data)
   }
 
-  if (!is.null(covar) && !check_confound(object_lab$batch, object_lab[[covar]][,1])) {
-    num_covar <- nlevels(factor(object_lab[[covar]][,1]))
+  if (!is.null(covar) && !check_confound(metadata$batch, metadata[[covar]][,1])) {
+    num_covar <- nlevels(factor(metadata[[covar]][,1]))
     if (num_covar == 1) covar <- NULL
   } else {
     covar <- NULL
   }
 
-  if (!is.null(anchor) && !check_confound(object_lab$batch, object_lab[[anchor]][,1])) {
-    num_anchor <- nlevels(factor(object_lab[[anchor]][,1]))
+  if (!is.null(anchor) && !check_confound(metadata$batch, metadata[[anchor]][,1])) {
+    num_anchor <- nlevels(factor(metadata[[anchor]][,1]))
     if (num_anchor == 1) anchor <- NULL
   } else {
     anchor <- NULL
   }
 
-  if (num_covar > 1 && num_anchor > 1 && check_confound(object_lab$batch, interaction(object_lab[[covar]][,1], object_lab[[anchor]][,1]))) {
+  if (num_covar > 1 && num_anchor > 1 && check_confound(metadata$batch, interaction(metadata[[covar]][,1], metadata[[anchor]][,1]))) {
     anchor <- NULL
   }
 
   if (!is.null(covar) && !is.null(anchor)) {
-    mod_matrix <- model.matrix(~ object_lab[[covar]][,1] + object_lab[[anchor]][,1])
+    mod_matrix <- model.matrix(~ metadata[[covar]][,1] + metadata[[anchor]][,1])
   } else if (!is.null(covar)) {
-    mod_matrix <- model.matrix(~ object_lab[[covar]][,1])
+    mod_matrix <- model.matrix(~ metadata[[covar]][,1])
   } else if (!is.null(anchor)) {
-    mod_matrix <- model.matrix(~ object_lab[[anchor]][,1])
+    mod_matrix <- model.matrix(~ metadata[[anchor]][,1])
   } else {
     mod_matrix <- NULL
   }
 
-  layer <- ifelse(method == "ComBat", "data", "counts")
   data <- .combat(
-    as.matrix(SeuratObject::LayerData(object_lab, layer = layer)),
-    batch = object_lab$batch,
-    mod_matrix,
-    parametric,
-    ref.batch,
-    method)
+    mat,
+    batch = metadata$batch,
+    ...)
 
   return(data)
 }
@@ -440,6 +386,7 @@ batch_correct_seurat <- function(
     object,
     xdim = 8,
     ydim = 8,
+    nClus = NULL,
     rlen = 10,
     mode = c("online", "batch", "pbatch"),
     parametric = TRUE,
@@ -458,7 +405,6 @@ batch_correct_seurat <- function(
     mc.cores = 1,
     pb = FALSE) {
 
-  APPLY <- set_apply(mc.cores, pb)
   cyCombine:::check_package("Seurat")
 
   stopifnot(
@@ -484,6 +430,7 @@ batch_correct_seurat <- function(
   for (i in seq_len(max(length(xdim), length(ydim)))) {
     xdim_i <- xdim[min(length(xdim), i)]
     ydim_i <- ydim[min(length(ydim), i)]
+    nClus_i <- nClus[min(length(nClus), i)]
 
     message("Batch correcting using a SOM grid of dimensions ", xdim_i,"x", ydim_i)
 
@@ -499,6 +446,7 @@ batch_correct_seurat <- function(
         pb = pb)
       # Remove excluded markers
       markers <- markers[markers %in% rownames(object)]
+
       object <- create_som_seurat(
         object,
         markers = markers,
@@ -508,10 +456,16 @@ batch_correct_seurat <- function(
         resolution = resolution,
         seed = seed,
         xdim = xdim_i,
-        ydim = ydim_i)
-      labels <- unique(object$Labels)
+        ydim = ydim_i,
+        nClus = nClus_i)
+      # labels <- unique(object$Labels)
     } else {
-      labels <- unique(object[[label]])
+      if (length(label) == 1 & is(label, "character")) {
+        if (label %in% colnames(object[[]])) object$Labels <- object[[label]]
+        else object$Labels <- label
+      } else {
+        object$Labels <- label
+      }
     }
 
 

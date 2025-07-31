@@ -4,32 +4,48 @@
 # cyCombine <img src="inst/cyCombine.png" width="200" align="right" />
 
 <!-- badges: start -->
+
 <!-- [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental) -->
+
 <!-- [![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable) -->
+
 <!-- badges: end -->
+
 <!-- ## Clone github repository -->
+
 <!-- ``` {sh, eval = FALSE} -->
+
 <!-- # Run in terminal -->
+
 <!-- git clone git@github.com:shdam/cyCombine.git -->
+
 <!-- ``` -->
+
 <!-- ## Restore renv library -->
+
 <!-- ``` {r, eval = FALSE} -->
+
 <!-- # Open project in Rstudio -->
+
 <!-- # Install renv and restore library -->
+
 <!-- install.packages("renv") -->
+
 <!-- library(renv) -->
+
 <!-- renv::restore() -->
+
 <!-- ``` -->
 
 ## Install from GitHub
 
 ``` r
 # To ensure Rstudio looks up BioConductor packages run:
-setRepositories(ind = c(1:6, 8))
+setRepositories(ind = 1:2)
 # If you are correcting cytometry data, install the following Bioconductor packages:
-BiocManager::install(c("flowCore", "Biobase"))
+BiocManager::install(c("flowCore", "Biobase", "sva"))
 # Then install package with
-devtools::install_github("biosurf/cyCombine")
+remotes::install_github("biosurf/cyCombine")
 ```
 
 ## Install with conda
@@ -43,7 +59,7 @@ conda install -c gartician r-cycombine
 
 ## Article
 
-The article introducing cyCombine is published in [Nature
+Please cite the article introducing cyCombine, published in [Nature
 Communications](https://doi.org/10.1038/s41467-022-29383-5).
 
 ## Vignettes

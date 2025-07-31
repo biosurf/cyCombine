@@ -13,7 +13,7 @@
 #' Define apply function to use
 #' @noRd
 set_apply <- function(mc.cores, pb = TRUE) {
-  if(mc.cores == 1) {
+  if(mc.cores == 1 & !pb) {
     APPLY <- lapply
   } else {
     if(pb) {
@@ -61,6 +61,7 @@ get_markers <- function(x) {
   if (!is.null(.GlobalEnv$non_markers)) non_markers <- .GlobalEnv$non_markers
 
   if (inherits(x, "data.frame")) x <- colnames(x)
+  else  x <- rownames(x)
   marker_pos <- tolower(x) %!in% tolower(non_markers)
   markers <- x[marker_pos]
   markers <- markers[which(!is.na(markers))]

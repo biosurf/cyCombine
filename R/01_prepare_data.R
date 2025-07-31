@@ -454,10 +454,10 @@ prepare_data <- function(
     flowset = NULL,
     markers = NULL,
     pattern = "\\.fcs",
-    metadata = NULL,
-    filename_col = "filename",
     extract_filename_regex = NULL,
     extract_filename_into = NULL,
+    metadata = NULL,
+    filename_col = "filename",
     sample_ids = NULL,
     batch_ids = NULL,
     condition = NULL,
@@ -494,6 +494,17 @@ prepare_data <- function(
       flowset <- cyCombine::compile_fcs(data_dir, pattern = pattern)
     }
 
+    # Compensate for spectral overlap
+    if (compensate) {
+      if (verbose) message("Compensating for spectral overlap between fluorescence channels")
+      comp <- flowCore::fsApply(
+        flowset,
+        function(x) flowCore::spillover(x)$SPILL,
+        simplify = FALSE
+      )
+      flowset <- flowCore::compensate(flowset, comp)
+    }
+
     # Look for metadata in data_dir
     if (!is.null(metadata)){
       if (!"data.frame" %in% class(metadata)) {
@@ -502,16 +513,7 @@ prepare_data <- function(
     }
   }
 
-  # Compensate for spectral overlap
-  if (compensate) {
-    if (verbose) message("Compensating for spectral overlap between fluorescence channels")
-    comp <- flowCore::fsApply(
-      flowset,
-      function(x) flowCore::spillover(x)$SPILL,
-      simplify = FALSE
-    )
-    flowset <- flowCore::compensate(flowset, comp)
-  }
+
 
 
   # Convert flowset to dataframe

@@ -163,21 +163,20 @@ plot_density <- function(uncorrected, corrected, markers = NULL, directory = NUL
 #' @export
 plot_dimred <- function(df,
                         name,
-                        type = "umap",
+                        type = c("umap", "pca"),
                         plot = "batch",
                         markers = NULL,
                         seed = 473,
-                        return_coord = FALSE) {
+                        return_coord = FALSE,
+                        metric = "euclidean") {
 
   # Check for missing packages
-  if (type == "umap") cyCombine:::missing_package("uwot", "CRAN")
-  if (plot != "batch") cyCombine:::missing_package("viridis", "CRAN")
-  cyCombine:::missing_package("ggridges", "CRAN")
-  cyCombine:::missing_package("ggplot2", "CRAN")
+  if (type == "umap") check_package("uwot", "CRAN")
+  if (plot != "batch") check_package("viridis", "CRAN")
+  check_package("ggridges", "CRAN")
+  check_package("ggplot2", "CRAN")
 
-  if (!(type %in% c('pca', 'umap'))) {
-    stop("Error, please use either type = 'pca' or type = 'umap'.")
-  }
+  type <- match.arg(type)
 
 
   if(is.null(markers)){
@@ -202,7 +201,8 @@ plot_dimred <- function(df,
         dplyr::mutate(Batch = as.factor(Batch))
 
     } else {
-      df <- cbind.data.frame(pca$x, as.factor(Batch), df[, plot]); colnames(df)[(ncol(df)-1):ncol(df)] <- c("Batch", plot)
+      df <- cbind.data.frame(pca$x, as.factor(Batch), df[, plot])
+      colnames(df)[(ncol(df)-1):ncol(df)] <- c("Batch", plot)
     }
 
   } else if (type == "umap") {
@@ -210,7 +210,7 @@ plot_dimred <- function(df,
     set.seed(seed)
     umap <- df %>%
       dplyr::select(dplyr::all_of(markers)) %>%
-      uwot::umap(n_neighbors = 15, min_dist = 0.2, metric = "euclidean")
+      uwot::umap(n_neighbors = 15, min_dist = 0.2, metric = metric)
 
     # Make dataframe with output
     if (plot == "batch") {
@@ -273,10 +273,10 @@ plot_dimred_full <- function(df,
                              out_dir = NULL) {
 
   if(type == "umap") cyCombine:::missing_package("uwot", "CRAN")
-  cyCombine:::missing_package("ggridges", "CRAN")
-  cyCombine:::missing_package("grDevices", "CRAN")
-  cyCombine:::missing_package("RColorBrewer", "CRAN")
-  cyCombine:::missing_package("ggplot2", "CRAN")
+  check_package("ggridges", "CRAN")
+  check_package("grDevices", "CRAN")
+  check_package("RColorBrewer", "CRAN")
+  check_package("ggplot2", "CRAN")
 
   # Check out dir
   if (is.null(out_dir)) {

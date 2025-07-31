@@ -29,7 +29,8 @@ normalize <- function(
     norm_method = c("scale", "rank", "CLR_seu", "CLR_med", "CLR", "qnorm", "none"),
     ties.method = c("average", "first", "last", "random", "max", "min"),
     mc.cores = 1,
-    pb = TRUE) {
+    pb = TRUE,
+    ...) {
 
   # Remove case-sensitivity
   norm_method <- match.arg(norm_method)
@@ -173,12 +174,13 @@ clr_norm_med <- function(x) {
 #' @inheritParams kohonen::supersom
 #' @inheritParams normalize
 #' @param seed The seed to use when creating the SOM.
-#' @param xdim The x-dimension size of the SOM.
-#' @param ydim The y-dimension size of the SOM.
+#' @param xdim The x-dimension size of the SOM. If NULL, gridsize is computed using `FuseSOM::computeGridSize`
+#' @param ydim The y-dimension size of the SOM. If NULL, gridsize is computed using `FuseSOM::computeGridSize`
 #' @param rlen Number of times the data is presented to the SOM network
-#' @param nClus (Usable with FlowSOM and kmeans) Number of clusters to export
-#' @param cluster_method Cluster method to use. Defaults to kohonen
+#' @param nClus (Usable with FlowSOM, FuseSOM, and kmeans) Number of clusters to export
+#' @param cluster_method Cluster method to use. Defaults to kohonen. Options: c("kohonen", "flowsom", "fusesom", "kmeans")
 #' @param distf Distance metric used for kohonen ("sumofsquares", "euclidean", "manhattan") or FlowSOM ("euclidean", "cosine", "manhattan", "chebyshev")
+#' @param return_model Option to return the clustering model instead of the labels for downstream usage. See used package documentation for how to use the model. E.g., the kohonen model can be used with `predict(model, newdata = df[,markers])`
 #' @family batch
 #' @importFrom stats kmeans
 #' @importFrom kohonen som somgrid
@@ -188,29 +190,43 @@ clr_norm_med <- function(x) {
 #'   }
 #' @export
 #' @return A vector of clustering labels
-create_som <- function(df,
-                       markers = NULL,
-                       seed = 473,
-                       cluster_method = c("kohonen", "flowsom", "fusesom", "kmeans"),
-                       distf = c("euclidean", "sumofsquares", "cosine", "manhattan", "chebyshev"),
-                       rlen = 10,
-                       mode = c("online", "batch", "pbatch"),
-                       xdim = 8,
-                       ydim = 8,
-                       nClus = NULL) {
+create_som <- function(
+    df,
+    markers = NULL,
+    seed = 473,
+    cluster_method = c("kohonen", "flowsom", "fusesom", "kmeans"),
+    distf = c("euclidean", "sumofsquares", "cosine", "manhattan", "chebyshev"),
+    rlen = 10,
+    mode = c("online", "batch", "pbatch"),
+    xdim = 8,
+    ydim = 8,
+    nClus = NULL,
+    return_model = FALSE,
+    ...) {
   mode <- match.arg(mode)
   distf <- match.arg(distf)
   cluster_method <- match.arg(cluster_method)
 
   if (is.null(markers)) {
-    markers <- df %>%
+    markers <- df  |>
       cyCombine::get_markers()
   }
 
   # SOM grid on overlapping markers, extract clustering per cell
-  message("Creating SOM grid..")
+
   set.seed(seed)
   df <- as.matrix(df[, markers])
+
+  if (is.null(xdim) | is.null(ydim)) {
+    cyCombine:::check_package("FuseSOM", "Bioc")
+    message("Computing gridsize")
+    size <- FuseSOM::computeGridSize(df)
+    if (size * size < 25) {
+      size <- 5
+    }
+    xdim <- ydim <- size
+    message("Using gridsize ", size)
+  }
 
   labels <- switch(
     cluster_method,
@@ -219,42 +235,53 @@ create_som <- function(df,
         warning("Distance function '", dist, "' not supported by Kohonen. Setting to 'sumofsquares'")
         distf <- "sumofsquares"
       }
-      kohonen::som(
+      message("Creating SOM grid..")
+      som_model <- kohonen::som(
         df,
         grid = kohonen::somgrid(xdim = xdim, ydim = ydim),
         rlen = rlen,
         mode = mode,
-        dist.fcts = distf)$unit.classif
+        dist.fcts = distf)
+      if (return_model) return(som_model)
+      som_model$unit.classif
     },
 
     "flowsom" = {
+      cyCombine:::check_package("FlowSOM", "Bioc")
       if (distf == "sumofsquares") {
         warning("Distance function '", dist, "' not supported by FlowSOM. Setting to 'euclidean'")
         distf <- "euclidean"
       }
-      cyCombine:::check_package("FlowSOM", "Bioc")
+      distf <- switch(distf, "manhattan" = 1, "euclidean" = 2, "chebyshev" = 3, "cosine" = 4)
+
       if (!is.null(nClus)) {
-        labels <- FlowSOM::FlowSOM(
-          df, xdim = xdim, ydim = ydim, nClus = nClus)
-        FlowSOM::GetMetaclusters(labels)
+        som_model <- FlowSOM::FlowSOM(
+          df, xdim = xdim, ydim = ydim, nClus = nClus, distf = distf)
+        if (return_model) return(som_model)
+        FlowSOM::GetMetaclusters(som_model)
       } else {
-        fsom <- FlowSOM::ReadInput(df) %>%
-          FlowSOM::BuildSOM(xdim = xdim, ydim = ydim)
+        som_model <- FlowSOM::ReadInput(df) %>%
+          FlowSOM::BuildSOM(xdim = xdim, ydim = ydim, distf = distf)
+        if (return_model) return(som_model)
         FlowSOM::GetClusters(fsom)
       }
     },
 
     "kmeans" = {
       if (is.null(nClus)) nClus <- xdim*ydim
-      stats::kmeans(df, centers = nClus)$cluster
+      model <- stats::kmeans(df, centers = nClus)
+      if (return_model) return(model)
+      model$cluster
     },
     "fusesom" = {
       cyCombine:::check_package("FuseSOM", "Bioc")
-      somModel <- FuseSOM::generatePrototypes(df, size = round(sqrt(xdim*ydim)))
+
+      som_model <- FuseSOM::generatePrototypes(df, size = round(sqrt(xdim*ydim)))
+      if (return_model) return(som_model)
       if (is.null(nClus)) {
-        somModel$classif
+        som_model$classif
       } else {
-        FuseSOM::clusterPrototypes(somModel, numClusters = nClus)
+        FuseSOM::clusterPrototypes(som_model, numClusters = nClus)
       }
     }
     )
@@ -296,7 +323,7 @@ correct_data <- function(df,
                          ref.batch = NULL,
                          parametric = TRUE,
                          mc.cores = 1,
-                         pb = TRUE) {
+                         pb = FALSE) {
   method <- match.arg(method)
 
   APPLY <- set_apply(mc.cores, pb)
@@ -549,7 +576,7 @@ correct_data_alt <- function(df,
 #'   covar = "condition")
 #'   }
 #' @export
-batch_correct <- function(df,
+batch_correct_df <- function(df,
                           label = NULL,
                           xdim = 8,
                           ydim = 8,
@@ -558,18 +585,20 @@ batch_correct <- function(df,
                           parametric = TRUE,
                           method = c("ComBat", "ComBat_seq"),
                           cluster_method = c("kohonen", "flowsom", "fusesom", "kmeans"),
+                          distf = c("euclidean", "sumofsquares", "cosine", "manhattan", "chebyshev"),
                           nClus = NULL,
                           mc.cores = 1,
-                          pb = TRUE,
+                          pb = FALSE,
                           ref.batch = NULL,
                           seed = 473,
                           covar = NULL,
                           anchor = NULL,
                           markers = NULL,
-                          norm_method = "scale",
-                          ties.method = "average") {
+                          norm_method = c("scale", "rank", "CLR_seu", "CLR_med", "CLR", "qnorm", "none"),
+                          ties.method = "average",
+                          ...) {
 
-  if (inherits(df, "Seurat")) stop("Please use 'batch_correct_seu()' on Seurat objects.")
+  if (!inherits(df, "data.frame")) stop("Please use 'batch_correct_generic()' on non-data.frame objects.")
   # A batch column is required
   cyCombine:::check_colname(colnames(df), "batch", "df")
   if (!is.null(markers)) lapply(markers, function(marker) cyCombine:::check_colname(colnames(df), marker, "df"))
@@ -580,12 +609,13 @@ batch_correct <- function(df,
   }
   mode <- match.arg(mode)
   method <- match.arg(method)
+  norm_method <- match.arg(norm_method)
   cluster_method <- match.arg(cluster_method)
 
   for (i in seq_len(max(length(xdim), length(ydim)))) {
     xdim_i <- xdim[min(length(xdim), i)]
     ydim_i <- ydim[min(length(ydim), i)]
-    nClus_i <- nClus_i[min(length(nClus_i), i)]
+    nClus_i <- nClus[min(length(nClus), i)]
 
     message("Batch correcting using a SOM grid of dimensions ", xdim_i,"x", ydim_i)
 
@@ -607,6 +637,7 @@ batch_correct <- function(df,
         seed = seed,
         xdim = xdim_i,
         ydim = ydim_i,
+        distf = distf,
         cluster_method = cluster_method,
         nClus = nClus_i)
       rm(df_norm)
