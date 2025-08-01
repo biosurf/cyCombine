@@ -42,8 +42,7 @@ create_som(
 
 \item{return_model}{Option to return the clustering model instead of the labels for downstream usage. See used package documentation for how to use the model. E.g., the kohonen model can be used with \code{predict(model, newdata = df[,markers])}}
 
-\item{...}{Further arguments for the \code{supersom} function
-    presented to the \code{som} or \code{xyf} wrappers.}
+\item{...}{Arguments passed to \code{create_som_sce}}
 }
 \value{
 A vector of clustering labels

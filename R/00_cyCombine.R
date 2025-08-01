@@ -3,6 +3,7 @@
 #' This is an alias for the `batch_correct` function.
 #' See `?batch_correct` for details.
 #' @param object An object of type "data.frame", "SingleCellExperiment", or "Seurat".
+#' @param ... Arguments passed to `batch_correct`
 #' @export
 cyCombine <- function(object, ...) {
   batch_correct(object, ...)
@@ -27,11 +28,9 @@ cyCombine <- function(object, ...) {
 #' performing clustering and correction iteratively. In subsequent iterations, the
 #' previously corrected data is used as input for normalization/clustering.
 #'
-#' @param object An object of type "data.frame", "SingleCellExperiment", or "Seurat".
+#' @param object An object of type "data.frame", "matrix", "SingleCellExperiment", or "Seurat".
 #' @param markers A character vector specifying the markers (features) to use for
 #'   normalization, clustering, and correction. If NULL, all features are used.
-#' @param batch_col Character string specifying the column name in \code{colData(sce)}
-#'   that contains batch information. Defaults to "batch".
 #' @param xdim Integer or vector of integers, the x-dimension(s) of the SOM grid
 #'   (for "kohonen" and "flowsom"). If a vector, the workflow iterates.
 #' @param ydim Integer or vector of integers, the y-dimension(s) of the SOM grid.
@@ -40,7 +39,6 @@ cyCombine <- function(object, ...) {
 #' @param mode Character, SOM training mode ("online", "batch", "pbatch") for "kohonen".
 #' @param cluster_method Clustering method: "kohonen", "flowsom", "fusesom", "leiden", or "kmeans.
 #' @param resolution Numeric, resolution parameter for Louvain/Leiden clustering.
-#' @param k_neighbors Integer, number of neighbors for k-NN graph construction.
 #' @param distf Character, distance function for SOM.
 #' @param nClus Integer, target number of clusters for FlowSOM metaclustering.
 #' @param seed Integer, random seed for reproducibility.
@@ -50,19 +48,17 @@ cyCombine <- function(object, ...) {
 #'    Applied before clustering unless \code{labels_colname} is provided. Defaults to "scale".
 #' @param ties.method Method for handling ties in rank normalization.
 #' @param label Character string for the cluster labels column. If this column
-#'    already exists in \code{colData(sce)}, the normalization and clustering steps are
+#'    already exists in the object metadata, the normalization and clustering steps are
 #'    skipped, and correction proceeds using these existing labels. Defaults to "Labels".
 #' @param method Batch correction method ("ComBat", "ComBat_seq").
-#' @param assay_combat_input Assay to use as input for ComBat (e.g., "logcounts", "normdata").
-#'    Defaults to "logcounts". Ensure this assay exists if method="ComBat".
-#' @param corrected_assay_name Name for the assay where the final corrected data is stored.
-#'    Defaults to "corrected".
 #' @param covar Optional: Covariate column name or vector for correction.
 #' @param anchor Optional: Anchor column name or vector for correction.
 #' @param ref.batch Optional: Reference batch for ComBat.
 #' @param parametric Logical, for ComBat's parametric adjustment.
 #' @param mc.cores Number of cores for parallel processing. Defaults to 1.
 #' @param pb Logical, whether to show progress bars. Defaults to FALSE.
+#' @param metadata Metadata to use in correction. Required when correcting a matrix
+#'
 #'
 #' @return An object of the same type as the input
 #'
@@ -109,6 +105,7 @@ batch_correct <- function(
 
   if (inherits(object, "Seurat")) {
     check_package("Seurat")
+    if (cluster_method == "kmeans") stop("kmeans clustering is not supported for Seurat objects.")
     stopifnot(
       "No 'batch' column in data." = "batch" %in% names(object[[]]))
     assay <- layer
@@ -119,43 +116,21 @@ batch_correct <- function(
     metadata <- object[[]]
   } else if (inherits(object, "SummarizedExperiment")) {
     check_package("SingleCellExperiment", "Bioc")
-    if (!"batch" %in% colnames(SummarizedExperiment::colData(sce)))
-      stop("Batch column 'batch' not found in colData(sce).")
+    if (cluster_method == "kmeans") stop("kmeans clustering is not supported for SCE objects.")
+    if (!"batch" %in% colnames(SummarizedExperiment::colData(object)))
+      stop("Batch column 'batch' not found in colData(object).")
     .normalize <- normalize_sce
     .create_som <- create_som_sce
     .correct_data <- correct_data_mat
 
-    metadata <- SummarizedExperiment::colData(sce)
+    metadata <- SummarizedExperiment::colData(object)
   } else if (inherits(object, "data.frame")) {
-
+    if (cluster_method == "leiden") stop("leiden clustering is only currently only supported for Seurat and SCE objects.")
     .normalize <- normalize
     .create_som <- create_som
     .correct_data <- correct_data
     metadata <- dplyr::select(object, dplyr::any_of(non_markers))
 
-    # corrected <- batch_correct_df(
-    #   object,
-    #   pb = pb,
-    #   xdim = xdim,
-    #   ydim = ydim,
-    #   rlen = rlen,
-    #   mode = mode,
-    #   seed = seed,
-    #   label = label,
-    #   distf = distf,
-    #   nClus = nClus,
-    #   covar = covar,
-    #   method = method,
-    #   anchor = anchor,
-    #   markers = markers,
-    #   mc.cores = mc.cores,
-    #   ref.batch = ref.batch,
-    #   parametric = parametric,
-    #   norm_method = norm_method,
-    #   ties.method = ties.method,
-    #   cluster_method = cluster_method
-    # )
-    # return(corrected)
   } else if (!inherits(object, "matrix")) {
     stop(
       "Objects of type '" , class(object),
@@ -187,7 +162,7 @@ batch_correct <- function(
         pb = pb)
 
       # Create SOM on normalized data
-      label_i <- .create_som(
+      label_i <- create_som(
         normalized,
         rlen = rlen,
         mode = mode,
@@ -211,9 +186,8 @@ batch_correct <- function(
     metadata$label <- label_i
 
 
-
     # Run batch correction
-    mat <- .correct_data(
+    mat <- correct_data(
       object2mat(object, assay = assay),
       metadata = metadata,
       label = label_i,
@@ -227,7 +201,7 @@ batch_correct <- function(
       pb = pb
     )
     # message(head(colnames(mat)))
-    object <- add_mat(object, mat, assay = "cyCombine")
+    object <- add_mat(object, mat, assay = "cyCombine", metadata = metadata)
     rm(mat)
     assay <- "cyCombine"
   }

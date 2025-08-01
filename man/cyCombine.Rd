@@ -8,6 +8,8 @@ cyCombine(object, ...)
 }
 \arguments{
 \item{object}{An object of type "data.frame", "SingleCellExperiment", or "Seurat".}
+
+\item{...}{Arguments passed to \code{batch_correct}}
 }
 \description{
 This is an alias for the \code{batch_correct} function.

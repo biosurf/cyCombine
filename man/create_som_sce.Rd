@@ -6,7 +6,7 @@
 \usage{
 create_som_sce(
   object,
-  assay = "normalized",
+  assay = ifelse(inherits(object, "Seurat"), "scale.data", "normalized"),
   markers = NULL,
   seed = 473,
   rlen = 10,
@@ -16,10 +16,16 @@ create_som_sce(
   distf = c("euclidean", "sumofsquares", "cosine", "manhattan", "chebyshev"),
   xdim = 6,
   ydim = 6,
-  nClus = NULL
+  nClus = NULL,
+  ...
 )
 }
 \arguments{
+\item{object}{A SingleCellExperiment object.}
+
+\item{assay}{Character string specifying the assay containing the
+data to use for clustering (e.g., "normalized" from \code{normalize_sce} or "scale.data" from \code{normalize_seurat}).}
+
 \item{markers}{A character vector specifying the markers (features) to use for
 clustering. If NULL, all features in the specified assay are used.}
 
@@ -47,19 +53,7 @@ Cosine is often good for high-dimensional data.}
 \item{nClus}{Integer, the target number of clusters for FlowSOM metaclusteirng.
 If NULL (default for FlowSOM), the grid node assignments are used directly.}
 
-\item{sce}{A SingleCellExperiment object.}
-
-\item{assay_name}{Character string specifying the assay containing the
-data to use for clustering (e.g., "normdata" from \code{normalize_sce}).}
-
-\item{batch_col}{Character string specifying the column name in \code{colData(sce)}
-that contains batch information. Defaults to "batch". Needed for FlowSOM distance calc.}
-
-\item{BPPARAM}{A \code{BiocParallelParam} object for parallel PCA computation.
-Defaults to \code{BiocParallel::SerialParam()}.}
-
-\item{labels_colname}{Character string for the column name in \code{colData(sce)}
-where the resulting cluster labels will be stored. Defaults to "Labels".}
+\item{...}{Arguments passed to \code{create_som}}
 }
 \value{
 A SingleCellExperiment object with cluster labels added to \code{colData}.

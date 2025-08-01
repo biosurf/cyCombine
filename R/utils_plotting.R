@@ -155,6 +155,7 @@ plot_density <- function(uncorrected, corrected, markers = NULL, directory = NUL
 #' @param markers Markers to include in dimensionality reduction
 #' @param seed For reproducibility
 #' @param return_coord Return coordinates and not just the plot
+#' @param metric Distance metric to use in UMAP generation
 #' @family plot
 #' @examples
 #' \dontrun{

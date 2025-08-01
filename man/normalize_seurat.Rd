@@ -23,6 +23,9 @@ normalize_seurat(
 
 \item{layer}{Layer to use from the Seurat object}
 
+\item{assay}{Character string specifying the assay in \code{sce} to use
+as input (e.g., "counts", "logcounts"). Defaults to "counts".}
+
 \item{norm_method}{Normalization method: "scale" (Z-score), "CLR", "lognorm", "rank", or "qnorm" (Quantile normalization). Defaults to "scale".}
 
 \item{ties.method}{The method to handle ties, when using rank. Default: 'average'. See ?rank for other options.}
@@ -30,6 +33,8 @@ normalize_seurat(
 \item{mc.cores}{Number of cores for parallelization}
 
 \item{pb}{Progress bar for parallelization}
+
+\item{...}{Arguments passed to \code{normalize_sce} or \code{normalize_seurat}}
 }
 \value{
 A Seurat object with normalized data.

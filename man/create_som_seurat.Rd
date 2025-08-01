@@ -21,9 +21,12 @@ create_som_seurat(
 )
 }
 \arguments{
-\item{object}{A Seurat object}
+\item{object}{A SingleCellExperiment object.}
 
 \item{layer}{Layer to use from the Seurat object}
+
+\item{assay}{Character string specifying the assay containing the
+data to use for clustering (e.g., "normalized" from \code{normalize_sce} or "scale.data" from \code{normalize_seurat}).}
 
 \item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 

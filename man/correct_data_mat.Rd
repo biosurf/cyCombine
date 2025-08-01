@@ -2,7 +2,7 @@
 % Please edit documentation in R/02_sce_batch_correct.R
 \name{correct_data_mat}
 \alias{correct_data_mat}
-\title{Correct SCE object using ComBat}
+\title{Correct matrix using ComBat}
 \usage{
 correct_data_mat(
   mat,
@@ -15,6 +15,10 @@ correct_data_mat(
 )
 }
 \arguments{
+\item{mat}{Data matrix}
+
+\item{metadata}{Metadata to use in correction. Required when correcting a matrix}
+
 \item{covar}{Optional: Covariate column name or vector for correction.}
 
 \item{anchor}{Optional: Anchor column name or vector for correction.}
@@ -22,13 +26,15 @@ correct_data_mat(
 \item{mc.cores}{Number of cores for parallel processing. Defaults to 1.}
 
 \item{pb}{Logical, whether to show progress bars. Defaults to FALSE.}
+
+\item{...}{Arguments passed to \code{correct_label_mat}}
 }
 \value{
 A SingleCellExperiment object with a new assay containing the batch-corrected data.
 }
 \description{
 Compute the batch correction on the data using the ComBat algorithm.
-Define a covariate, either as a character vector or name of Seurat metadata column.
+Define a covariate, either as a character vector or name of metadata column.
 The covariate should preferably be the cell condition types but can be any column that infers heterogeneity in the data.
-The function assumes that the batch information is in the "batch" column and the data contains a "sample" column with sample information.
+The function assumes that the batch information is in the "batch" column.
 }

@@ -32,13 +32,15 @@ batch_correct(
 )
 }
 \arguments{
-\item{object}{An object of type "data.frame", "SingleCellExperiment", or "Seurat".}
+\item{object}{An object of type "data.frame", "matrix", "SingleCellExperiment", or "Seurat".}
 
 \item{markers}{A character vector specifying the markers (features) to use for
 normalization, clustering, and correction. If NULL, all features are used.}
 
+\item{metadata}{Metadata to use in correction. Required when correcting a matrix}
+
 \item{label}{Character string for the cluster labels column. If this column
-already exists in \code{colData(sce)}, the normalization and clustering steps are
+already exists in the object metadata, the normalization and clustering steps are
 skipped, and correction proceeds using these existing labels. Defaults to "Labels".}
 
 \item{xdim}{Integer or vector of integers, the x-dimension(s) of the SOM grid
@@ -83,17 +85,6 @@ Applied before clustering unless \code{labels_colname} is provided. Defaults to 
 \item{mc.cores}{Number of cores for parallel processing. Defaults to 1.}
 
 \item{pb}{Logical, whether to show progress bars. Defaults to FALSE.}
-
-\item{batch_col}{Character string specifying the column name in \code{colData(sce)}
-that contains batch information. Defaults to "batch".}
-
-\item{k_neighbors}{Integer, number of neighbors for k-NN graph construction.}
-
-\item{assay_combat_input}{Assay to use as input for ComBat (e.g., "logcounts", "normdata").
-Defaults to "logcounts". Ensure this assay exists if method="ComBat".}
-
-\item{corrected_assay_name}{Name for the assay where the final corrected data is stored.
-Defaults to "corrected".}
 }
 \value{
 An object of the same type as the input

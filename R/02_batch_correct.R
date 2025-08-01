@@ -16,6 +16,7 @@
 #' @param ties.method The method to handle ties, when using rank. Default: 'average'. See ?rank for other options.
 #' @param mc.cores Number of cores for parallelization
 #' @param pb Progress bar for parallelization
+#' @param ... Arguments passed to `normalize_sce` or `normalize_seurat`
 #' @family batch
 #' @examples
 #' \dontrun{
@@ -31,6 +32,21 @@ normalize <- function(
     mc.cores = 1,
     pb = TRUE,
     ...) {
+  if (!inherits(df, "data.frame")) {
+    if (inherits(df, "SummarizedExperiment")) .normalize <- normalize_sce
+    else if (inherits(df, "Seurat")) .normalize <- normalize_seurat
+    return(
+      .normalize(
+        df,
+        markers = markers,
+        norm_method = norm_method,
+        ties.method = ties.method,
+        mc.cores = mc.cores,
+        pb = pb,
+        ...
+      )
+    )
+  }
 
   # Remove case-sensitivity
   norm_method <- match.arg(norm_method)
@@ -181,6 +197,7 @@ clr_norm_med <- function(x) {
 #' @param cluster_method Cluster method to use. Defaults to kohonen. Options: c("kohonen", "flowsom", "fusesom", "kmeans")
 #' @param distf Distance metric used for kohonen ("sumofsquares", "euclidean", "manhattan") or FlowSOM ("euclidean", "cosine", "manhattan", "chebyshev")
 #' @param return_model Option to return the clustering model instead of the labels for downstream usage. See used package documentation for how to use the model. E.g., the kohonen model can be used with `predict(model, newdata = df[,markers])`
+#' @param ... Arguments passed to `create_som_sce`
 #' @family batch
 #' @importFrom stats kmeans
 #' @importFrom kohonen som somgrid
@@ -206,6 +223,26 @@ create_som <- function(
   mode <- match.arg(mode)
   distf <- match.arg(distf)
   cluster_method <- match.arg(cluster_method)
+
+  if (!inherits(df, "data.frame") & !inherits(df, "matrix")) {
+    return(
+      create_som_sce(
+        df,
+        rlen = rlen,
+        mode = mode,
+        seed = seed,
+        xdim = xdim,
+        ydim = ydim,
+        nClus = nClus,
+        markers = markers,
+        return_model = return_model,
+        cluster_method = cluster_method,
+        ...
+      )
+    )
+  }
+
+
 
   if (is.null(markers)) {
     markers <- df  |>
@@ -263,7 +300,7 @@ create_som <- function(
         som_model <- FlowSOM::ReadInput(df) %>%
           FlowSOM::BuildSOM(xdim = xdim, ydim = ydim, distf = distf)
         if (return_model) return(som_model)
-        FlowSOM::GetClusters(fsom)
+        FlowSOM::GetClusters(som_model)
       }
     },
 
@@ -307,7 +344,9 @@ create_som <- function(
 #' @param parametric Default: TRUE. If TRUE, the parametric version of ComBat is used. If FALSE, the non-parametric version is used.
 #' @param method Default: "ComBat". Choose "ComBat" for cytometry data and "ComBat_seq" for bulk RNAseq data.
 #' @param ref.batch Optional. A string of the batch that should be used as the reference for batch adjustments.
+#' @param ... Arguments passed to `correct_data_mat```
 #' @family batch
+#' @importFrom sva ComBat ComBat_seq
 #' @examples
 #' \dontrun{
 #' corrected <- uncorrected %>%
@@ -315,7 +354,7 @@ create_som <- function(
 #'   }
 #' @export
 correct_data <- function(df,
-                         label,
+                         label = NULL,
                          markers = NULL,
                          method = c("ComBat", "ComBat_seq"),
                          covar = NULL,
@@ -325,6 +364,24 @@ correct_data <- function(df,
                          mc.cores = 1,
                          pb = FALSE,
                          ...) {
+  if (!inherits(df, "data.frame")) {
+    return(
+      correct_data_mat(
+        df,
+        pb = pb,
+        covar = covar,
+        anchor = anchor,
+        method = method,
+        markers = markers,
+        mc.cores = mc.cores,
+        ref.batch = ref.batch,
+        parametric = parametric,
+        ...
+      )
+    )
+  }
+
+
   method <- match.arg(method)
 
   APPLY <- set_apply(mc.cores, pb)
@@ -488,7 +545,7 @@ correct_data <- function(df,
 
 #' Run combat
 #' @noRd
-.combat <- function(x, batch, mod_matrix, parametric, ref.batch, method) {
+.combat <- function(x, batch, mod_matrix, parametric, ref.batch, method, ...) {
   if (method == "ComBat") {
     x <- sva::ComBat(
       x,
@@ -576,7 +633,6 @@ correct_data_alt <- function(df,
 #'   batch_correct(markers = markers,
 #'   covar = "condition")
 #'   }
-#' @export
 batch_correct_df <- function(df,
                           label = NULL,
                           xdim = 8,

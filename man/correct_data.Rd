@@ -6,7 +6,7 @@
 \usage{
 correct_data(
   df,
-  label,
+  label = NULL,
   markers = NULL,
   method = c("ComBat", "ComBat_seq"),
   covar = NULL,
@@ -39,6 +39,8 @@ If NULL, no covar will be used}
 \item{mc.cores}{Number of cores for parallelization}
 
 \item{pb}{Progress bar for parallelization}
+
+\item{...}{Arguments passed to `correct_data_mat```}
 }
 \description{
 Compute the batch correction on the data using the ComBat algorithm.

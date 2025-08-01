@@ -28,7 +28,7 @@ impute_across_panels(
 \item{impute_channels2}{Channels to impute and add to the impute_for dataset2 (must be present in dataset1). Alternatively can be set to NULL.}
 
 \item{label}{Character string for the cluster labels column. If this column
-already exists in \code{colData(sce)}, the normalization and clustering steps are
+already exists in the object metadata, the normalization and clustering steps are
 skipped, and correction proceeds using these existing labels. Defaults to "Labels".}
 
 \item{xdim}{Integer or vector of integers, the x-dimension(s) of the SOM grid

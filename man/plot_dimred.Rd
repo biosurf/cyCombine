@@ -29,6 +29,8 @@ plot_dimred(
 \item{seed}{For reproducibility}
 
 \item{return_coord}{Return coordinates and not just the plot}
+
+\item{metric}{Distance metric to use in UMAP generation}
 }
 \description{
 Dimensionality reduction plot

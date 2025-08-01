@@ -5,12 +5,11 @@ Authors@R:
     c(person(given = "Christina Bligaard",
            family = "Pedersen",
            role = c("aut"),
-           email = "chrbl@dtu.dk",
            comment = c(ORCID = "0000-0002-9895-0930")),
     person(given = "Søren Helweg",
            family = "Dam",
            role = c("aut", "cre"),
-           email = "sohdam@dtu.dk",
+           email = "soren.dam@sund.ku.dk",
            comment = c(ORCID = "0000-0003-0755-0016")),
     person(given = "Lars Rønn",
            family = "Olsen",
@@ -62,6 +61,9 @@ Suggests:
     FlowSOM,
     FuseSOM,
     pbmcapply,
-    parallel
+    parallel,
+    igraph,
+    scater,
+    scran,
+    scuttle
 VignetteBuilder: knitr
-LazyData: true

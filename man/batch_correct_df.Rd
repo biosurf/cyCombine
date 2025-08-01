@@ -70,8 +70,7 @@ If NULL, no covar will be used}
 
 \item{ties.method}{The method to handle ties, when using rank. Default: 'average'. See ?rank for other options.}
 
-\item{...}{Further arguments for the \code{supersom} function
-    presented to the \code{som} or \code{xyf} wrappers.}
+\item{...}{Arguments passed to \code{create_som_sce}}
 }
 \description{
 This is a wrapper function for the cyCombine batch correction workflow.

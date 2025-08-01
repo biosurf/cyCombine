@@ -29,7 +29,7 @@ batch_correct_seurat(
 )
 }
 \arguments{
-\item{object}{An object of type "data.frame", "SingleCellExperiment", or "Seurat".}
+\item{object}{An object of type "data.frame", "matrix", "SingleCellExperiment", or "Seurat".}
 
 \item{xdim}{Integer or vector of integers, the x-dimension(s) of the SOM grid
 (for "kohonen" and "flowsom"). If a vector, the workflow iterates.}
@@ -56,7 +56,7 @@ If a vector, the workflow iterates. Length should match \code{xdim} or be 1.}
 \item{seed}{Integer, random seed for reproducibility.}
 
 \item{label}{Character string for the cluster labels column. If this column
-already exists in \code{colData(sce)}, the normalization and clustering steps are
+already exists in the object metadata, the normalization and clustering steps are
 skipped, and correction proceeds using these existing labels. Defaults to "Labels".}
 
 \item{covar}{Optional: Covariate column name or vector for correction.}

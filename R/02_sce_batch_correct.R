@@ -12,6 +12,7 @@
 #' Log-normalization is a standard method for RNA-seq.
 #'
 #' @param sce A SingleCellExperiment object.
+#' @inheritParams normalize
 #' @param markers A character vector specifying the markers (features) to use for
 #'   normalization. If NULL, all features are used.
 #' @param assay Character string specifying the assay in \code{sce} to use
@@ -22,8 +23,8 @@
 #'   normalized data will be stored. Defaults to "normdata"..
 #' @return A SingleCellExperiment object with a new assay containing the
 #'   normalized data (named according to \code{new_assay_name}).
+#' @param ... For compatibility
 #'
-#' @export
 normalize_sce <- function(
     sce,
     markers = NULL,
@@ -140,13 +141,11 @@ normalize_sce <- function(
 #' correction, making the correction less affected by compositional differences
 #' between batches.
 #'
-#' @param sce A SingleCellExperiment object.
-#' @param assay_name Character string specifying the assay containing the
-#'   data to use for clustering (e.g., "normdata" from \code{normalize_sce}).
+#' @param object A SingleCellExperiment object.
+#' @param assay Character string specifying the assay containing the
+#'   data to use for clustering (e.g., "normalized" from \code{normalize_sce} or "scale.data" from \code{normalize_seurat}).
 #' @param markers A character vector specifying the markers (features) to use for
 #'   clustering. If NULL, all features in the specified assay are used.
-#' @param batch_col Character string specifying the column name in \code{colData(sce)}
-#'   that contains batch information. Defaults to "batch". Needed for FlowSOM distance calc.
 #' @param cluster_method Clustering method: "kohonen", "flowsom", "louvain", or "leiden".
 #' @param xdim Integer, the x-dimension of the SOM grid (for "kohonen" and "flowsom").
 #' @param ydim Integer, the y-dimension of the SOM grid (for "kohonen" and "flowsom").
@@ -161,18 +160,14 @@ normalize_sce <- function(
 #' @param resolution Numeric, resolution parameter for Louvain/Leiden community
 #'   detection (\code{igraph}). Higher values lead to more clusters. Ignored
 #'   if \code{cluster_method} is not "louvain" or "leiden".
-#' @param BPPARAM A \code{BiocParallelParam} object for parallel PCA computation.
-#'   Defaults to \code{BiocParallel::SerialParam()}.
 #' @param seed Integer, random seed for reproducibility.
-#' @param labels_colname Character string for the column name in \code{colData(sce)}
-#'   where the resulting cluster labels will be stored. Defaults to "Labels".
+#' @param ... Arguments passed to `create_som`
 #'
 #' @return A SingleCellExperiment object with cluster labels added to \code{colData}.
 #'
-#' @export
 create_som_sce <- function(
     object,
-    assay = "normalized",
+    assay = ifelse(inherits(object, "Seurat"), "scale.data","normalized"),
     markers = NULL,
     seed = 473,
     rlen = 10,
@@ -182,7 +177,8 @@ create_som_sce <- function(
     distf = c("euclidean", "sumofsquares", "cosine", "manhattan", "chebyshev"),
     xdim = 6,
     ydim = 6,
-    nClus = NULL) {
+    nClus = NULL,
+    ...) {
 
   mode <- match.arg(mode)
   distf <- match.arg(distf)
@@ -239,7 +235,8 @@ create_som_sce <- function(
       cluster_method = cluster_method,
       distf = distf,
       seed = seed,
-      rlen = rlen
+      rlen = rlen,
+      ...
     )
   }
 
@@ -247,18 +244,19 @@ create_som_sce <- function(
 }
 
 
-#' Correct SCE object using ComBat
+#' Correct matrix using ComBat
 #'
 #' Compute the batch correction on the data using the ComBat algorithm.
-#' Define a covariate, either as a character vector or name of Seurat metadata column.
+#' Define a covariate, either as a character vector or name of metadata column.
 #' The covariate should preferably be the cell condition types but can be any column that infers heterogeneity in the data.
-#' The function assumes that the batch information is in the "batch" column and the data contains a "sample" column with sample information.
+#' The function assumes that the batch information is in the "batch" column.
 #'
 #' @inheritParams batch_correct
+#' @param mat Data matrix
+#' @param ... Arguments passed to `correct_label_mat`
 #'
 #' @return A SingleCellExperiment object with a new assay containing the batch-corrected data.
 #'
-#' @export
 correct_data_mat <- function(
     mat,
     metadata,
@@ -344,7 +342,7 @@ correct_label_mat <- function(
     anchor <- NULL
   }
 
-  if (num_covar > 1 && num_anchor > 1 && check_confound(metadata$batch, interaction(metadata[[covar]][,1], object_lab[[anchor]][,1]))) {
+  if (num_covar > 1 && num_anchor > 1 && check_confound(metadata$batch, interaction(metadata[[covar]][,1], metadata[[anchor]][,1]))) {
     anchor <- NULL
   }
 
@@ -371,7 +369,7 @@ correct_label_mat <- function(
 
 
 
-add_mat <- function(object, mat, assay = "cyCommbine") {
+add_mat <- function(object, mat, assay = "cyCommbine", metadata = NULL) {
 
   if(inherits(object, "matrix") | inherits(object, "data.frame")) {
     return(mat)
@@ -382,6 +380,7 @@ add_mat <- function(object, mat, assay = "cyCommbine") {
   if (sum(flawed_cells) > 0) {
     warning(sum(flawed_cells), " cell(s) were excluded in correction and are removed.")
     object <- object[, colnames(mat)]
+    if (!is.null(metadata)) metadata <- metadata[colnames(mat),]
   }
 
   if (inherits(object, "Seurat")) {
@@ -389,9 +388,11 @@ add_mat <- function(object, mat, assay = "cyCommbine") {
     # Update the Seurat object with corrected data
     object[[assay]] <- SeuratObject::CreateAssayObject(data = mat, key = "corrected_")
     SeuratObject::DefaultAssay(object) <- "cyCombine"
+    if (!is.null(metadata)) object[[]] <- metadata
   } else if (inherits(object, "SummarizedExperiment")) {
     check_package("SingleCellExperiment", "Bioc")
     SummarizedExperiment::assay(object, assay) <- mat
+    if (!is.null(metadata)) SummarizedExperiment::colData(object) <- metadata
   }
   return(object)
 }

@@ -1,11 +1,11 @@
-# cyCombine 0.2.20
+# cyCombine 0.3.0
 
 * Batch correction can now be performed iteratively by submitting xdim and ydim as vectors. E.g., `xdim = c(4,8)` and `ydim = c(1,8)`. This will first correct using a 4x1 grid and then an 8x8 grid.
 * You can now adjust the bin size for EMD calculations.
 * Added \ to removed characters in clean_colnames, but - and + are no longer removed.
 * Added markers as input in detect_batch_effects_express
 * Added compensation in prepare_data
-* Support for Seurat objects
+* Support for Seurat and SCE objects
 * Added mode selection in SOM clustering
 * Added binSize argument to detect_batch_effect* functions
 * batch_correct can now be parallelized with `mc.cores` parameter using `pbmcapply`, optionally without progressbar.

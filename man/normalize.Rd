@@ -26,6 +26,8 @@ normalize(
 \item{mc.cores}{Number of cores for parallelization}
 
 \item{pb}{Progress bar for parallelization}
+
+\item{...}{Arguments passed to \code{normalize_sce} or \code{normalize_seurat}}
 }
 \description{
 This function normalizes the data in a batch-wise manner.

@@ -11,12 +11,12 @@
 #' Quantile is not recommended.
 #'
 #' @inheritParams normalize
+#' @inheritParams normalize_sce
 #' @param object A Seurat object
 #' @param norm_method Normalization method: "scale" (Z-score), "CLR", "lognorm", "rank", or "qnorm" (Quantile normalization). Defaults to "scale".
 #' @param layer Layer to use from the Seurat object
 #'
 #' @return A Seurat object with normalized data.
-#' @export
 normalize_seurat <- function(
     object,
     markers = NULL,
@@ -135,11 +135,11 @@ quantile_norm_seurat <- function(object, markers = NULL, mc.cores = 1, pb = FALS
 #'
 #' @inheritParams kohonen::supersom
 #' @inheritParams create_som
+#' @inheritParams create_som_sce
 #' @inheritParams normalize_seurat
 #' @param resolution Resolution parameter for lauvain/leiden
 #'
 #' @return A vector of clustering labels
-#' @export
 create_som_seurat <- function(
     object,
     layer = SeuratObject::Layers(object)[length(SeuratObject::Layers(object))],
@@ -214,7 +214,6 @@ create_som_seurat <- function(
 #' @param return_seurat Logical. Whether the matrix or a Seurat object should be returned.
 #'
 #' @return A Seurat object with corrected data.
-#' @export
 correct_data_seurat <- function(
     object,
     markers = NULL,
@@ -342,6 +341,7 @@ correct_label_seurat <- function(mat, metadata, ...) {
   data <- .combat(
     mat,
     batch = metadata$batch,
+    mod_matrix = mod_matrix,
     ...)
 
   return(data)
@@ -370,7 +370,6 @@ correct_label_seurat <- function(mat, metadata, ...) {
 #' @inheritParams correct_data_seurat
 #' @inheritParams normalize_seurat
 #' @family batch
-#' @importFrom sva ComBat ComBat_seq
 #' @importFrom methods slot slot<-
 #' @import stats
 #' @examples
@@ -381,7 +380,6 @@ correct_label_seurat <- function(mat, metadata, ...) {
 #'  covar = "condition"
 #'  )
 #'   }
-#' @export
 batch_correct_seurat <- function(
     object,
     xdim = 8,
@@ -406,6 +404,10 @@ batch_correct_seurat <- function(
     pb = FALSE) {
 
   cyCombine:::check_package("Seurat")
+  mode <- match.arg(mode)
+  method <- match.arg(method)
+  norm_method <- match.arg(norm_method)
+  cluster_method <- match.arg(cluster_method)
 
   stopifnot(
     "No 'batch' column in data." = "batch" %in% names(object[[]]))
@@ -419,9 +421,9 @@ batch_correct_seurat <- function(
     ## Published on github by longmanz
     ## https://github.com/satijalab/seurat-object/issues/208
 
-    tmp_SCT_features_attributes <- slot(object = object[['SCT']], name = "SCTModel.list")[[1]]@feature.attributes
+    tmp_SCT_features_attributes <- methods::slot(object = object[['SCT']], name = "SCTModel.list")[[1]]@feature.attributes
     tmp_SCT_features_attributes <- tmp_SCT_features_attributes[markers, ]
-    slot(object = object[['SCT']], name = "SCTModel.list")[[1]]@feature.attributes <- tmp_SCT_features_attributes
+    methods::slot(object = object[['SCT']], name = "SCTModel.list")[[1]]@feature.attributes <- tmp_SCT_features_attributes
     object <- object[markers, ] #subset(object, features = markers)
   } else {
     object <- object[markers, ]

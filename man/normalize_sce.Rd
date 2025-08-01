@@ -28,6 +28,10 @@ normalized data will be stored. Defaults to "normdata"..}
 
 \item{norm_method}{Normalization method: "scale" (Z-score), "rank", "clr",
 "lognorm", or "qnorm" (Quantile normalization). Defaults to "scale".}
+
+\item{ties.method}{The method to handle ties, when using rank. Default: 'average'. See ?rank for other options.}
+
+\item{...}{For compatibility}
 }
 \value{
 A SingleCellExperiment object with a new assay containing the
