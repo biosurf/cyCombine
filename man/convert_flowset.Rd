@@ -12,7 +12,7 @@ convert_flowset(
   batch_ids = NULL,
   condition = NULL,
   anchor = NULL,
-  down_sample = TRUE,
+  down_sample = FALSE,
   sample_size = 5e+05,
   sampling_type = "random",
   seed = 473,

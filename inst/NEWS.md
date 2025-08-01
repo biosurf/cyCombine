@@ -14,6 +14,10 @@
 * Vectorize and parallelize EMD computation
 * Remove dependency on sample column in correction
 * Included FuseSOM clustering
+* Included Leiden clustering for SCE and Seurat objects
+* Added `cyCombine()` as an alias for `batch_correct`
+* Generalized main functions for all object types
+* Added `df2Seurat` function
 
 # cyCombine 0.2.19
 

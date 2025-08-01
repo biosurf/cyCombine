@@ -67,3 +67,4 @@ Suggests:
     scran,
     scuttle
 VignetteBuilder: knitr
+LazyData: true
