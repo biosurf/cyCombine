@@ -4,20 +4,45 @@
 \alias{create_som}
 \title{Create Self-Organizing Map}
 \usage{
-create_som(df, markers = NULL, seed = 473, rlen = 10, xdim = 8, ydim = 8)
+create_som(
+  df,
+  markers = NULL,
+  seed = 473,
+  cluster_method = c("kohonen", "flowsom", "fusesom", "kmeans"),
+  distf = c("euclidean", "sumofsquares", "cosine", "manhattan", "chebyshev"),
+  rlen = 10,
+  mode = c("online", "batch", "pbatch"),
+  xdim = 8,
+  ydim = 8,
+  nClus = NULL,
+  return_model = FALSE,
+  ...
+)
 }
 \arguments{
-\item{df}{tibble with expression values}
+\item{df}{tibble or seurat with expression values}
 
 \item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 
 \item{seed}{The seed to use when creating the SOM.}
 
+\item{cluster_method}{Cluster method to use. Defaults to kohonen. Options: c("kohonen", "flowsom", "fusesom", "kmeans")}
+
+\item{distf}{Distance metric used for kohonen ("sumofsquares", "euclidean", "manhattan") or FlowSOM ("euclidean", "cosine", "manhattan", "chebyshev")}
+
 \item{rlen}{Number of times the data is presented to the SOM network}
 
-\item{xdim}{The x-dimension size of the SOM.}
+\item{mode}{type of learning algorithm.}
 
-\item{ydim}{The y-dimension size of the SOM.}
+\item{xdim}{The x-dimension size of the SOM. If NULL, gridsize is computed using \code{FuseSOM::computeGridSize}}
+
+\item{ydim}{The y-dimension size of the SOM. If NULL, gridsize is computed using \code{FuseSOM::computeGridSize}}
+
+\item{nClus}{(Usable with FlowSOM, FuseSOM, and kmeans) Number of clusters to export}
+
+\item{return_model}{Option to return the clustering model instead of the labels for downstream usage. See used package documentation for how to use the model. E.g., the kohonen model can be used with \code{predict(model, newdata = df[,markers])}}
+
+\item{...}{Arguments passed to \code{create_som_sce}}
 }
 \value{
 A vector of clustering labels
@@ -29,13 +54,13 @@ by samples with high abundances of a particular cell type.
 }
 \examples{
 \dontrun{
-labels <- uncorrected \%>\%
-  create_som()
+labels <- create_som(uncorrected)
   }
 }
 \seealso{
 Other batch: 
-\code{\link{batch_correct}()},
+\code{\link{batch_correct_df}()},
+\code{\link{batch_correct_seurat}()},
 \code{\link{correct_data}()},
 \code{\link{normalize}()},
 \code{\link{quantile_norm}()}

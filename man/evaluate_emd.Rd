@@ -12,7 +12,8 @@ evaluate_emd(
   batch_col = "batch",
   markers = NULL,
   plots = TRUE,
-  filter_limit = 2
+  filter_limit = 2,
+  mc.cores = 1
 )
 }
 \arguments{
@@ -31,6 +32,8 @@ evaluate_emd(
 \item{plots}{If TRUE, a violin and scatter plot of the emds will be returned}
 
 \item{filter_limit}{Limit for EMD removal (Removing EMDs that are below filter_limit in both before and after correction)}
+
+\item{mc.cores}{Number of cores for parallelization}
 }
 \description{
 The function computes the Earth Mover's Distance of the two given datasets.

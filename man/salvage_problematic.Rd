@@ -8,6 +8,7 @@ salvage_problematic(
   df,
   correct_batches,
   channel,
+  markers = NULL,
   label = NULL,
   sample_size = NULL,
   exclude = NULL,
@@ -23,15 +24,17 @@ salvage_problematic(
 
 \item{channel}{Channel (marker) to impute}
 
+\item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
+
 \item{label}{(Optional) Column with group labels to base imputations on}
 
 \item{sample_size}{Number of cells to base imputation on - defaults to all cells in df not in 'correct_batches'}
 
 \item{exclude}{Channels to exclude (e.g. other misstained channels not to be used for imputation)}
 
-\item{xdim}{The x-dimension size of the SOM.}
+\item{xdim}{The x-dimension size of the SOM. If NULL, gridsize is computed using \code{FuseSOM::computeGridSize}}
 
-\item{ydim}{The y-dimension size of the SOM.}
+\item{ydim}{The y-dimension size of the SOM. If NULL, gridsize is computed using \code{FuseSOM::computeGridSize}}
 
 \item{seed}{The seed to use when creating the SOM.}
 }

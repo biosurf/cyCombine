@@ -7,11 +7,12 @@
 plot_dimred(
   df,
   name,
-  type = "umap",
+  type = c("umap", "pca"),
   plot = "batch",
   markers = NULL,
   seed = 473,
-  return_coord = FALSE
+  return_coord = FALSE,
+  metric = "euclidean"
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ plot_dimred(
 \item{seed}{For reproducibility}
 
 \item{return_coord}{Return coordinates and not just the plot}
+
+\item{metric}{Distance metric to use in UMAP generation}
 }
 \description{
 Dimensionality reduction plot

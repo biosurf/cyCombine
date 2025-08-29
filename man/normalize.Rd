@@ -4,16 +4,30 @@
 \alias{normalize}
 \title{Batch-wise normalization of data}
 \usage{
-normalize(df, markers = NULL, norm_method = "scale", ties.method = "average")
+normalize(
+  df,
+  markers = NULL,
+  norm_method = c("scale", "rank", "CLR_seu", "CLR_med", "CLR", "qnorm", "none"),
+  ties.method = c("average", "first", "last", "random", "max", "min"),
+  mc.cores = 1,
+  pb = TRUE,
+  ...
+)
 }
 \arguments{
-\item{df}{tibble with expression values}
+\item{df}{tibble or seurat with expression values}
 
 \item{markers}{Markers to normalize. If NULL, markers will be found using the \code{\link{get_markers}} function.}
 
-\item{norm_method}{Normalization method. Should be either 'rank', 'scale' or 'qnorm'. Default: 'scale'}
+\item{norm_method}{Normalization method. Should be either 'rank', 'scale', 'CLR', 'CLR_seu', 'CLR_med', or 'qnorm'. Default: 'scale'. CLR is recommended for ADT normalization. CLR_seu mimicks the Seurat implementation of CLR. CLR_med uses the median instead of geometric mean.}
 
 \item{ties.method}{The method to handle ties, when using rank. Default: 'average'. See ?rank for other options.}
+
+\item{mc.cores}{Number of cores for parallelization}
+
+\item{pb}{Progress bar for parallelization}
+
+\item{...}{Arguments passed to \code{normalize_sce} or \code{normalize_seurat}}
 }
 \description{
 This function normalizes the data in a batch-wise manner.
@@ -31,7 +45,8 @@ df_normed <- df \%>\%
 }
 \seealso{
 Other batch: 
-\code{\link{batch_correct}()},
+\code{\link{batch_correct_df}()},
+\code{\link{batch_correct_seurat}()},
 \code{\link{correct_data}()},
 \code{\link{create_som}()},
 \code{\link{quantile_norm}()}

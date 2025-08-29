@@ -10,8 +10,9 @@
 #'   3. A MultiDimensional Scaling plot based on the median marker expression per sample.
 #'   It can apply downsampling for a quicker analysis of larger datasets.
 #'
+#' @inheritParams detect_batch_effect
 #' @param df Tibble containing the expression data and batch information. See prepare_data.
-#' @param out_dir Directory for plot output
+#' @param out_dir Directory for plot output, default = NULL will return plots as variable.
 #' @param batch_col Name of column containing batch information
 #' @param downsample Number of cells to include in detection. If not specified, all cells will be used.
 #' @param seed Random seed for reproducibility
@@ -23,7 +24,9 @@
 #' }
 #' @export
 detect_batch_effect_express <- function(df,
-                                        out_dir,
+                                        out_dir = NULL,
+                                        binSize = 0.1, #TODO: Dynamic binsize
+                                        markers = NULL,
                                         batch_col = "batch",
                                         downsample = NULL,
                                         seed = 472) {
@@ -35,8 +38,13 @@ detect_batch_effect_express <- function(df,
   cyCombine:::missing_package("grDevices", "CRAN")
 
   message('Starting the quick(er) detection of batch effects.')
-  # Create output directory if missing
-  cyCombine:::check_make_dir(out_dir)
+  # Create output directory if missing, and not NULL
+  if (!is.null(out_dir)) {
+    cyCombine:::check_make_dir(out_dir)
+  } else {
+    message('Returning plots as variable.')
+    plots_return <- list()
+  }
 
   # Check batch_col and rename if necessary
   cyCombine:::check_colname(colnames(df), batch_col, location = "df")
@@ -49,7 +57,6 @@ detect_batch_effect_express <- function(df,
   if (length(levels(df$batch)) < 2) {
     stop('Error! Please provide a datasets with more than one batch.')
   }
-
 
   # This works without clustering the data, so we set all labels to 1
   df$label <- 1
@@ -75,14 +82,17 @@ detect_batch_effect_express <- function(df,
   ### Making distribution plots for all markers in each batch - good for diagnostics
   message('Making distribution plots for all markers in each batch.')
 
-  all_markers <- df %>% cyCombine::get_markers()
+  if (is.null(markers)){
+    markers <- df %>%
+      cyCombine::get_markers()
+  }
 
   # For each marker, make the plot
   grDevices::pdf(NULL)
   p <- list()
-  for (c in 1:length(all_markers)) {
+  for (c in 1:length(markers)) {
 
-    p[[c]] <- ggplot2::ggplot(df, ggplot2::aes_string(x = all_markers[c],
+    p[[c]] <- ggplot2::ggplot(df, ggplot2::aes_string(x = markers[c],
                                              y = "batch")) +
       ggridges::geom_density_ridges(ggplot2::aes(color = batch, fill = batch),
                                     alpha = 0.4,
@@ -90,10 +100,16 @@ detect_batch_effect_express <- function(df,
       ggplot2::theme_bw()
   }
 
-  # Save the plots
-  suppressMessages(cowplot::save_plot(paste0(out_dir, '/distributions_per_batch.png'), cowplot::plot_grid(plotlist = p, nrow = round(length(all_markers) / 6)), base_width = length(all_markers) / (4/3), base_height = length(all_markers)))
-  message(paste0('Saved marker distribution plots here: ', out_dir, '/distributions_per_batch.png.'))
+  # Combine plots
+  dist_plot <- suppressMessages(cowplot::plot_grid(plotlist = p, nrow = round(length(markers) / 6)))
 
+  # Save the plots if out_dir provided
+  if (!is.null(out_dir)) {
+    cowplot::save_plot(paste0(out_dir, '/distributions_per_batch.png'), dist_plot, base_width = length(markers) / (4/3), base_height = length(markers))
+    message(paste0('Saved marker distribution plots here: ', out_dir, '/distributions_per_batch.png.\n'))
+  } else {
+    plots_return[['distributions']] <- dist_plot
+  }
 
   ### Use EMD-based batch effect detection
   message('Applying global EMD-based batch effect detection.')
@@ -101,7 +117,7 @@ detect_batch_effect_express <- function(df,
   # Perform EMD calculations
   emd <- df %>%
     dplyr::arrange(id) %>%
-    cyCombine::compute_emd()
+    cyCombine::compute_emd(binSize = binSize)
 
   # Get summary per marker ACROSS batches
   emd_markers <- cbind.data.frame(sapply(emd[[1]], mean, na.rm = T), sapply(emd[[1]], stats::sd, na.rm = T))
@@ -139,10 +155,14 @@ detect_batch_effect_express <- function(df,
     ggplot2::ylab('Mean EMD') + ggplot2::xlab('') +
     ggplot2::geom_errorbar(ggplot2::aes(ymin=mean-sd, ymax=mean+sd), width=.2,
                            position=ggplot2::position_dodge(.9))
-  suppressMessages(ggplot2::ggsave(p, filename = paste0(out_dir, '/emd_per_marker.png')))
 
-  message(paste0('Saved EMD plot here: ', out_dir, '/emd_per_marker.png.\n'))
-
+  # Save the plots if out_dir provided
+  if (!is.null(out_dir)) {
+    suppressMessages(ggplot2::ggsave(p, filename = paste0(out_dir, '/emd_per_marker.png')))
+    message(paste0('Saved EMD plot here: ', out_dir, '/emd_per_marker.png.\n'))
+  } else {
+    plots_return[['EMD']] <- p
+  }
 
   # The magnitude of expression also matters for the size EMD ?
   # marker_means <- df %>% select(get_markers(df)) %>% as.matrix() %>% matrixStats::colMeans()
@@ -180,7 +200,7 @@ detect_batch_effect_express <- function(df,
     dplyr::group_by(sample) %>%
     dplyr::summarise_at(cyCombine::get_markers(df), stats::median)
 
-  dist_mat <- as.matrix(stats::dist(median_expr[, all_markers]))   # Euclidean distance
+  dist_mat <- as.matrix(stats::dist(median_expr[, markers]))   # Euclidean distance
   rownames(dist_mat) <- colnames(dist_mat) <- median_expr$sample
 
   mds <- as.data.frame(stats::cmdscale(dist_mat, k = 2))
@@ -192,10 +212,20 @@ detect_batch_effect_express <- function(df,
     ggplot2::labs(x = "MDS1", y = "MDS2", title = "MDS plot") +
     ggplot2::theme_bw()
 
-  suppressMessages(ggplot2::ggsave(p, filename = paste0(out_dir, '/MDS_per_batch.png')))
-  message(paste0('Saved MDS plot here: ', out_dir, '/MDS_per_batch.png'))
+  # Save the plots if out_dir provided
+  if (!is.null(out_dir)) {
+    suppressMessages(ggplot2::ggsave(p, filename = paste0(out_dir, '/MDS_per_batch.png')))
+    message(paste0('Saved MDS plot here: ', out_dir, '/MDS_per_batch.png\n'))
+  } else {
+    plots_return[['MDS']] <- p
+  }
 
   message('Done!')
+
+  # Return plots if out_dir not provided
+  if (is.null(out_dir)) {
+    return(plots_return)
+  }
 }
 
 
@@ -208,6 +238,7 @@ detect_batch_effect_express <- function(df,
 #'   This is coupled with UMAP plots to assist the interpretation of the results.
 #'   However, this is primarily meaningful for sets with 3-30 batches - in cases outside this range, only the UMAPs will be generated.
 #'
+#' @inheritParams compute_emd
 #' @param df Tibble containing the expression data and batch information. See prepare_data.
 #' @param downsample Number of cells to include in detection. If not specified all cells will be used. One should be careful with the downsampling here as too strong downsampling leads to spurious results.
 #' @param norm_method Normalization methods (options = 'scale' and 'rank')
@@ -235,6 +266,7 @@ detect_batch_effect <- function(df,
                                 ydim = 8,
                                 seed = 382,
                                 markers = NULL,
+                                binSize = 0.1,
                                 batch_col = "batch",
                                 label_col = "label",
                                 name = 'raw data') {
@@ -304,7 +336,7 @@ detect_batch_effect <- function(df,
   if (length(levels(df$batch)) >= 3 & length(levels(df$batch)) <= 30) {
     emd <- df %>%
       dplyr::mutate(label = as.character(label)) %>%
-      cyCombine::compute_emd()
+      cyCombine::compute_emd(binSize = binSize)
 
     markers_emd <- list()
     # Looking through EMDs to find culprits - using loops

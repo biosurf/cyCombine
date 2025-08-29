@@ -44,6 +44,7 @@ The function uses CATALYST::sce2fcs and flowCore::write.flowSet to store the FCS
 }
 \seealso{
 Other export: 
-\code{\link{df2SCE}()}
+\code{\link{df2SCE}()},
+\code{\link{df2Seurat}()}
 }
 \concept{export}
