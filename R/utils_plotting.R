@@ -171,13 +171,12 @@ plot_dimred <- function(df,
                         return_coord = FALSE,
                         metric = "euclidean") {
 
+  type <- match.arg(type)
   # Check for missing packages
   if (type == "umap") check_package("uwot", "CRAN")
   if (plot != "batch") check_package("viridis", "CRAN")
   check_package("ggridges", "CRAN")
   check_package("ggplot2", "CRAN")
-
-  type <- match.arg(type)
 
 
   if(is.null(markers)){
